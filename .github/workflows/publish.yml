@@ -1,0 +1,49 @@
+name: publish
+
+# Decoupled publish: any published GitHub Release pushes the workspace packages to
+# GitHub Packages. This is independent of release-please's release-creation step
+# (which proved unreliable for this monorepo) — a release, manual or automated, is
+# the trigger. The publish is idempotent: an already-published version is skipped,
+# so re-runs and multiple release events do not fail.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write # publish to GitHub Packages
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+          # Package-name scope == owning org, as GitHub Packages requires.
+          scope: "@forschungsgruppe-digital-health"
+
+      - run: npm ci --legacy-peer-deps
+
+      # Publish each workspace. Raw-src publish (no build step). Already-published
+      # versions return a conflict and are skipped; any other failure fails the job.
+      - name: Publish packages to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for pkg in terminology fhir-mapping; do
+            echo "::group::publish @forschungsgruppe-digital-health/$pkg"
+            if npm publish --workspace="packages/$pkg" 2>publish-err.log; then
+              echo "published $pkg"
+            elif grep -qiE "cannot publish over|already exists|EPUBLISHCONFLICT|409|conflict" publish-err.log; then
+              echo "skip $pkg — this version is already published"
+            else
+              cat publish-err.log
+              echo "::error::publish failed for $pkg"
+              exit 1
+            fi
+            echo "::endgroup::"
+          done

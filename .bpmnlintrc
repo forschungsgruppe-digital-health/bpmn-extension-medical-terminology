@@ -1,9 +1,3 @@
 {
-  "extends": [
-    "bpmnlint:recommended",
-    "plugin:myext/recommended"
-  ],
-  "moddleExtensions": {
-    "myext": "./extension/model/myExtension.json"
-  }
+  "extends": ["bpmnlint:recommended", "bpmnlint:correctness"]
 }

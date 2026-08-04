@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn2:definitions
+    xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+    xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+    id="Definitions_Minimal"
+    targetNamespace="https://clinical-bpmn.org/examples/minimal"
+    exporter="bpmn-js-clinical-semantics"
+    exporterVersion="0.1.0">
+
+  <!-- ============================================================
+       Minimal BPMN Example: Lung Cancer Treatment Decision
+       ============================================================
+
+       This is a plain BPMN 2.0 process with NO clinical extensions.
+       It models a simplified lung cancer treatment pathway:
+
+       Start → TNM Staging → [Stage I-II?] → Surgical Resection
+                                            → Systemic Chemotherapy
+                             → (join) → Follow-up Assessment → End
+
+       Use this file to understand the base BPMN structure before
+       looking at the FHIR-annotated version.
+       ============================================================ -->
+
+  <bpmn2:process id="Process_LungCaMin" name="Lung Cancer Treatment Decision" isExecutable="false">
+
+    <!-- ─── Start Event ─────────────────────────────────────── -->
+    <bpmn2:startEvent id="StartEvent_1" name="Patient with suspected lung cancer">
+      <bpmn2:outgoing>Flow_Start_Staging</bpmn2:outgoing>
+    </bpmn2:startEvent>
+
+    <!-- ─── Data Object: MRI Scan Report (input to staging) ─── -->
+    <bpmn2:dataObjectReference id="DataObj_MRI" name="MRI Scan Report"/>
+
+    <!-- ─── Task: TNM Staging (before gateway) ──────────────── -->
+    <bpmn2:task id="Task_Staging" name="Perform TNM Staging">
+      <bpmn2:incoming>Flow_Start_Staging</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_Staging_GwSplit</bpmn2:outgoing>
+      <bpmn2:dataInputAssociation id="DataInputAssoc_MRI">
+        <bpmn2:sourceRef>DataObj_MRI</bpmn2:sourceRef>
+      </bpmn2:dataInputAssociation>
+    </bpmn2:task>
+
+    <!-- ─── XOR Gateway: Split (tumor stage decision) ───────── -->
+    <bpmn2:exclusiveGateway id="Gateway_Split" name="Tumor Stage?">
+      <bpmn2:incoming>Flow_Staging_GwSplit</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_GwSplit_Surgery</bpmn2:outgoing>
+      <bpmn2:outgoing>Flow_GwSplit_Chemo</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+
+    <!-- ─── Task: Surgical Resection (path A: early stage) ──── -->
+    <bpmn2:task id="Task_Surgery" name="Surgical Resection">
+      <bpmn2:incoming>Flow_GwSplit_Surgery</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_Surgery_GwJoin</bpmn2:outgoing>
+    </bpmn2:task>
+
+    <!-- ─── Task: Systemic Chemotherapy (path B: advanced) ──── -->
+    <bpmn2:task id="Task_Chemo" name="Systemic Chemotherapy">
+      <bpmn2:incoming>Flow_GwSplit_Chemo</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_Chemo_GwJoin</bpmn2:outgoing>
+    </bpmn2:task>
+
+    <!-- ─── XOR Gateway: Join ───────────────────────────────── -->
+    <bpmn2:exclusiveGateway id="Gateway_Join">
+      <bpmn2:incoming>Flow_Surgery_GwJoin</bpmn2:incoming>
+      <bpmn2:incoming>Flow_Chemo_GwJoin</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_GwJoin_Followup</bpmn2:outgoing>
+    </bpmn2:exclusiveGateway>
+
+    <!-- ─── Data Object: Discharge Letter (output of follow-up) -->
+    <bpmn2:dataObjectReference id="DataObj_DischargeLetter" name="Discharge Letter"/>
+
+    <!-- ─── Task: Follow-up Assessment (after gateway) ──────── -->
+    <bpmn2:task id="Task_Followup" name="Follow-up Assessment">
+      <bpmn2:incoming>Flow_GwJoin_Followup</bpmn2:incoming>
+      <bpmn2:outgoing>Flow_Followup_End</bpmn2:outgoing>
+      <bpmn2:dataOutputAssociation id="DataOutputAssoc_DischargeLetter">
+        <bpmn2:targetRef>DataObj_DischargeLetter</bpmn2:targetRef>
+      </bpmn2:dataOutputAssociation>
+    </bpmn2:task>
+
+    <!-- ─── End Event ───────────────────────────────────────── -->
+    <bpmn2:endEvent id="EndEvent_1" name="Treatment plan completed">
+      <bpmn2:incoming>Flow_Followup_End</bpmn2:incoming>
+    </bpmn2:endEvent>
+
+    <!-- ─── Sequence Flows ──────────────────────────────────── -->
+    <bpmn2:sequenceFlow id="Flow_Start_Staging" sourceRef="StartEvent_1" targetRef="Task_Staging"/>
+    <bpmn2:sequenceFlow id="Flow_Staging_GwSplit" sourceRef="Task_Staging" targetRef="Gateway_Split"/>
+    <bpmn2:sequenceFlow id="Flow_GwSplit_Surgery" name="Stage I-II (operable)" sourceRef="Gateway_Split" targetRef="Task_Surgery"/>
+    <bpmn2:sequenceFlow id="Flow_GwSplit_Chemo" name="Stage III-IV (inoperable)" sourceRef="Gateway_Split" targetRef="Task_Chemo"/>
+    <bpmn2:sequenceFlow id="Flow_Surgery_GwJoin" sourceRef="Task_Surgery" targetRef="Gateway_Join"/>
+    <bpmn2:sequenceFlow id="Flow_Chemo_GwJoin" sourceRef="Task_Chemo" targetRef="Gateway_Join"/>
+    <bpmn2:sequenceFlow id="Flow_GwJoin_Followup" sourceRef="Gateway_Join" targetRef="Task_Followup"/>
+    <bpmn2:sequenceFlow id="Flow_Followup_End" sourceRef="Task_Followup" targetRef="EndEvent_1"/>
+
+  </bpmn2:process>
+
+  <!-- ─── Diagram Layout ──────────────────────────────────────── -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_LungCaMin">
+
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="160" y="222" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="134" y="265" width="89" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="DataObj_MRI_di" bpmnElement="DataObj_MRI">
+        <dc:Bounds x="292" y="95" width="36" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="270" y="65" width="80" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_Staging_di" bpmnElement="Task_Staging">
+        <dc:Bounds x="260" y="200" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_Split_di" bpmnElement="Gateway_Split" isMarkerVisible="true">
+        <dc:Bounds x="425" y="215" width="50" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="415" y="191" width="70" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_Surgery_di" bpmnElement="Task_Surgery">
+        <dc:Bounds x="540" y="120" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_Chemo_di" bpmnElement="Task_Chemo">
+        <dc:Bounds x="540" y="290" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Gateway_Join_di" bpmnElement="Gateway_Join" isMarkerVisible="true">
+        <dc:Bounds x="705" y="215" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="Task_Followup_di" bpmnElement="Task_Followup">
+        <dc:Bounds x="820" y="200" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="DataObj_DischargeLetter_di" bpmnElement="DataObj_DischargeLetter">
+        <dc:Bounds x="852" y="95" width="36" height="50"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="838" y="65" width="64" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+        <dc:Bounds x="992" y="222" width="36" height="36"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="966" y="265" width="89" height="27"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+
+      <bpmndi:BPMNEdge id="Flow_Start_Staging_di" bpmnElement="Flow_Start_Staging">
+        <di:waypoint x="196" y="240"/>
+        <di:waypoint x="260" y="240"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Staging_GwSplit_di" bpmnElement="Flow_Staging_GwSplit">
+        <di:waypoint x="360" y="240"/>
+        <di:waypoint x="425" y="240"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_GwSplit_Surgery_di" bpmnElement="Flow_GwSplit_Surgery">
+        <di:waypoint x="450" y="215"/>
+        <di:waypoint x="450" y="160"/>
+        <di:waypoint x="540" y="160"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="456" y="143" width="80" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_GwSplit_Chemo_di" bpmnElement="Flow_GwSplit_Chemo">
+        <di:waypoint x="450" y="265"/>
+        <di:waypoint x="450" y="330"/>
+        <di:waypoint x="540" y="330"/>
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="456" y="335" width="80" height="14"/>
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Surgery_GwJoin_di" bpmnElement="Flow_Surgery_GwJoin">
+        <di:waypoint x="640" y="160"/>
+        <di:waypoint x="730" y="160"/>
+        <di:waypoint x="730" y="215"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Chemo_GwJoin_di" bpmnElement="Flow_Chemo_GwJoin">
+        <di:waypoint x="640" y="330"/>
+        <di:waypoint x="730" y="330"/>
+        <di:waypoint x="730" y="265"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_GwJoin_Followup_di" bpmnElement="Flow_GwJoin_Followup">
+        <di:waypoint x="755" y="240"/>
+        <di:waypoint x="820" y="240"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="Flow_Followup_End_di" bpmnElement="Flow_Followup_End">
+        <di:waypoint x="920" y="240"/>
+        <di:waypoint x="992" y="240"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="DataInputAssoc_MRI_di" bpmnElement="DataInputAssoc_MRI">
+        <di:waypoint x="310" y="145"/>
+        <di:waypoint x="310" y="200"/>
+      </bpmndi:BPMNEdge>
+
+      <bpmndi:BPMNEdge id="DataOutputAssoc_DischargeLetter_di" bpmnElement="DataOutputAssoc_DischargeLetter">
+        <di:waypoint x="870" y="200"/>
+        <di:waypoint x="870" y="145"/>
+      </bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+
+</bpmn2:definitions>

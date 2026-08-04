@@ -1,0 +1,22 @@
+{
+  "name": "clinical-bpmn-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Demo app for @forschungsgruppe-digital-health/terminology",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@bpmn-io/properties-panel": "^3.40.5",
+    "@forschungsgruppe-digital-health/terminology": "file:../../packages/terminology",
+    "bpmn-js": "^18.14.0",
+    "bpmn-js-properties-panel": "^5.53.0",
+    "hl7.fhir.r4.core": "https://packages.simplifier.net/hl7.fhir.r4.core/4.0.1"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+  xmlns="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="https://clinical-bpmn.org/terminology/v1"
+  xmlns:term="https://clinical-bpmn.org/terminology/v1"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  elementFormDefault="qualified">
+
+  <xsd:import namespace="http://www.omg.org/spec/BPMN/20100524/MODEL" />
+
+  <xsd:annotation>
+    <xsd:documentation>
+      This XML schema defines and documents BPMN 2.0 extension elements and
+      attributes to add clinical terminology annotations to BPMN processes.
+    </xsd:documentation>
+  </xsd:annotation>
+
+  <!-- Global attribute: clinicalDomain (extends FlowNode, DataObjectReference, DataStoreReference, MessageFlow) -->
+  <xsd:attribute name="clinicalDomain" type="xsd:string">
+    <xsd:annotation>
+      <xsd:documentation>
+        Attribute to define the clinical domain of the element (e.g., Nursing, Medical, etc.).
+      </xsd:documentation>
+    </xsd:annotation>
+  </xsd:attribute>
+
+  <!-- Extension element: Annotations -->
+  <xsd:element name="annotations">
+    <xsd:annotation>
+      <xsd:documentation>
+        Container element for multiple clinical terminology annotations.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="annotation" type="term:tAnnotation" minOccurs="0" maxOccurs="unbounded" />
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+  <xsd:complexType name="tAnnotation">
+    <xsd:annotation>
+      <xsd:documentation>
+        A single terminology annotation, containing text and codings.
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:sequence>
+      <xsd:element name="coding" type="term:tCoding" minOccurs="0" maxOccurs="unbounded" />
+    </xsd:sequence>
+    <xsd:attribute name="id" type="xsd:string" use="optional" />
+    <xsd:attribute name="text" type="xsd:string" use="optional" />
+  </xsd:complexType>
+
+  <xsd:complexType name="tCoding">
+    <xsd:annotation>
+      <xsd:documentation>
+        A specific coding concept from a terminology system (e.g., SNOMED CT, LOINC).
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:attribute name="system" type="xsd:string" use="optional" />
+    <xsd:attribute name="version" type="xsd:string" use="optional" />
+    <xsd:attribute name="code" type="xsd:string" use="optional" />
+    <xsd:attribute name="display" type="xsd:string" use="optional" />
+  </xsd:complexType>
+
+  <xsd:complexType name="tMappingTarget">
+    <xsd:annotation>
+      <xsd:documentation>
+        Optional target definition for prescriptive annotations mapping to execution engines or standards (e.g., FHIR).
+      </xsd:documentation>
+    </xsd:annotation>
+    <xsd:attribute name="element" type="xsd:string" use="optional" />
+    <xsd:attribute name="transform" type="xsd:string" use="optional" />
+    <xsd:attribute name="value" type="xsd:string" use="optional" />
+  </xsd:complexType>
+
+</xsd:schema>

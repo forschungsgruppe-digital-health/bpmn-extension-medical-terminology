@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Clinical BPMN Annotations – Demo</title>
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header__title">
+      <span class="app-header__icon">⚕</span>
+      <h1>Clinical BPMN Annotations</h1>
+    </div>
+    <p class="app-header__subtitle">Semantische Annotation von Prozessmodellen mit medizinischen Terminologien</p>
+    <div class="app-header__actions">
+      <select id="sample-select" title="Beispiel wählen" aria-label="Beispiel wählen"></select>
+      <button id="btn-download" title="BPMN XML herunterladen">↓ XML</button>
+      <button id="btn-xml-toggle" title="XML-Quelltext anzeigen">{ }</button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <div id="canvas" class="app-canvas"></div>
+    <div id="properties" class="app-properties"></div>
+  </main>
+
+  <div id="xml-overlay" class="xml-overlay xml-overlay--hidden">
+    <div class="xml-overlay__header">
+      <span>BPMN XML (mit term: Extensions)</span>
+      <button id="btn-xml-close">×</button>
+    </div>
+    <pre id="xml-content" class="xml-overlay__content"></pre>
+  </div>
+
+  <footer class="app-footer">
+    <span>Demo für <code>@forschungsgruppe-digital-health/terminology</code></span>
+    <span>·</span>
+    <span>Klicke ein Element an → Properties Panel rechts</span>
+  </footer>
+
+  <script type="module" src="./src/app.js"></script>
+</body>
+</html>
