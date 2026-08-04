@@ -167,7 +167,7 @@ describe('terminologyVitePlugin', () => {
     const code = runPlugin(root, {
       packages: {
         'example-terminology': {
-          include: ['CodeSystem-second.json']
+          include: ['http://example.org/second']
         }
       }
     });
@@ -232,13 +232,35 @@ describe('terminologyVitePlugin', () => {
     const code = runPlugin(root, {
       packages: {
         'example-terminology': {
-          exclude: ['CodeSystem-second.json']
+          exclude: ['http://example.org/second']
         }
       }
     });
 
     expect(code).toContain('CodeSystem-first.json');
     expect(code).not.toContain('CodeSystem-second.json');
+  });
+
+  it('throws when a selected resource URL does not exist in a package', () => {
+    const root = createTestRoot();
+    tmpRoots.push(root);
+
+    createPackage(root, 'example-terminology', {
+      exports: './index.js'
+    }, {
+      'index.js': 'export default {};\n',
+      'CodeSystem-first.json': '{"resourceType":"CodeSystem","url":"http://example.org/first"}\n'
+    });
+
+    expect(() => runPlugin(root, {
+      packages: {
+        'example-terminology': {
+          include: ['http://example.org/missing']
+        }
+      }
+    })).toThrow(
+      '[fdh-terminology] Resource selector "http://example.org/missing" not found in package "example-terminology".'
+    );
   });
 
   it('discovers transitive packages from nested node_modules under root packages', () => {

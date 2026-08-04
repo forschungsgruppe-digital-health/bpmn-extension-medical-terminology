@@ -51,6 +51,25 @@ package-backed terminology providers. Configure endpoints and providers through
 [`demo/src/terminology-config.js`](demo/src/terminology-config.js) for a working
 example.
 
+The Vite discovery plugin selects package resources by their canonical
+`CodeSystem.url`:
+
+```js
+terminologyVitePlugin({
+  packages: {
+    'hl7.fhir.r4.core': {
+      include: [
+        'http://terminology.hl7.org/CodeSystem/condition-clinical'
+      ]
+    }
+  }
+});
+```
+
+`exclude` uses the same URL format and takes precedence over `include`.
+`include: ['*']` includes all resources. A configured URL that does not exist
+in the package causes an error; filenames are not valid selectors.
+
 ## Development
 
 ```bash

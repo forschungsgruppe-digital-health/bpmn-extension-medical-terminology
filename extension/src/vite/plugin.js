@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 
 /**
  * @typedef {object} TerminologyVitePluginOptions
+ * Resource filters match CodeSystem.url values, not package filenames.
  * @property {string[] | Record<string, { include?: string[], exclude?: string[] }>} [packages]
  * @property {boolean} [autoDiscover]
  * @property {string[]} [includeTransitiveFrom]
@@ -76,6 +77,38 @@ function findResourceFiles(packageDir, resourceTypes) {
   }
 
   return getResourceFilesFromGlob(packageDir);
+}
+
+function getResourceSelector(packageDir, filename) {
+  const resource = JSON.parse(readFileSync(join(packageDir, filename), 'utf-8'));
+  return resource?.url;
+}
+
+function filterResourceFiles(packageDir, packageName, resourceFiles, resourceFilter) {
+  const resources = resourceFiles.map(filename => ({
+    filename,
+    selector: getResourceSelector(packageDir, filename)
+  }));
+  const include = resourceFilter?.include;
+  const exclude = resourceFilter?.exclude || [];
+  const availableSelectors = new Set(resources.map(resource => resource.selector).filter(Boolean));
+  const selectors = [...(include || []), ...exclude].filter(selector => selector !== '*');
+  const missingSelector = selectors.find(selector => !availableSelectors.has(selector));
+
+  if (missingSelector) {
+    throw new Error(
+      `[fdh-terminology] Resource selector "${missingSelector}" not found in package "${packageName}".`
+    );
+  }
+
+  return resources
+    .filter(({ selector }) =>
+      (!include
+        || include.includes('*')
+        || include.includes(selector))
+      && !exclude.includes(selector)
+    )
+    .map(resource => resource.filename);
 }
 
 function normalizePackageSelection(explicitPackages) {
@@ -342,12 +375,12 @@ export function terminologyVitePlugin(options = {}) {
         }
 
         const resourceFilter = packageSelection.resourceFilters[packageName];
-        const resourceFiles = findResourceFiles(packageDir, resourceTypes)
-          .filter(filename =>
-            (!resourceFilter?.include
-              || resourceFilter.include.some(pattern => pattern === '*' || pattern === filename))
-            && !resourceFilter?.exclude?.includes(filename)
-          );
+        const resourceFiles = filterResourceFiles(
+          packageDir,
+          packageName,
+          findResourceFiles(packageDir, resourceTypes),
+          resourceFilter
+        );
         if (resourceFiles.length === 0) {
           console.warn(`[fdh-terminology] No CodeSystem resources found in "${packageName}" - skipping.`);
           continue;
