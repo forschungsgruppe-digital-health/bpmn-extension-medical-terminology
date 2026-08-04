@@ -8,9 +8,9 @@ tool-specific files only point here — never copy a skill's body.
 
 | Skill | When it fires | Gate |
 |---|---|---|
-| [`bpmn-conformance`](bpmn-conformance/SKILL.md) | editing `**/*.bpmn` or `packages/*/src/moddle/*.json` | `npm run check:conformance` |
-| [`moddle-extension-review`](moddle-extension-review/SKILL.md) | changing a moddle type / property / namespace / prefix in `packages/*/src/moddle/*.json` | `npm run check:conformance` |
-| [`bpmn-naming-publishing`](bpmn-naming-publishing/SKILL.md) | editing `packages/*/package.json` or releasing | `npm run check:packages` |
+| [`bpmn-conformance`](bpmn-conformance/SKILL.md) | editing `**/*.bpmn` or `extension/src/moddle/*.json` | `npm run check:conformance` |
+| [`moddle-extension-review`](moddle-extension-review/SKILL.md) | changing a moddle type / property / namespace / prefix in `extension/src/moddle/clinical.json` | `npm run check:conformance` |
+| [`bpmn-naming-publishing`](bpmn-naming-publishing/SKILL.md) | editing `extension/package.json` or releasing | `npm run check:packages` |
 
 ## Analysis skills (vendored from the MiHUB Patient-Portal toolset, adapted)
 

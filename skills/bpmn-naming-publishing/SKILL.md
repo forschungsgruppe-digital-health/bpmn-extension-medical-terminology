@@ -1,6 +1,6 @@
 ---
 name: bpmn-naming-publishing
-description: Check the workspace packages against npm/bpmn.io publishing conventions before a release or when adding a package. Use when editing any packages/*/package.json or preparing to publish. Verifies name prefix, ESM, license, entry points, peer dependencies, and registry config.
+description: Check the terminology package against npm/bpmn.io publishing conventions before a release or when editing extension/package.json. Verifies name prefix, ESM, license, entry points, peer dependencies, and registry config.
 ---
 
 # Naming & publishing conventions
@@ -36,10 +36,9 @@ npm run check:packages        # node tools/check-package-conventions.mjs
 
 - Prefer an `exports` map mirroring the siblings: `"."`, `"./moddle"`,
   `"./properties-panel"`.
-- The two publishable packages (`terminology`, `fhir-mapping`) are versioned
-  together — keep their versions in lockstep (see CONTRIBUTING.md → Releasing).
-  The `demo` package is private and not published.
-- Declared bpmn-js peer ranges must agree across packages.
+- The `terminology` package is the only published workspace. The `demo` workspace
+  is private and not published.
+- Declared bpmn-js peer ranges must remain compatible with the demo.
 
 Present a concrete `package.json` diff, then re-run `npm run check:packages` to
 confirm zero errors before opening the PR.

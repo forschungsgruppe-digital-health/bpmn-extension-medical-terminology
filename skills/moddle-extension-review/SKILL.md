@@ -1,6 +1,6 @@
 ---
 name: moddle-extension-review
-description: Review a bpmn-moddle extension descriptor (packages/*/src/moddle/*.json) against bpmn.io conventions before merging. Use when adding or changing a moddle type, property, namespace, or prefix. Checks namespace separation, Element superClass, isAttr/isMany, and XSD-extension risks.
+description: Review the terminology bpmn-moddle extension descriptor (extension/src/moddle/clinical.json) against bpmn.io conventions before merging. Use when adding or changing a moddle type, property, namespace, or prefix. Checks namespace separation, Element superClass, isAttr/isMany, and XSD-extension risks.
 ---
 
 # Moddle extension review
@@ -11,8 +11,7 @@ proves the descriptor actually round-trips the example files losslessly).
 
 ## Inputs
 
-- `packages/terminology/src/moddle/clinical.json` (`term:` / `https://clinical-bpmn.org/terminology/v1`)
-- `packages/fhir-mapping/src/moddle/fhir-mapping.json` (`fhirmap:` / `https://clinical-bpmn.org/fhir-mapping/v1`)
+- `extension/src/moddle/clinical.json` (`term:` / `https://clinical-bpmn.org/terminology/v1`)
 
 ## Checklist (verify each, cite the line)
 

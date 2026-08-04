@@ -7,6 +7,10 @@
     "test": "vitest run"
   },
   "main": "src/index.js",
+  "files": [
+    "src",
+    "README.md"
+  ],
   "exports": {
     ".": "./src/index.js",
     "./moddle": "./src/moddle/clinical.json",

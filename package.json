@@ -8,7 +8,7 @@
   },
   "homepage": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology#readme",
   "bugs": {
-    "url": "https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics/issues"
+    "url": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues"
   },
   "scripts": {
     "dev": "npm run --workspace=demo dev",
@@ -25,8 +25,8 @@
     "prepare": "node tools/setup-hooks.mjs"
   },
   "workspaces": [
-  "extension",
-  "demo"
+    "extension",
+    "demo"
   ],
   "devDependencies": {
     "@testing-library/preact": "^3.2.4",
