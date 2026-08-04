@@ -1,9 +1,5 @@
-export const ENABLE_PACKAGE_DISCOVERY = true;
-export const DISCOVERY_PACKAGES = {
-  'hl7.fhir.r4.core': {
-    include: ['*']
-  }
-};
+export const ENABLE_PACKAGE_DISCOVERY = false;
+export const DISCOVERY_PACKAGES = {};
 
 const DEFAULT_FHIR_BASE_URL = import.meta.env?.VITE_FHIR_BASE_URL || 'https://r4.ontoserver.csiro.au/fhir';
 const DEFAULT_SNOWSTORM_BASE_URL = import.meta.env?.VITE_SNOWSTORM_BASE_URL || 'https://snowstorm-training.snomedtools.org/snowstorm/snomed-ct';
