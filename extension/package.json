@@ -32,10 +32,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics.git",
-    "directory": "packages/terminology"
+    "url": "git+https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git",
+    "directory": "extension"
   },
-  "homepage": "https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics#readme",
+  "homepage": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   },

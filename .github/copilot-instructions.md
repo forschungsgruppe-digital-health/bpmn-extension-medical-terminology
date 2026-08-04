@@ -19,18 +19,18 @@ the report, explain failures — never hand-wave a pass.
 | Command | What it gates |
 |---|---|
 | `npm run check:conformance` | bpmnlint + moddle roundtrip + XSD core (BPMN / extension conformance) |
-| `npm run check:packages` | npm / bpmn.io publishing conventions for `packages/*` |
+| `npm run check:packages` | npm / bpmn.io publishing conventions for `extension/` |
 | `npm run verify` | full gate: `check:packages` + `check:conformance` + tests (pre-push runs this) |
 
 ## Skills and when they apply
 
 - **bpmn-conformance** (`skills/bpmn-conformance/SKILL.md`) — when editing any `**/*.bpmn` or a
-  moddle descriptor `packages/*/src/moddle/*.json`. Gate: `npm run check:conformance`.
+  moddle descriptor `extension/src/moddle/*.json`. Gate: `npm run check:conformance`.
 - **moddle-extension-review** (`skills/moddle-extension-review/SKILL.md`) — when changing a moddle
-  type / property / namespace / prefix in `packages/*/src/moddle/*.json`. Pair with
+  type / property / namespace / prefix in `extension/src/moddle/*.json`. Pair with
   `npm run check:conformance` (the roundtrip proves the descriptor).
 - **bpmn-naming-publishing** (`skills/bpmn-naming-publishing/SKILL.md`) — when editing any
-  `packages/*/package.json` or preparing a release. Gate: `npm run check:packages`.
+  `extension/package.json` or preparing a release. Gate: `npm run check:packages`.
 
 When a task matches a trigger above, open and follow the named `SKILL.md` and run its gate
 command before proposing a commit or PR.

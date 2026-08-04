@@ -4,14 +4,14 @@
   "description": "Semantic clinical terminology annotations for BPMN process models",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics.git"
+    "url": "git+https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git"
   },
-  "homepage": "https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics#readme",
+  "homepage": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology#readme",
   "bugs": {
     "url": "https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics/issues"
   },
   "scripts": {
-    "dev": "npm run --workspace=examples/vanilla dev",
+    "dev": "npm run --workspace=demo dev",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
@@ -25,9 +25,8 @@
     "prepare": "node tools/setup-hooks.mjs"
   },
   "workspaces": [
-    "packages/terminology",
-    "packages/demo",
-    "examples/*"
+  "extension",
+  "demo"
   ],
   "devDependencies": {
     "@testing-library/preact": "^3.2.4",
@@ -40,6 +39,6 @@
   },
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   }
 }

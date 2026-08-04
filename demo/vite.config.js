@@ -6,7 +6,7 @@ import {
 } from './src/terminology-config.js';
 
 export default defineConfig({
-  base: '/bpmn-js-clinical-semantics/',
+  base: process.env.BASE_PATH || '/',
   resolve: {
     preserveSymlinks: true
   },
@@ -18,7 +18,7 @@ export default defineConfig({
     })
   ],
   build: {
-    outDir: '../../site',
+    outDir: '../site',
     emptyOutDir: true,
     sourcemap: true
   }

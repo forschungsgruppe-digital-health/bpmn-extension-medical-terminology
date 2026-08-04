@@ -32,7 +32,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 // Load the shipped moddle descriptors via fs (portable across Node 18/20/22 —
 // avoids JSON import-attribute syntax differences).
-const term = JSON.parse(readFileSync(join(here, '../packages/terminology/src/moddle/clinical.json'), 'utf8'));
+const term = JSON.parse(readFileSync(join(here, '../extension/src/moddle/clinical.json'), 'utf8'));
 
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');

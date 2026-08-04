@@ -21,8 +21,8 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import './styles.css';
 
-import annotatedBpmn from '../../minimal/lung-cancer-staging-annotated.bpmn?raw';
-import plainBpmn from '../../minimal/lung-cancer-staging.bpmn?raw';
+import annotatedBpmn from '../../examples/valid/lung-cancer-staging-annotated.bpmn?raw';
+import plainBpmn from '../../examples/valid/lung-cancer-staging.bpmn?raw';
 
 let modeler;
 

@@ -5,7 +5,7 @@ import { terminologyVitePlugin } from '../../src/vite/plugin.js';
 
 describe('terminologyVitePlugin (vanilla integration)', () => {
   it('discovers hl7.terminology.r4 for the vanilla example', () => {
-    const vanillaRoot = resolve(process.cwd(), '../../examples/vanilla');
+    const vanillaRoot = resolve(process.cwd(), '../demo');
     const plugin = terminologyVitePlugin();
 
     plugin.configResolved({
@@ -19,7 +19,7 @@ describe('terminologyVitePlugin (vanilla integration)', () => {
   });
 
   it('loads another real terminology package via explicit plugin packages', () => {
-    const vanillaRoot = resolve(process.cwd(), '../../examples/vanilla');
+    const vanillaRoot = resolve(process.cwd(), '../demo');
     const plugin = terminologyVitePlugin({
       packages: ['de.ihe-d.terminology']
     });
@@ -36,8 +36,8 @@ describe('terminologyVitePlugin (vanilla integration)', () => {
   });
 
   it('includes every CodeSystem resource from the installed terminology package', () => {
-    const vanillaRoot = resolve(process.cwd(), '../../examples/vanilla');
-    const packageRoot = resolve(vanillaRoot, '../../node_modules/hl7.fhir.r4.core');
+    const vanillaRoot = resolve(process.cwd(), '../demo');
+    const packageRoot = resolve(vanillaRoot, '../node_modules/hl7.fhir.r4.core');
     const codeSystemFiles = readdirSync(packageRoot)
       .filter(fileName => /^CodeSystem-.*\.json$/i.test(fileName));
     const plugin = terminologyVitePlugin({

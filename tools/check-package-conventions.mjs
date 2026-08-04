@@ -3,7 +3,7 @@
  * Publishing-convention check for the workspace packages (BLOCKING on errors).
  *
  * Verifies the bpmn.io / npm conventions for each publishable package under
- * `packages/*`:
+ * `extension/`:
  *
  *   ERROR (exit 1):
  *     - name uses an accepted prefix:
@@ -23,12 +23,12 @@
  *
  * Usage: node tools/check-package-conventions.mjs
  */
-import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-const packagesDir = join(repoRoot, 'packages');
+const packagePath = join(repoRoot, 'extension', 'package.json');
 
 const ACCEPTED_NAME = (name) =>
   name.startsWith('@forschungsgruppe-digital-health/') ||
@@ -36,12 +36,7 @@ const ACCEPTED_NAME = (name) =>
   name.startsWith('bpmnlint-plugin-');
 
 function listPackageJsons() {
-  if (!existsSync(packagesDir)) return [];
-  return readdirSync(packagesDir)
-    .map((name) => join(packagesDir, name))
-    .filter((p) => statSync(p).isDirectory())
-    .map((p) => join(p, 'package.json'))
-    .filter((p) => existsSync(p));
+  return existsSync(packagePath) ? [packagePath] : [];
 }
 
 let errors = 0;
@@ -57,7 +52,7 @@ const warn = (pkg, msg) => {
 
 const files = listPackageJsons();
 if (!files.length) {
-  console.log('check-package-conventions: no packages/* found — nothing to check.');
+  console.log('check-package-conventions: no extension package found — nothing to check.');
   process.exit(0);
 }
 

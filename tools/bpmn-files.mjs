@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Directories scanned for `.bpmn` files when no explicit paths are given. */
-const ROOTS = ['examples', 'docs'];
+const ROOTS = ['examples/valid', 'docs'];
 
 /** Directory names never descended into (build output, deps, VCS). */
 const EXCLUDE_DIRS = new Set(['node_modules', 'dist', '.git', 'coverage']);

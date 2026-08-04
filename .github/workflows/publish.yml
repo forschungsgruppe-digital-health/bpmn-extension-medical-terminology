@@ -34,15 +34,15 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for pkg in terminology fhir-mapping; do
-            echo "::group::publish @forschungsgruppe-digital-health/$pkg"
-            if npm publish --workspace="packages/$pkg" 2>publish-err.log; then
+          for pkg in extension; do
+            echo "::group::publish @forschungsgruppe-digital-health/terminology"
+            if npm publish --workspace="$pkg" 2>publish-err.log; then
               echo "published $pkg"
             elif grep -qiE "cannot publish over|already exists|EPUBLISHCONFLICT|409|conflict" publish-err.log; then
               echo "skip $pkg — this version is already published"
             else
               cat publish-err.log
-              echo "::error::publish failed for $pkg"
+              echo "::error::publish failed for terminology"
               exit 1
             fi
             echo "::endgroup::"
