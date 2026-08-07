@@ -1,4 +1,5 @@
 import { createPackageCollectionProvider } from './TerminologyServices.js';
+import { formatPackageDisplayName } from './PackageMetadata.js';
 
 export const DEFAULT_DISCOVERY_INCLUDE = Object.freeze([
   '*terminology*'
@@ -191,7 +192,8 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
  * @param {{
  *   include?: string[],
  *   exclude?: string[],
- *   mode?: 'auto' | 'whitelist'
+ *   mode?: 'auto' | 'whitelist',
+ *   metadata?: Record<string, { title?: string, version?: string }>
  * }} [config]
  * @returns {import('../core/TerminologyProvider').TerminologyProvider[]}
  */
@@ -199,6 +201,7 @@ export function discoverPackageProviders(packages = {}, config = {}) {
   const includePatterns = config.include || DEFAULT_DISCOVERY_INCLUDE;
   const excludePatterns = config.exclude || DEFAULT_DISCOVERY_EXCLUDE;
   const mode = config.mode || 'auto';
+  const metadata = config.metadata || {};
 
   return Object.entries(packages)
     .filter(([packageName]) =>
@@ -211,7 +214,7 @@ export function discoverPackageProviders(packages = {}, config = {}) {
     .map(([packageName, codeSystems]) =>
     createPackageCollectionProvider({
       id: toProviderId(packageName),
-      displayName: packageName,
+      displayName: formatPackageDisplayName(packageName, metadata[packageName]),
       codeSystems
     })
     );

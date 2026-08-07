@@ -298,6 +298,33 @@ describe('terminologyVitePlugin', () => {
     expect(code).toContain('CodeSystem-v3-ActCode.json');
   });
 
+  it('exports package metadata from package.json', () => {
+    const root = createTestRoot();
+    tmpRoots.push(root);
+
+    writeJson(join(root, 'package.json'), {
+      name: 'consumer-app',
+      dependencies: {}
+    });
+
+    createPackage(root, 'acme.terminology', {
+      title: 'ACME Terminology',
+      version: '1.2.3',
+      exports: './index.js'
+    }, {
+      'index.js': 'export default {};\n',
+      'CodeSystem-custom.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/custom"}\n'
+    });
+
+    const code = runPlugin(root, {
+      packages: ['acme.terminology']
+    });
+
+    expect(code).toContain('export const packageMetadata =');
+    expect(code).toContain('"title": "ACME Terminology"');
+    expect(code).toContain('"version": "1.2.3"');
+  });
+
   it('injects discovered packages into a global by default', () => {
     const root = createTestRoot();
     tmpRoots.push(root);
@@ -315,5 +342,6 @@ describe('terminologyVitePlugin', () => {
 
     expect(injectedScript.children).toContain("virtual:fdh-terminology-packages");
     expect(injectedScript.children).toContain('__FDH_TERMINOLOGY_PACKAGES__');
+    expect(injectedScript.children).toContain('__FDH_TERMINOLOGY_PACKAGE_METADATA__');
   });
 });

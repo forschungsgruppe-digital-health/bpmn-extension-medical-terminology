@@ -8,6 +8,7 @@ import {
   collectPackageCodeSystemsFromModules,
   discoverPackageProviders
 } from '../services/PackageProviderDiscovery.js';
+import { DEFAULT_PACKAGE_METADATA_GLOBAL_KEY } from '../services/PackageMetadata.js';
 import { createTerminologyModule, createTerminologyServices } from '../services/TerminologyServices.js';
 
 const DEFAULT_SERVER_CONFIG = Object.freeze({
@@ -123,6 +124,7 @@ export function createDefaultPackageProviders(config = {}) {
     additionalPackageProviders = [],
     packageDiscovery = {},
     packageAutoDiscovery = false,
+    packageMetadata: configuredPackageMetadata = {},
     disabledProviderIds = [],
     hl7CodeSystems
   } = config;
@@ -137,6 +139,15 @@ export function createDefaultPackageProviders(config = {}) {
       || collectPackageCodeSystemsFromGlob(autoDiscoveryOptions.globFn || import.meta.glob)
     )
     : null;
+  const autoDiscoveryMetadata = autoDiscoveryOptions
+    ? (
+      autoDiscoveryOptions.metadata
+      || globalThis?.[
+        autoDiscoveryOptions.metadataGlobalKey || DEFAULT_PACKAGE_METADATA_GLOBAL_KEY
+      ]
+      || null
+    )
+    : null;
 
   const packageCodeSystems = packageDiscovery?.packages
     || (
@@ -147,6 +158,9 @@ export function createDefaultPackageProviders(config = {}) {
         )
         : (autoDiscoveryPackages || {})
     );
+  const packageMetadata = packageDiscovery?.metadata
+    || autoDiscoveryMetadata
+    || configuredPackageMetadata;
   const discoveryInclude = packageDiscovery?.include
     || packageDiscovery?.packageNames
     || (autoDiscoveryOptions ? ['*'] : undefined);
@@ -157,6 +171,7 @@ export function createDefaultPackageProviders(config = {}) {
     ? discoverPackageProviders(packageCodeSystems, {
       ...packageDiscovery,
       ...(discoveryInclude ? { include: discoveryInclude } : {}),
+      metadata: packageMetadata,
       mode: discoveryMode
     })
     : [];
@@ -164,6 +179,7 @@ export function createDefaultPackageProviders(config = {}) {
   const providers = [
     ...DEFAULT_PACKAGE_PROVIDER_IDS.map(providerId => createPackagePresetProvider(providerId, {
       ...(packageProviderOptions[providerId] || {}),
+      packageMetadata: packageProviderOptions[providerId]?.packageMetadata || packageMetadata,
       ...(providerId === 'hl7-terminology-r4-package' && resolvedHl7CodeSystems
         ? { codeSystems: resolvedHl7CodeSystems }
         : {})

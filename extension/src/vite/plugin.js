@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { createRequire } from 'node:module';
+import { DEFAULT_PACKAGE_METADATA_GLOBAL_KEY } from '../services/PackageMetadata.js';
 
 /**
  * @typedef {object} TerminologyVitePluginOptions
@@ -21,6 +22,11 @@ const DEFAULT_GLOBAL_PACKAGES_KEY = '__FDH_TERMINOLOGY_PACKAGES__';
 const BUILTIN_PRESET_PACKAGES = Object.freeze([
   'de.ihe-d.terminology',
   'dvmd.kdl.r4'
+]);
+
+const PACKAGE_METADATA_NAMES = Object.freeze([
+  'hl7.terminology.r4',
+  ...BUILTIN_PRESET_PACKAGES
 ]);
 
 const INFRASTRUCTURE_PACKAGES = Object.freeze([
@@ -82,6 +88,25 @@ function findResourceFiles(packageDir, resourceTypes) {
 function getResourceSelector(packageDir, filename) {
   const resource = JSON.parse(readFileSync(join(packageDir, filename), 'utf-8'));
   return resource?.url;
+}
+
+function readPackageMetadata(packageDir) {
+  try {
+    const packageJson = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf-8'));
+    const metadata = {};
+
+    if (typeof packageJson.title === 'string' && packageJson.title.trim()) {
+      metadata.title = packageJson.title.trim();
+    }
+
+    if (typeof packageJson.version === 'string' && packageJson.version.trim()) {
+      metadata.version = packageJson.version.trim();
+    }
+
+    return Object.keys(metadata).length > 0 ? metadata : null;
+  } catch {
+    return null;
+  }
 }
 
 function filterResourceFiles(packageDir, packageName, resourceFiles, resourceFilter) {
@@ -321,7 +346,8 @@ export function terminologyVitePlugin(options = {}) {
     exclude: userExclude = [],
     resourceTypes = DEFAULT_RESOURCE_TYPES,
     exposeGlobal = true,
-    globalKey = DEFAULT_GLOBAL_PACKAGES_KEY
+    globalKey = DEFAULT_GLOBAL_PACKAGES_KEY,
+    metadataGlobalKey = DEFAULT_PACKAGE_METADATA_GLOBAL_KEY
   } = options;
 
   /** @type {string} */
@@ -362,6 +388,7 @@ export function terminologyVitePlugin(options = {}) {
       const importStatements = [];
       const exportEntries = [];
       let importCounter = 0;
+      const packageMetadata = {};
 
       for (const packageName of packageNames) {
         if (excludeSet.has(packageName) && !explicitPackages) {
@@ -399,8 +426,27 @@ export function terminologyVitePlugin(options = {}) {
         exportEntries.push(`  ${JSON.stringify(packageName)}: [${variableNames.join(', ')}]`);
       }
 
+      const metadataPackageNames = [...new Set([
+        ...packageNames,
+        ...PACKAGE_METADATA_NAMES
+      ])];
+
+      for (const packageName of metadataPackageNames) {
+        const packageDir = resolveDiscoveredPackageDir(packageName, root, includeTransitiveFrom);
+        if (!packageDir) {
+          continue;
+        }
+
+        const metadata = readPackageMetadata(packageDir);
+        if (metadata) {
+          packageMetadata[packageName] = metadata;
+        }
+      }
+
       return [
         ...importStatements,
+        '',
+        `export const packageMetadata = ${JSON.stringify(packageMetadata, null, 2)};`,
         '',
         'export default {',
         exportEntries.join(',\n'),
@@ -421,7 +467,7 @@ export function terminologyVitePlugin(options = {}) {
             attrs: {
               type: 'module'
             },
-            children: `import discoveredPackages from '${VIRTUAL_MODULE_ID}'; globalThis[${JSON.stringify(globalKey)}] = discoveredPackages;`,
+            children: `import discoveredPackages, { packageMetadata } from '${VIRTUAL_MODULE_ID}'; globalThis[${JSON.stringify(globalKey)}] = discoveredPackages; globalThis[${JSON.stringify(metadataGlobalKey)}] = packageMetadata;`,
             injectTo: 'head-prepend'
           }
         ]

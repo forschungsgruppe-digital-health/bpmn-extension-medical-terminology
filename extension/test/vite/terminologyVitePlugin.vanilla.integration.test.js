@@ -58,5 +58,7 @@ describe('terminologyVitePlugin (vanilla integration)', () => {
 
     expect(importedCodeSystemFiles).toHaveLength(codeSystemFiles.length);
     expect(code).toContain(codeSystemFiles.at(-1));
+    expect(code).toContain('"title": "FHIR R4 package : Core"');
+    expect(code).toContain('"version": "4.0.1"');
   });
 });

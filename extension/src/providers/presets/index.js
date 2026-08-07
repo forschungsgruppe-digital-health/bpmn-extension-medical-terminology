@@ -1,4 +1,5 @@
 import { createPackageCollectionProvider } from '../../services/TerminologyServices.js';
+import { formatPackageDisplayName } from '../../services/PackageMetadata.js';
 
 import iheXdsClassCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDSclassCode.json';
 import iheXdsTypeCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDStypeCode.json';
@@ -98,23 +99,23 @@ export const DEFAULT_PACKAGE_PROVIDER_IDS = Object.freeze([
 const PACKAGE_PROVIDER_PRESETS = Object.freeze({
   'hl7-terminology-r4-package': Object.freeze({
     id: 'hl7-terminology-r4-package',
-    displayName: 'HL7 Terminology R4 Package',
+    packageName: 'hl7.terminology.r4',
     resolveCodeSystems: config => config.codeSystems || loadHl7TerminologyR4CodeSystems(),
     returnNullIfEmpty: true
   }),
   'ihe-xds-class': Object.freeze({
     id: 'ihe-xds-class',
-    displayName: 'IHE XDS classCode',
+    packageName: 'de.ihe-d.terminology',
     resolveCodeSystems: config => config.codeSystems || [iheXdsClassCodeSystem]
   }),
   'ihe-xds-type': Object.freeze({
     id: 'ihe-xds-type',
-    displayName: 'IHE XDS typeCode',
+    packageName: 'de.ihe-d.terminology',
     resolveCodeSystems: config => config.codeSystems || [iheXdsTypeCodeSystem]
   }),
   kdl: Object.freeze({
     id: 'kdl',
-    displayName: 'KDL (Klinische Dokumentenklassen-Liste)',
+    packageName: 'dvmd.kdl.r4',
     resolveCodeSystems: config => config.codeSystems || [kdlCodeSystem]
   })
 });
@@ -135,9 +136,15 @@ export function createPackagePresetProvider(presetId, config = {}) {
     return null;
   }
 
+  const displayName = config.displayName
+    || formatPackageDisplayName(
+      preset.packageName,
+      config.packageMetadata?.[preset.packageName]
+    );
+
   return createPackageCollectionProvider({
     id: preset.id,
-    displayName: preset.displayName,
+    displayName,
     ...config,
     codeSystems
   });

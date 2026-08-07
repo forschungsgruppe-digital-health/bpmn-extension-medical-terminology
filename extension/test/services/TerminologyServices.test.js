@@ -251,6 +251,47 @@ describe('TerminologyServices', () => {
     expect(providerIds).toContain('pkg-acme-terminology');
   });
 
+  it('should use package metadata for discovered provider display names', () => {
+    const providers = createDefaultPackageProviders({
+      packageDiscovery: {
+        enabled: true,
+        include: ['acme.terminology'],
+        mode: 'whitelist',
+        metadata: {
+          'acme.terminology': {
+            title: 'ACME Terminology',
+            version: '1.2.3'
+          }
+        },
+        packages: {
+          'acme.terminology': [{
+            ...actCodeCodeSystem,
+            url: 'https://example.org/CodeSystem/custom'
+          }]
+        }
+      }
+    });
+
+    const provider = providers.find(item => item.id === 'pkg-acme-terminology');
+
+    expect(provider.displayName).toBe('ACME Terminology (1.2.3)');
+  });
+
+  it('should use package metadata for built-in presets without package auto-discovery', () => {
+    const providers = createDefaultPackageProviders({
+      packageMetadata: {
+        'dvmd.kdl.r4': {
+          title: 'KDL Terminology',
+          version: '2025.0.1'
+        }
+      }
+    });
+
+    const provider = providers.find(item => item.id === 'kdl');
+
+    expect(provider.displayName).toBe('KDL Terminology (2025.0.1)');
+  });
+
   it('should register hl7 preset as searchable provider from full package code systems', async () => {
     const services = createDefaultTerminologyServices({
       loaderConfig: false,
