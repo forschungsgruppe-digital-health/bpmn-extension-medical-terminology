@@ -12,7 +12,7 @@ import { createTerminologyModule, createTerminologyServices } from '../services/
 
 const DEFAULT_SERVER_CONFIG = Object.freeze({
   fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-  snowstormBaseUrl: 'https://snowstorm-training.snomedtools.org/snowstorm/snomed-ct'
+  snowstormBaseUrl: 'https://snowstorm.snomedtools.org/snowstorm/snomed-ct'
 });
 
 const DEFAULT_SNOMED_CONFIG = Object.freeze({

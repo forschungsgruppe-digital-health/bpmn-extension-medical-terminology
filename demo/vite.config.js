@@ -7,16 +7,27 @@ import {
 
 export default defineConfig({
   base: process.env.BASE_PATH || '/',
+  server: {
+    proxy: {
+      '/snowstorm-api': {
+        target: 'https://snowstorm.snomedtools.org',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/snowstorm-api/, '/snowstorm/snomed-ct')
+      }
+    }
+  },
   resolve: {
     preserveSymlinks: true
   },
   plugins: [
-    terminologyVitePlugin({
-      packages: ENABLE_PACKAGE_DISCOVERY ? DISCOVERY_PACKAGES : [],
-      autoDiscover: ENABLE_PACKAGE_DISCOVERY,
-      exposeGlobal: true
-    })
-  ],
+    ENABLE_PACKAGE_DISCOVERY
+      ? terminologyVitePlugin({
+        packages: DISCOVERY_PACKAGES,
+        autoDiscover: true,
+        exposeGlobal: true
+      })
+      : null
+  ].filter(Boolean),
   build: {
     outDir: '../site',
     emptyOutDir: true,
