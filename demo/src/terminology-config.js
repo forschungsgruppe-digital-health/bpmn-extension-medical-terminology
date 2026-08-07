@@ -2,7 +2,7 @@ export const ENABLE_PACKAGE_DISCOVERY = false;
 export const DISCOVERY_PACKAGES = {};
 
 const DEFAULT_FHIR_BASE_URL = import.meta.env?.VITE_FHIR_BASE_URL || 'https://r4.ontoserver.csiro.au/fhir';
-const DEFAULT_SNOWSTORM_BASE_URL = import.meta.env?.VITE_SNOWSTORM_BASE_URL || '/snowstorm-api';
+const DEFAULT_SNOWSTORM_BASE_URL = import.meta.env?.VITE_SNOWSTORM_BASE_URL || 'https://snowstorm-training.snomedtools.org/snowstorm/snomed-ct';
 export async function createDemoTerminologyServices() {
   const { createDefaultTerminologyServices } = await import('@forschungsgruppe-digital-health/terminology');
 
