@@ -1,9 +1,5 @@
 import { SnomedCtProvider } from '../providers/SnomedCtProvider.js';
 import {
-  createPackagePresetProvider,
-  DEFAULT_PACKAGE_PROVIDER_IDS
-} from '../providers/presets/index.js';
-import {
   collectPackageCodeSystemsFromGlob,
   collectPackageCodeSystemsFromModules,
   discoverPackageProviders
@@ -120,13 +116,11 @@ export function createDefaultFhirProviderConfigs(config = {}) {
 
 export function createDefaultPackageProviders(config = {}) {
   const {
-    packageProviderOptions = {},
     additionalPackageProviders = [],
     packageDiscovery = {},
     packageAutoDiscovery = false,
     packageMetadata: configuredPackageMetadata = {},
-    disabledProviderIds = [],
-    hl7CodeSystems
+    disabledProviderIds = []
   } = config;
 
   const autoDiscoveryOptions = packageAutoDiscovery === true
@@ -165,7 +159,6 @@ export function createDefaultPackageProviders(config = {}) {
     || packageDiscovery?.packageNames
     || (autoDiscoveryOptions ? ['*'] : undefined);
   const discoveryMode = packageDiscovery?.mode || (packageDiscovery?.packageNames?.length ? 'whitelist' : 'auto');
-  const resolvedHl7CodeSystems = hl7CodeSystems || packageCodeSystems['hl7.terminology.r4'];
 
   const discoveredPackageProviders = (packageDiscovery?.enabled || Boolean(autoDiscoveryOptions))
     ? discoverPackageProviders(packageCodeSystems, {
@@ -177,16 +170,9 @@ export function createDefaultPackageProviders(config = {}) {
     : [];
 
   const providers = [
-    ...DEFAULT_PACKAGE_PROVIDER_IDS.map(providerId => createPackagePresetProvider(providerId, {
-      ...(packageProviderOptions[providerId] || {}),
-      packageMetadata: packageProviderOptions[providerId]?.packageMetadata || packageMetadata,
-      ...(providerId === 'hl7-terminology-r4-package' && resolvedHl7CodeSystems
-        ? { codeSystems: resolvedHl7CodeSystems }
-        : {})
-    })),
     ...additionalPackageProviders,
     ...discoveredPackageProviders
-  ].filter(Boolean);
+  ];
 
   return filterDisabled(providers, toDisabledSet(disabledProviderIds));
 }

@@ -151,22 +151,6 @@ describe('TerminologyServices', () => {
     expect(providerIds).toContain('loinc');
   });
 
-  it('should apply package provider overrides by id', () => {
-    const providers = createDefaultPackageProviders({
-      packageProviderOptions: {
-        kdl: {
-          displayName: 'KDL Custom'
-        }
-      }
-    });
-
-    const providerIds = providers.map(provider => provider.id);
-    const kdlProvider = providers.find(provider => provider.id === 'kdl');
-
-    expect(providerIds).toContain('kdl');
-    expect(kdlProvider.displayName).toBe('KDL Custom');
-  });
-
   it('should discover additional package providers via packageDiscovery config', () => {
     const customCodeSystem = {
       resourceType: 'CodeSystem',
@@ -188,31 +172,54 @@ describe('TerminologyServices', () => {
       }
     });
 
-    expect(providers.map(provider => provider.id)).toContain('pkg-acme-terminology');
+    expect(providers.map(provider => provider.id)).toContain(
+      'pkg-acme-terminology'
+    );
   });
 
-  it('should resolve HL7 package CodeSystems from packageDiscovery.packages', () => {
-    const hl7CodeSystem = {
-      resourceType: 'CodeSystem',
-      id: 'v3-ActCode',
-      url: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
-      concept: [
-        { code: 'AA', display: 'Adjudicated with adjustments' }
-      ]
-    };
+  it('should create one searchable provider per discovered package', async () => {
+    const codeSystems = [
+      {
+        resourceType: 'CodeSystem',
+        id: 'v3-ActCode',
+        url: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
+        version: '7.1.0',
+        concept: [
+          { code: 'AA', display: 'Adjudicated with adjustments' }
+        ]
+      },
+      {
+        resourceType: 'CodeSystem',
+        id: 'v2-0203',
+        url: 'http://terminology.hl7.org/CodeSystem/v2-0203',
+        version: '7.1.0',
+        concept: [
+          { code: 'MR', display: 'Medical record number' }
+        ]
+      }
+    ];
 
     const providers = createDefaultPackageProviders({
       packageDiscovery: {
         enabled: true,
-        include: ['acme.terminology'],
+        include: ['hl7.terminology.r4'],
         mode: 'whitelist',
         packages: {
-          'hl7.terminology.r4': [hl7CodeSystem]
+          'hl7.terminology.r4': codeSystems
         }
       }
     });
 
-    expect(providers.map(provider => provider.id)).toContain('hl7-terminology-r4-package');
+    expect(providers).toHaveLength(1);
+    expect(providers[0].id).toBe('pkg-hl7-terminology-r4');
+    expect(providers[0].displayName).toBe('hl7.terminology.r4');
+    await expect(providers[0].search('medical')).resolves.toMatchObject({
+      total: 1,
+      concepts: [{
+        code: 'MR',
+        version: '7.1.0'
+      }]
+    });
   });
 
   it('should resolve package discovery from modules + packageNames', () => {
@@ -247,7 +254,7 @@ describe('TerminologyServices', () => {
 
     const providerIds = providers.map(provider => provider.id);
 
-    expect(providerIds).toContain('hl7-terminology-r4-package');
+    expect(providerIds).toContain('pkg-hl7-terminology-r4');
     expect(providerIds).toContain('pkg-acme-terminology');
   });
 
@@ -265,7 +272,8 @@ describe('TerminologyServices', () => {
         },
         packages: {
           'acme.terminology': [{
-            ...actCodeCodeSystem,
+            resourceType: 'CodeSystem',
+            id: 'custom-cs',
             url: 'https://example.org/CodeSystem/custom'
           }]
         }
@@ -277,22 +285,7 @@ describe('TerminologyServices', () => {
     expect(provider.displayName).toBe('ACME Terminology (1.2.3)');
   });
 
-  it('should use package metadata for built-in presets without package auto-discovery', () => {
-    const providers = createDefaultPackageProviders({
-      packageMetadata: {
-        'dvmd.kdl.r4': {
-          title: 'KDL Terminology',
-          version: '2025.0.1'
-        }
-      }
-    });
-
-    const provider = providers.find(item => item.id === 'kdl');
-
-    expect(provider.displayName).toBe('KDL Terminology (2025.0.1)');
-  });
-
-  it('should register hl7 preset as searchable provider from full package code systems', async () => {
+  it('should search all CodeSystems through the package provider', async () => {
     const services = createDefaultTerminologyServices({
       loaderConfig: false,
       packageDiscovery: {
@@ -321,59 +314,17 @@ describe('TerminologyServices', () => {
     });
 
     const providers = services.terminologyRegistry.listProviders();
-    const hl7Provider = providers.find(provider => provider.id === 'hl7-terminology-r4-package');
+    const hl7Provider = providers.find(
+      provider => provider.id === 'pkg-hl7-terminology-r4'
+    );
 
     expect(hl7Provider).toBeDefined();
-    expect(hl7Provider.capabilities.search).toBe(true);
 
     await expect(
-      services.terminologyRegistry.search('medical', 'hl7-terminology-r4-package')
+      services.terminologyRegistry.search('medical', hl7Provider.id)
     ).resolves.toMatchObject({
       total: 1
     });
-  });
-
-  it('should prefer explicit hl7CodeSystems over packageDiscovery hl7 data', async () => {
-    const preferredCodeSystems = [
-      {
-        resourceType: 'CodeSystem',
-        id: 'preferred',
-        url: 'https://example.org/CodeSystem/preferred',
-        concept: [
-          { code: 'P1', display: 'Preferred term' }
-        ]
-      }
-    ];
-
-    const discoveredCodeSystems = [
-      {
-        resourceType: 'CodeSystem',
-        id: 'discovered',
-        url: 'https://example.org/CodeSystem/discovered',
-        concept: [
-          { code: 'D1', display: 'Discovered term' }
-        ]
-      }
-    ];
-
-    const services = createDefaultTerminologyServices({
-      loaderConfig: false,
-      hl7CodeSystems: preferredCodeSystems,
-      packageDiscovery: {
-        enabled: true,
-        packages: {
-          'hl7.terminology.r4': discoveredCodeSystems
-        }
-      }
-    });
-
-    await expect(
-      services.terminologyRegistry.search('preferred', 'hl7-terminology-r4-package')
-    ).resolves.toMatchObject({ total: 1 });
-
-    await expect(
-      services.terminologyRegistry.search('discovered', 'hl7-terminology-r4-package')
-    ).resolves.toMatchObject({ total: 0 });
   });
 
   it('should dedupe discovered package code systems by system url', async () => {
@@ -397,7 +348,9 @@ describe('TerminologyServices', () => {
       }
     });
 
-    const acmeProvider = providers.find(provider => provider.id === 'pkg-acme-terminology');
+    const acmeProvider = providers.find(
+      provider => provider.id === 'pkg-acme-terminology'
+    );
     const searchResult = await acmeProvider.search('custom');
 
     expect(searchResult.total).toBe(1);
@@ -425,7 +378,9 @@ describe('TerminologyServices', () => {
         packageAutoDiscovery: true
       });
 
-      const provider = services.terminologyRegistry.getProvider('pkg-acme-custom');
+      const provider = services.terminologyRegistry.getProvider(
+        'pkg-acme-custom'
+      );
       expect(provider).toBeDefined();
 
       await expect(

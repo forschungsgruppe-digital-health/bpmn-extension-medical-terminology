@@ -2,14 +2,10 @@ import { createPackageCollectionProvider } from './TerminologyServices.js';
 import { formatPackageDisplayName } from './PackageMetadata.js';
 
 export const DEFAULT_DISCOVERY_INCLUDE = Object.freeze([
-  '*terminology*'
+  '*'
 ]);
 
-export const DEFAULT_DISCOVERY_EXCLUDE = Object.freeze([
-  'hl7.terminology.r4',
-  'de.ihe-d.terminology',
-  'dvmd.kdl.r4'
-]);
+export const DEFAULT_DISCOVERY_EXCLUDE = Object.freeze([]);
 
 const DEFAULT_AUTO_DISCOVERY_GLOBS = Object.freeze([
   '/node_modules/*/CodeSystem-*.json',
@@ -20,13 +16,18 @@ const DEFAULT_AUTO_DISCOVERY_GLOBS = Object.freeze([
   '../../../../../node_modules/@*/*/CodeSystem-*.json'
 ]);
 
-function toProviderId(packageName) {
-  return `pkg-${packageName
+function toSafeIdPart(value) {
+  return String(value)
     .toLowerCase()
     .replace(/[^a-z0-9@/.-]+/g, '-')
     .replace(/^@/, '')
     .replace(/[/.]/g, '-')
-    .replace(/-+/g, '-')}`;
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function toProviderId(packageName) {
+  return `pkg-${toSafeIdPart(packageName)}`;
 }
 
 function matchesPattern(packageName, pattern) {
@@ -185,8 +186,8 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
 }
 
 /**
- * Build package-backed terminology providers from consumer-provided CodeSystem
- * collections keyed by package name.
+ * Build one searchable package-backed provider per package from consumer-
+ * provided CodeSystem collections keyed by package name.
  *
  * @param {Record<string, import('@types/fhir').fhir4.CodeSystem[]>} packages
  * @param {{
@@ -209,13 +210,15 @@ export function discoverPackageProviders(packages = {}, config = {}) {
       && isIncluded(packageName, includePatterns, mode)
       && !isExcluded(packageName, excludePatterns)
     )
-    .map(([packageName, codeSystems]) =>
-      [packageName, dedupeCodeSystems(codeSystems)]).filter(([, codeSystems]) => codeSystems.length > 0)
-    .map(([packageName, codeSystems]) =>
-    createPackageCollectionProvider({
-      id: toProviderId(packageName),
-      displayName: formatPackageDisplayName(packageName, metadata[packageName]),
-      codeSystems
+    .flatMap(([packageName, codeSystems]) => {
+      const uniqueCodeSystems = dedupeCodeSystems(codeSystems);
+
+      return uniqueCodeSystems.length > 0
+        ? [createPackageCollectionProvider({
+          id: toProviderId(packageName),
+          displayName: formatPackageDisplayName(packageName, metadata[packageName]),
+          codeSystems: uniqueCodeSystems
+        })]
+        : [];
     })
-    );
 }

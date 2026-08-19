@@ -105,7 +105,8 @@ describe('terminologyVitePlugin', () => {
 
     expect(code).toContain('"hl7.terminology.r4": [');
     expect(code).toContain('CodeSystem-v3-ActCode.json');
-    expect(code).not.toContain('hl7.fhir.r4.core');
+    expect(code).toContain('"hl7.fhir.r4.core": [');
+    expect(code).toContain('CodeSystem-should-not-load.json');
   });
 
   it('supports disabling transitive discovery roots', () => {

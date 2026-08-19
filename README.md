@@ -105,31 +105,15 @@ const modeler = new BpmnModeler({
 ```js
 import {
   SnomedCtProvider,
-  createKdlProvider,
-  createPackageFallbackProvider,
   createTerminologyModule,
   createTerminologyServices,
   addAnnotation
 } from '@forschungsgruppe-digital-health/terminology';
-import actCodeCodeSystem from
-  'hl7.terminology.r4/CodeSystem-v3-ActCode.json';
 
 const terminologyServices = createTerminologyServices({
   providers: [
     new SnomedCtProvider({
       baseUrl: 'https://snowstorm.example.com'
-    }),
-    createKdlProvider(),
-    createPackageFallbackProvider({
-      id: 'hl7-v3-actcode',
-      displayName: 'HL7 v3 ActCode',
-      systemUri: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
-      codeSystem: actCodeCodeSystem,
-      fallbackFhirConfig: {
-        systemUri: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
-        valueSetUri: 'http://terminology.hl7.org/ValueSet/v3-ActCode',
-        baseUrl: 'https://fhir.example.com'
-      }
     })
   ],
   loaderConfig: {
@@ -168,13 +152,11 @@ terminology providers.
 | `serverConfig` | Override FHIR and Snowstorm server base URLs |
 | `enableSnomed` | Enable or disable the default SNOMED provider |
 | `enableFhirDefaults` | Enable or disable built-in FHIR providers |
-| `enablePackageDefaults` | Enable or disable built-in package providers |
+| `enablePackageDefaults` | Enable or disable discovered package providers |
 | `disabledProviderIds` | Disable providers by ID |
 | `snomedConfig` | Override SNOMED provider settings |
 | `fhirProviderOverrides` | Override built-in FHIR providers |
 | `additionalFhirProviders` | Add additional FHIR providers |
-| `packageProviderOptions` | Override built-in package providers |
-| `hl7CodeSystems` | Inject explicit HL7 CodeSystems |
 | `additionalPackageProviders` | Add package-backed providers |
 | `packageDiscovery` | Configure explicit package registration and filtering |
 | `packageAutoDiscovery` | Enable Vite-driven package discovery |
@@ -211,27 +193,41 @@ Install the terminology package that contains the CodeSystems:
 npm install <your-terminology-package>
 ```
 
-Register the plugin in `vite.config.js`:
+Configure the discovered packages and their CodeSystem filters in `vite.config.js`:
 
 ```js
 import { defineConfig } from 'vite';
 import { terminologyVitePlugin } from
   '@forschungsgruppe-digital-health/terminology/vite';
 
+const discoveryPackages = {
+  'de.ihe-d.terminology': { include: ['*'] },
+  'dvmd.kdl.r4': { include: ['*'] },
+  'hl7.terminology.r4': { include: ['*'] },
+  'hl7.fhir.r4.core': {
+    include: ['http://hl7.org/fhir/abstract-types']
+  },
+  'hl7.fhir.uv.extensions.r4': { include: ['*'] }
+};
+
 export default defineConfig({
   plugins: [
     terminologyVitePlugin({
-      packages: {
-        'hl7.fhir.r4.core': {
-          include: [
-            'http://terminology.hl7.org/CodeSystem/condition-clinical',
-            'http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical'
-          ]
-        }
-      }
+      packages: discoveryPackages
     })
   ]
 });
+```
+
+Each package entry supports the documented resource filters:
+
+```js
+const discoveryPackages = {
+  'hl7.fhir.r4.core': {
+    include: ['http://hl7.org/fhir/abstract-types'],
+    exclude: []
+  }
+};
 ```
 
 Enable discovery in the terminology services:
@@ -242,32 +238,18 @@ createDefaultTerminologyServices({
 });
 ```
 
-The plugin exposes discovered packages on
-`globalThis.__FDH_TERMINOLOGY_PACKAGES__`.
+The plugin discovers installed FHIR terminology packages from the application's
+dependency graph and exposes them on
+`globalThis.__FDH_TERMINOLOGY_PACKAGES__`. The services create one provider
+per discovered package. Each provider searches all CodeSystems in that package,
+so the properties-panel dropdown stays compact while the selected coding still
+keeps its concrete CodeSystem URL and version.
 
-`include` and `exclude` select resources by exact canonical `CodeSystem.url`,
-never by filename. `exclude` takes precedence over `include`.
-`include: ['*']` includes every CodeSystem in the selected package. Omitting
-both filters also includes the complete package. A configured URL that does
-not exist in the package causes an error.
-
-To discover transitive dependencies explicitly:
-
-```js
-terminologyVitePlugin({
-  includeTransitiveFrom: [
-    '@forschungsgruppe-digital-health/terminology'
-  ],
-  exclude: [
-    'hl7.fhir.r4.core',
-    'hl7.fhir.uv.extensions.r4'
-  ]
-});
-```
-
-When using `createDefaultTerminologyServices(...)`, pass
-`packageDiscovery: { exclude: [] }` if built-in package and FHIR
-infrastructure packages should also be discovered.
+The package names are explicit keys in `packages`. Within each package,
+`include` and `exclude` match exact canonical `CodeSystem.url` values, never
+filenames. `exclude` takes precedence over `include`, and `include: ['*']`
+loads every CodeSystem from that package. A configured URL that does not exist
+in the package causes an error.
 
 ## Generated XML
 

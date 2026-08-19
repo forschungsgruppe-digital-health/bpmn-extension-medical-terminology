@@ -4,7 +4,7 @@
  * Usage:
  *   const registry = new TerminologyRegistry();
  *   registry.register(new SnomedCtProvider({ ... }));
- *   registry.register(createKdlProvider());
+ *   registry.register(new SnomedCtProvider({ baseUrl: 'https://snowstorm.example.com' }));
  *
  *   const results = await registry.search('pneumonia', 'snomed-ct');
  *   const concept = await registry.lookup('169069000', 'snomed-ct');

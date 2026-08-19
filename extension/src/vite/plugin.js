@@ -9,7 +9,7 @@ import { DEFAULT_PACKAGE_METADATA_GLOBAL_KEY } from '../services/PackageMetadata
  * @property {string[] | Record<string, { include?: string[], exclude?: string[] }>} [packages]
  * @property {boolean} [autoDiscover]
  * @property {string[]} [includeTransitiveFrom]
- * @property {string[]} [exclude]
+ * @property {string[]} [exclude] Package name filters for automatic discovery
  * @property {string[]} [resourceTypes]
  * @property {boolean} [exposeGlobal]
  * @property {string} [globalKey]
@@ -18,25 +18,6 @@ import { DEFAULT_PACKAGE_METADATA_GLOBAL_KEY } from '../services/PackageMetadata
 const VIRTUAL_MODULE_ID = 'virtual:fdh-terminology-packages';
 const RESOLVED_VIRTUAL_MODULE_ID = '\0' + VIRTUAL_MODULE_ID;
 const DEFAULT_GLOBAL_PACKAGES_KEY = '__FDH_TERMINOLOGY_PACKAGES__';
-
-const BUILTIN_PRESET_PACKAGES = Object.freeze([
-  'de.ihe-d.terminology',
-  'dvmd.kdl.r4'
-]);
-
-const PACKAGE_METADATA_NAMES = Object.freeze([
-  'hl7.terminology.r4',
-  ...BUILTIN_PRESET_PACKAGES
-]);
-
-const INFRASTRUCTURE_PACKAGES = Object.freeze([
-  'hl7.fhir.r4.core',
-  'hl7.fhir.r5.core',
-  'hl7.fhir.uv.extensions.r4',
-  'hl7.fhir.uv.extensions.r5',
-  'hl7.fhir.uv.tools',
-  'hl7.fhir.xver-extensions'
-]);
 
 const DEFAULT_RESOURCE_TYPES = Object.freeze(['CodeSystem']);
 const DEFAULT_TRANSITIVE_ROOT_PACKAGES = Object.freeze([
@@ -274,43 +255,47 @@ function toSafeVarName(name) {
     .replace(/^_|_$/g, '');
 }
 
-function discoverPackages(root, excludeSet, transitiveRoots = []) {
+function discoverPackages(root, excludeSet, transitiveRoots = [], packageDirs = new Map()) {
   const discovered = new Set();
+  const visited = new Set();
+  const pending = [];
 
-  for (const depName of readConsumerDependencies(root)) {
-    if (excludeSet.has(depName)) {
-      continue;
+  const enqueueDependencies = (packageDir, dependencies, traverseDependencies) => {
+    for (const depName of dependencies) {
+      pending.push({baseDir: packageDir, depName, traverseDependencies});
     }
+  };
 
-    const packageDir = resolvePackageDir(depName, root);
-    if (!packageDir) {
-      continue;
-    }
-
-    if (isFhirTerminologyPackage(packageDir)) {
-      discovered.add(depName);
-    }
-  }
-
+  enqueueDependencies(root, readConsumerDependencies(root), false);
   for (const rootPackageName of transitiveRoots || []) {
     const rootPackageDir = resolvePackageDir(rootPackageName, root);
     if (!rootPackageDir) {
       continue;
     }
 
-    for (const depName of readPackageDependencies(rootPackageDir)) {
-      if (excludeSet.has(depName) || discovered.has(depName)) {
-        continue;
-      }
+    enqueueDependencies(rootPackageDir, readPackageDependencies(rootPackageDir), true);
+  }
 
-      const packageDir = resolvePackageDir(depName, rootPackageDir);
-      if (!packageDir) {
-        continue;
-      }
+  while (pending.length > 0) {
+    const {baseDir, depName, traverseDependencies} = pending.shift();
+    if (excludeSet.has(depName)) {
+      continue;
+    }
 
-      if (isFhirTerminologyPackage(packageDir)) {
-        discovered.add(depName);
-      }
+    const packageDir = resolvePackageDir(depName, baseDir);
+    if (!packageDir || visited.has(packageDir)) {
+      continue;
+    }
+
+    visited.add(packageDir);
+    const isFhirPackage = isFhirTerminologyPackage(packageDir);
+    if (isFhirPackage) {
+      discovered.add(depName);
+      packageDirs.set(depName, packageDir);
+    }
+
+    if (traverseDependencies || isFhirPackage) {
+      enqueueDependencies(packageDir, readPackageDependencies(packageDir), true);
     }
   }
 
@@ -356,6 +341,7 @@ export function terminologyVitePlugin(options = {}) {
   /** @type {Set<string>} */
   let excludeSet;
   let packageSelection;
+  let discoveredPackageDirs = new Map();
 
   return {
     name: 'fdh-terminology-packages',
@@ -363,11 +349,7 @@ export function terminologyVitePlugin(options = {}) {
     configResolved(config) {
       root = config.root;
       packageSelection = normalizePackageSelection(explicitPackages);
-      excludeSet = new Set([
-        ...BUILTIN_PRESET_PACKAGES,
-        ...INFRASTRUCTURE_PACKAGES,
-        ...userExclude
-      ]);
+      excludeSet = new Set(userExclude);
     },
 
     resolveId(id) {
@@ -383,7 +365,9 @@ export function terminologyVitePlugin(options = {}) {
 
       const packageNames = explicitPackages
         ? packageSelection.packageNames
-        : (autoDiscover ? discoverPackages(root, excludeSet, includeTransitiveFrom) : []);
+        : (autoDiscover
+          ? discoverPackages(root, excludeSet, includeTransitiveFrom, discoveredPackageDirs)
+          : []);
 
       const importStatements = [];
       const exportEntries = [];
@@ -395,7 +379,8 @@ export function terminologyVitePlugin(options = {}) {
           continue;
         }
 
-        const packageDir = resolveDiscoveredPackageDir(packageName, root, includeTransitiveFrom);
+        const packageDir = discoveredPackageDirs.get(packageName)
+          || resolveDiscoveredPackageDir(packageName, root, includeTransitiveFrom);
         if (!packageDir) {
           console.warn(`[fdh-terminology] Could not resolve package "${packageName}" - skipping.`);
           continue;
@@ -426,13 +411,9 @@ export function terminologyVitePlugin(options = {}) {
         exportEntries.push(`  ${JSON.stringify(packageName)}: [${variableNames.join(', ')}]`);
       }
 
-      const metadataPackageNames = [...new Set([
-        ...packageNames,
-        ...PACKAGE_METADATA_NAMES
-      ])];
-
-      for (const packageName of metadataPackageNames) {
-        const packageDir = resolveDiscoveredPackageDir(packageName, root, includeTransitiveFrom);
+      for (const packageName of packageNames) {
+        const packageDir = discoveredPackageDirs.get(packageName)
+          || resolveDiscoveredPackageDir(packageName, root, includeTransitiveFrom);
         if (!packageDir) {
           continue;
         }

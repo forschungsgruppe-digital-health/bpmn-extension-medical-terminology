@@ -15,7 +15,6 @@
     ".": "./src/index.js",
     "./moddle": "./src/moddle/clinical.json",
     "./properties-panel": "./src/properties-panel/index.js",
-    "./providers/presets": "./src/providers/presets/index.js",
     "./vite": "./src/vite/plugin.js",
     "./vite/types": "./src/vite/types.d.ts"
   },
@@ -42,10 +41,5 @@
   "homepage": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology#readme",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
-  },
-  "dependencies": {
-    "de.ihe-d.terminology": "https://packages.simplifier.net/de.ihe-d.terminology/3.0.1",
-    "dvmd.kdl.r4": "https://packages.simplifier.net/dvmd.kdl.r4/2025.0.1",
-    "hl7.terminology.r4": "https://packages.simplifier.net/hl7.terminology.r4/7.1.0"
   }
 }
