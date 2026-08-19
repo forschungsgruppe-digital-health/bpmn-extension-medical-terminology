@@ -86,6 +86,39 @@ describe('TerminologyServices', () => {
     });
   });
 
+  it('should preserve CodeSystem versions independently in an aggregate provider', async () => {
+    const provider = createPackageCollectionProvider({
+      id: 'mixed-package',
+      displayName: 'Mixed Package',
+      codeSystems: [
+        {
+          resourceType: 'CodeSystem',
+          id: 'versioned',
+          url: 'https://example.org/CodeSystem/versioned',
+          version: '1.0.0',
+          concept: [
+            { code: 'V1', display: 'Versioned concept' }
+          ]
+        },
+        {
+          resourceType: 'CodeSystem',
+          id: 'unversioned',
+          url: 'https://example.org/CodeSystem/unversioned',
+          concept: [
+            { code: 'U1', display: 'Unversioned concept' }
+          ]
+        }
+      ]
+    });
+
+    const result = await provider.search('');
+    const versioned = result.concepts.find(concept => concept.code === 'V1');
+    const unversioned = result.concepts.find(concept => concept.code === 'U1');
+
+    expect(versioned.version).toBe('1.0.0');
+    expect(unversioned.version).toBeUndefined();
+  });
+
   it('should create registry and loader services from configuration', () => {
     const services = createTerminologyServices({
       packageProviders: [

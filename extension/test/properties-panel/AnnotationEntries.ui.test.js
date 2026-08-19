@@ -398,6 +398,47 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="20240901" code="233604007" display="Pneumonia"');
   });
 
+  it('uses the selected provider version when a search result omits one', async () => {
+    const context = await createTestContext({
+      id: 'Task_ProviderVersionFallback',
+      type: 'bpmn:Task',
+      name: 'Provider Version Fallback Task'
+    });
+    const provider = {
+      ...PROVIDERS[0],
+      version: '2024-09'
+    };
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [provider],
+        search: vi.fn(async () => ({
+          items: [{
+            code: '254292007',
+            display: 'Tumor staging (tumor staging)',
+            system: 'http://snomed.info/sct'
+          }]
+        }))
+      }
+    });
+
+    const annotationView = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(annotationView.container, {
+      text: 'Provider version fallback',
+      codings: [
+        {
+          providerId: 'snomed-ct',
+          searchTerm: 'Tumor staging',
+          resultLabel: 'Tumor staging (tumor staging)'
+        }
+      ]
+    });
+
+    const xml = await serializeXml(context.moddle, context.definitions);
+
+    expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
+  });
+
   it('blocks duplicate terminology codes with the same system', async () => {
     const context = await createTestContext({
       id: 'Task_DuplicateCode',

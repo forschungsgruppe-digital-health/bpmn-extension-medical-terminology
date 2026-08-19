@@ -1,6 +1,14 @@
 import { TerminologyProvider } from '../core/TerminologyProvider.js';
 import { SnowstormAdapter } from '../adapters/SnowstormAdapter.js';
 
+function applyProviderVersion(concept, version) {
+  if (!concept || concept.version || !version) {
+    return concept;
+  }
+
+  return { ...concept, version };
+}
+
 export class SnomedCtProvider extends TerminologyProvider {
 
   /**
@@ -58,13 +66,18 @@ export class SnomedCtProvider extends TerminologyProvider {
     });
 
     return {
-      concepts: result.items || [],
+      concepts: (result.items || []).map(concept =>
+        applyProviderVersion(concept, this._version)
+      ),
       total: result.total ?? 0
     };
   }
 
   async lookup(code) {
-    return this._adapter.lookup(code);
+    return applyProviderVersion(
+      await this._adapter.lookup(code),
+      this._version
+    );
   }
 
   async getHierarchy(code) {

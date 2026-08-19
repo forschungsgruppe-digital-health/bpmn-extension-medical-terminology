@@ -108,9 +108,18 @@ export class FhirTerminologyAdapter {
 
       /** @type {FhirValueSetExpansionContains[]} */
       const contains = data.expansion?.contains || [];
+      const expansionVersion = getExpansionVersion(data.expansion);
 
       return {
-        items: contains.map(c => this._mapExpandContainsToConcept(c, resolvedLanguage)),
+        items: contains.map(c => {
+          const concept = this._mapExpandContainsToConcept(c, resolvedLanguage);
+
+          if (concept.version || !expansionVersion) {
+            return concept;
+          }
+
+          return { ...concept, version: expansionVersion };
+        }),
         total: data.expansion?.total ?? contains.length
       };
     } catch (e) {
@@ -245,4 +254,24 @@ function getImplicitValueSetUri(systemUri) {
   const isValueSet = systemUri.includes('/ValueSet/') || systemUri.includes('?');
 
   return isValueSet ? systemUri : `${systemUri}?vs`;
+}
+
+function getExpansionVersion(expansion) {
+  const versionParameter = expansion?.parameter?.find(parameter =>
+    parameter.name === 'version'
+    || parameter.name === 'system-version'
+    || parameter.name === 'used-codesystem'
+  );
+  const rawVersion = versionParameter?.valueUri
+    || versionParameter?.valueCanonical
+    || versionParameter?.valueString;
+
+  if (!rawVersion) {
+    return undefined;
+  }
+
+  const separatorIndex = rawVersion.lastIndexOf('|');
+  return separatorIndex === -1
+    ? rawVersion
+    : rawVersion.slice(separatorIndex + 1);
 }

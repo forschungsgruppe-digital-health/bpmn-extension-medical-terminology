@@ -62,6 +62,51 @@ describe('FhirProvider', () => {
       expect(result.concepts[0].system).toBe('http://fhir.de/CodeSystem/bfarm/icd-10-gm');
     });
 
+    it('should add the configured version when the search response omits one', async () => {
+      const fetchFn = createMockFetch({
+        expansion: {
+          contains: [
+            { code: 'C34.1', display: 'Oberlappen' }
+          ],
+          total: 1
+        }
+      });
+      const provider = createProvider({
+        version: '2024',
+        fetchFn
+      });
+
+      const result = await provider.search('Lunge');
+
+      expect(result.concepts[0].version).toBe('2024');
+    });
+
+    it('should preserve the CodeSystem version reported by the expansion', async () => {
+      const fetchFn = createMockFetch({
+        expansion: {
+          parameter: [
+            { name: 'version', valueUri: 'http://loinc.org|2.82' }
+          ],
+          contains: [
+            { code: 'LP149706-6', display: 'Discharge' }
+          ],
+          total: 1
+        }
+      });
+      const provider = createProvider({
+        systemUri: 'http://loinc.org',
+        valueSetUri: 'http://loinc.org/vs',
+        fetchFn
+      });
+
+      const result = await provider.search('discharge');
+
+      expect(result.concepts[0]).toMatchObject({
+        system: 'http://loinc.org',
+        version: '2.82'
+      });
+    });
+
     it('should respect maxResults config', async () => {
       const fetchFn = createMockFetch({ expansion: { contains: [] } });
       const provider = createProvider({ maxResults: 25, fetchFn });
@@ -122,6 +167,23 @@ describe('FhirProvider', () => {
       const concept = await provider.lookup('C34.1');
       expect(concept.code).toBe('C34.1');
       expect(concept.display).toBe('Bösartige Neubildung');
+    });
+
+    it('should add the configured version when lookup omits one', async () => {
+      const fetchFn = createMockFetch({
+        parameter: [
+          { name: 'display', valueString: 'Bösartige Neubildung' }
+        ]
+      });
+      const provider = createProvider({
+        version: '2024',
+        fetchFn
+      });
+
+      await expect(provider.lookup('C34.1')).resolves.toMatchObject({
+        code: 'C34.1',
+        version: '2024'
+      });
     });
 
     it('should forward lookupParameters to the adapter lookup request', async () => {

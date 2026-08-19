@@ -19,7 +19,7 @@ export class StaticProvider extends TerminologyProvider {
     this._displayName = displayName;
     this._systemUri = systemUri;
     this._concepts = concepts;
-    this._version = version || concepts.find(concept => concept.version)?.version;
+    this._version = version;
   }
 
   get id() { return this._id; }

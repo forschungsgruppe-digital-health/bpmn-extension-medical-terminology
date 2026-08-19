@@ -160,4 +160,37 @@ describe('StaticProvider', () => {
       expect(all).not.toBe(SAMPLE_CONCEPTS);
     });
   });
+
+  it('preserves per-concept versions without inferring one for unversioned concepts', async () => {
+    const provider = new StaticProvider(
+      'mixed-static',
+      'Mixed Static',
+      'http://example.com/package',
+      [
+        { code: 'V1', display: 'Versioned', system: 'http://example.com/v1', version: '1.0.0' },
+        { code: 'U1', display: 'Unversioned', system: 'http://example.com/v2' }
+      ]
+    );
+
+    expect(provider.version).toBeUndefined();
+    const result = await provider.search('');
+
+    expect(result.concepts[0].version).toBe('1.0.0');
+    expect(result.concepts[1]).not.toHaveProperty('version');
+  });
+
+  it('uses an explicitly configured provider version for unversioned concepts', async () => {
+    const provider = new StaticProvider(
+      'configured-static',
+      'Configured Static',
+      'http://example.com/cs',
+      [{ code: 'C1', display: 'Configured', system: 'http://example.com/cs' }],
+      '2.0.0'
+    );
+
+    await expect(provider.lookup('C1')).resolves.toMatchObject({
+      code: 'C1',
+      version: '2.0.0'
+    });
+  });
 });

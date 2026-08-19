@@ -148,6 +148,34 @@ describe('FhirTerminologyAdapter', () => {
       expect(result.items[0].system).toBe(SYSTEM_URI);
     });
 
+    it('should use the CodeSystem version from expansion parameters', async () => {
+      const mockFetch = createMockFetch({
+        expansion: {
+          parameter: [
+            {
+              name: 'version',
+              valueUri: 'http://loinc.org|2.82'
+            }
+          ],
+          contains: [
+            { code: 'LP149706-6', display: 'Discharge', system: 'http://loinc.org' }
+          ],
+          total: 1
+        }
+      });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: 'http://loinc.org',
+        valueSetUri: 'http://loinc.org/vs',
+        fetchFn: mockFetch
+      });
+
+      const result = await adapter.search({ term: 'discharge', limit: 10, offset: 0 });
+
+      expect(result.items[0].version).toBe('2.82');
+    });
+
     it('should strip trailing slash from baseUrl', async () => {
       const mockFetch = createMockFetch({ expansion: { contains: [] } });
       const adapter = new FhirTerminologyAdapter({

@@ -64,6 +64,28 @@ describe('SnomedCtProvider', () => {
       expect(calledHeaders['Accept-Language']).toBe('de');
     });
 
+    it('should add the configured version when search omits one', async () => {
+      const fetchFn = createMockFetch({
+        items: [{
+          conceptId: '233604007',
+          pt: { term: 'Pneumonia' },
+          active: true
+        }],
+        total: 1
+      });
+      const provider = createProvider({
+        version: '2024-09',
+        fetchFn
+      });
+
+      await expect(provider.search('pneumonia')).resolves.toMatchObject({
+        concepts: [{
+          code: '233604007',
+          version: '2024-09'
+        }]
+      });
+    });
+
     it('should pass ECL constraint from default config', async () => {
       const fetchFn = createMockFetch({ items: [], total: 0 });
       const provider = createProvider({ defaultEcl: '<71388002', fetchFn });
@@ -100,6 +122,23 @@ describe('SnomedCtProvider', () => {
       expect(concept.code).toBe('169069000');
       expect(concept.version).toBe('http://snomed.info/sct/900000000000207008/version/20240901');
       expect(concept.moduleId).toBeUndefined(); // Map doesn't include moduleId directly
+    });
+
+    it('uses the configured version when lookup omits one', async () => {
+      const fetchFn = createMockFetch({
+        conceptId: '169069000',
+        pt: { term: 'CT of chest' },
+        active: true
+      });
+      const provider = createProvider({
+        version: '2024-09',
+        fetchFn
+      });
+
+      await expect(provider.lookup('169069000')).resolves.toMatchObject({
+        code: '169069000',
+        version: '2024-09'
+      });
     });
   });
 
