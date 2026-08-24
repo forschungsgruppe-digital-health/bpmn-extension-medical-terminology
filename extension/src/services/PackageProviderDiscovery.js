@@ -74,6 +74,23 @@ function dedupeCodeSystems(codeSystems = []) {
   return uniqueCodeSystems;
 }
 
+function validateComponentLabels(packages, componentLabels = {}) {
+  for (const [packageName, labels] of Object.entries(componentLabels)) {
+    if (!packages[packageName]) {
+      throw new Error(`Component labels reference unknown package "${packageName}".`);
+    }
+
+    const systemUris = new Set(dedupeCodeSystems(packages[packageName]).map(codeSystem => codeSystem.url));
+    for (const systemUri of Object.keys(labels || {})) {
+      if (!systemUris.has(systemUri)) {
+        throw new Error(
+          `Component label references unknown CodeSystem "${systemUri}" in package "${packageName}".`
+        );
+      }
+    }
+  }
+}
+
 function getNodeModulesPackagePath(packageName) {
   return `/node_modules/${packageName}/`;
 }
@@ -194,7 +211,9 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
  *   include?: string[],
  *   exclude?: string[],
  *   mode?: 'auto' | 'whitelist',
- *   metadata?: Record<string, { title?: string, version?: string }>
+ *   metadata?: Record<string, { title?: string, version?: string }>,
+ *   componentLabels?: Record<string, Record<string, string>>,
+ *   excludeSystemUris?: Iterable<string>
  * }} [config]
  * @returns {import('../core/TerminologyProvider').TerminologyProvider[]}
  */
@@ -203,6 +222,9 @@ export function discoverPackageProviders(packages = {}, config = {}) {
   const excludePatterns = config.exclude || DEFAULT_DISCOVERY_EXCLUDE;
   const mode = config.mode || 'auto';
   const metadata = config.metadata || {};
+  const excludedSystemUris = new Set(config.excludeSystemUris || []);
+
+  validateComponentLabels(packages, config.componentLabels);
 
   return Object.entries(packages)
     .filter(([packageName]) =>
@@ -211,14 +233,23 @@ export function discoverPackageProviders(packages = {}, config = {}) {
       && !isExcluded(packageName, excludePatterns)
     )
     .flatMap(([packageName, codeSystems]) => {
-      const uniqueCodeSystems = dedupeCodeSystems(codeSystems);
+      const uniqueCodeSystems = dedupeCodeSystems(codeSystems)
+        .filter(codeSystem => !excludedSystemUris.has(codeSystem.url));
+      const componentLabels = config.componentLabels?.[packageName] || {};
 
-      return uniqueCodeSystems.length > 0
-        ? [createPackageCollectionProvider({
-          id: toProviderId(packageName),
-          displayName: formatPackageDisplayName(packageName, metadata[packageName]),
-          codeSystems: uniqueCodeSystems
-        })]
-        : [];
+      if (!uniqueCodeSystems.length) {
+        return [];
+      }
+
+      return [createPackageCollectionProvider({
+        id: toProviderId(packageName),
+        packageName,
+        packageMetadata: metadata[packageName],
+        componentLabel: uniqueCodeSystems.length === 1
+          ? componentLabels[uniqueCodeSystems[0].url]
+          : undefined,
+        includeCodeSystemName: uniqueCodeSystems.length === 1,
+        codeSystems: uniqueCodeSystems
+      })];
     })
 }

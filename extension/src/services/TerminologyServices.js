@@ -2,7 +2,10 @@ import { TerminologyRegistry } from '../core/TerminologyRegistry.js';
 import { FhirProvider } from '../providers/FhirProvider.js';
 import { FallbackProvider } from '../providers/FallbackProvider.js';
 import { StaticProvider } from '../providers/StaticProvider.js';
-import { createStaticProviderFromCodeSystem } from './CodeSystemProviderFactory.js';
+import {
+  createStaticProviderFromCodeSystem
+} from './CodeSystemProviderFactory.js';
+import { formatPackageProviderDisplayName } from './PackageMetadata.js';
 import { createFhirTerminologyProviderLoader } from './TerminologyProviderLoader.js';
 
 function createPackageProviderId(id) {
@@ -36,7 +39,10 @@ export function createPackageTerminologyProvider(config) {
   return createStaticProviderFromCodeSystem(config.codeSystem, {
     id: config.id,
     displayName: config.displayName,
-    systemUri: config.systemUri
+    systemUri: config.systemUri,
+    packageName: config.packageName,
+    packageMetadata: config.packageMetadata,
+    componentLabel: config.componentLabel
   });
 }
 
@@ -47,23 +53,37 @@ export function createPackageTerminologyProvider(config) {
  *
  * @param {{
  *   id: string,
- *   displayName: string,
+ *   displayName?: string,
+ *   packageName?: string,
+ *   packageMetadata?: { title?: string, version?: string },
+ *   componentLabel?: string,
+ *   includeCodeSystemName?: boolean,
  *   codeSystems: import('@types/fhir').fhir4.CodeSystem[],
  *   systemUri?: string
  * }} config
  * @returns {StaticProvider}
  */
 export function createPackageCollectionProvider(config) {
-  const concepts = (config.codeSystems || []).flatMap((codeSystem, index) =>
+  const codeSystems = config.codeSystems || [];
+  const concepts = codeSystems.flatMap((codeSystem, index) =>
     createStaticProviderFromCodeSystem(codeSystem, {
       id: `${config.id}-${index}`,
       systemUri: codeSystem.url
     }).getAll()
   );
+  const displayName = config.displayName
+    || formatPackageProviderDisplayName({
+      packageName: config.packageName,
+      packageMetadata: config.packageMetadata,
+      componentLabel: config.componentLabel,
+      codeSystems,
+      includeCodeSystemName: config.includeCodeSystemName
+    })
+    || config.id;
 
   return new StaticProvider(
     config.id,
-    config.displayName,
+    displayName,
     config.systemUri || `package:${config.id}`,
     concepts
   );

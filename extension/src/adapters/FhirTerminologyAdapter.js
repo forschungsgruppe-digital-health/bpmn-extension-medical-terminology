@@ -14,6 +14,21 @@
 import { FHIR_MIME_TYPE } from '../core/fhir-version.js';
 import languageConfig from '../config/terminology-language-config.js';
 
+function resolveBaseUrl(baseUrl) {
+  const rawBaseUrl = String(baseUrl || '').trim();
+
+  if (!rawBaseUrl) {
+    throw new Error('FhirTerminologyAdapter requires a baseUrl.');
+  }
+
+  if (/^(?:[a-z]+:)?\/\//i.test(rawBaseUrl) || rawBaseUrl.startsWith('data:') || rawBaseUrl.startsWith('blob:')) {
+    return rawBaseUrl.replace(/\/$/, '');
+  }
+
+  const origin = globalThis.location?.origin || globalThis.location?.href || 'http://localhost';
+  return new URL(rawBaseUrl, origin).toString().replace(/\/$/, '');
+}
+
 /**
  * @typedef {import('@types/fhir').fhir4.ValueSet} FhirValueSet
  * @typedef {import('@types/fhir').fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
@@ -37,7 +52,7 @@ export class FhirTerminologyAdapter {
    * @param {Record<string, string>} [config.lookupParameters]
    */
   constructor(config) {
-    this._baseUrl = config.baseUrl.replace(/\/$/, '');
+    this._baseUrl = resolveBaseUrl(config.baseUrl);
     this._systemUri = config.systemUri;
     this._valueSetUri = config.valueSetUri || null;
     this._auth = config.auth;

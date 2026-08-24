@@ -1,10 +1,18 @@
 import { StaticProvider } from '../providers/StaticProvider.js';
+import { formatPackageProviderDisplayName } from './PackageMetadata.js';
 
 function slugify(value) {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+export function getCodeSystemDisplayName(codeSystem) {
+  return codeSystem.title?.trim()
+    || codeSystem.name?.trim()
+    || codeSystem.id?.trim()
+    || codeSystem.url;
 }
 
 function getConceptStatus(concept) {
@@ -54,7 +62,12 @@ export function createStaticProviderFromCodeSystem(codeSystem, options = {}) {
 
   return new StaticProvider(
     options.id || slugify(codeSystem.id || codeSystem.url),
-    options.displayName || codeSystem.title || codeSystem.name || codeSystem.id || codeSystem.url,
+    options.displayName || formatPackageProviderDisplayName({
+      packageName: options.packageName,
+      packageMetadata: options.packageMetadata,
+      componentLabel: options.componentLabel,
+      codeSystems: [codeSystem]
+    }) || getCodeSystemDisplayName(codeSystem),
     options.systemUri || codeSystem.url,
     concepts,
     codeSystem.version

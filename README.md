@@ -44,8 +44,8 @@ namespace under BPMN `extensionElements`.
 
 - Multi-code annotations on BPMN Tasks, DataObjects, Events, Gateways, and
   MessageFlows.
-- Provider architecture for SNOMED CT via Snowstorm, FHIR terminology
-  servers, package-backed HL7 resources, IHE XDS, and KDL.
+- Provider architecture for SNOMED CT via Ontoserver/FHIR by default or a
+  custom Snowstorm endpoint, package-backed HL7 resources, IHE XDS, and KDL.
 - Stable annotation IDs and optional coded entries.
 - Offline static providers for small terminology systems.
 - Interactive bpmn-js properties-panel integration.
@@ -142,25 +142,55 @@ addAnnotation(businessObject, moddle, {
 ```
 
 `createDefaultTerminologyServices()` provides the standard service setup used
-by the demo: SNOMED CT, FHIR terminology-server providers, and package-backed
-terminology providers.
+by the demo and by a plain app after installation: SNOMED CT, FHIR
+terminology-server providers, and package-backed terminology providers are all
+available with sensible defaults, so the extension works out of the box after
+`npm install`.
 
 ### Default service configuration
 
 | Option | Purpose |
 |---|---|
-| `serverConfig` | Override FHIR and Snowstorm server base URLs |
+| `serverConfig` | Override FHIR, SNOMED, and Snowstorm server base URLs |
 | `enableSnomed` | Enable or disable the default SNOMED provider |
 | `enableFhirDefaults` | Enable or disable built-in FHIR providers |
-| `enablePackageDefaults` | Enable or disable discovered package providers |
+| `enablePackageDefaults` | Enable or disable bundled package providers |
 | `disabledProviderIds` | Disable providers by ID |
 | `snomedConfig` | Override SNOMED provider settings |
 | `fhirProviderOverrides` | Override built-in FHIR providers |
 | `additionalFhirProviders` | Add additional FHIR providers |
 | `additionalPackageProviders` | Add package-backed providers |
+| `packageProviderOptions` | Override a bundled package provider's `componentLabel` or complete `displayName` |
 | `packageDiscovery` | Configure explicit package registration and filtering |
 | `packageAutoDiscovery` | Enable Vite-driven package discovery |
 | `loaderConfig` | Override or disable provider loading |
+
+Package-backed provider labels use `Package title (version) — component`.
+For example, the bundled IHE XDS providers are labelled by their package and
+their distinct document class or document type component. Override only the
+component label while preserving the package metadata:
+
+```js
+createDefaultTerminologyServices({
+  packageProviderOptions: {
+    'ihe-xds-class': {
+      componentLabel: 'XDS document class'
+    }
+  }
+});
+```
+
+Set `displayName` instead when the application needs to replace the entire
+label.
+
+Package discovery creates one aggregate provider per package. When exactly one
+CodeSystem is selected from a package, its FHIR `title`, `name`, `id`, or
+canonical URL is appended as the component. `componentLabels` overrides that
+component by package name and canonical CodeSystem URL. Invalid provider IDs,
+package names, or CodeSystem URLs fail fast with a descriptive error.
+
+TypeScript consumers can import the public configuration types from
+`@forschungsgruppe-digital-health/terminology/types`.
 
 Example:
 
@@ -172,8 +202,10 @@ import {
 const terminologyServices = createDefaultTerminologyServices({
   serverConfig: {
     fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-    snowstormBaseUrl:
-      'https://snowstorm-training.snomedtools.org/snowstorm/snomed-ct'
+    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
+  },
+  snomedConfig: {
+    transport: 'fhir'
   },
   disabledProviderIds: ['atc'],
   fhirProviderOverrides: [
@@ -184,6 +216,105 @@ const terminologyServices = createDefaultTerminologyServices({
   ]
 });
 ```
+
+The default SNOMED provider uses the FHIR API at
+`https://r4.ontoserver.csiro.au/fhir`. To use a custom Snowstorm deployment
+or a same-origin proxy, keep the provider ID unchanged and change its
+transport and base URL.
+
+```js
+const terminologyServices = createDefaultTerminologyServices({
+  snomedConfig: {
+    transport: 'snowstorm',
+    baseUrl: '/api/snowstorm/snomed-ct'
+  }
+});
+```
+
+For another FHIR terminology server, keep `transport: 'fhir'` and set
+`serverConfig.snomedBaseUrl` or `snomedConfig.baseUrl`. For a Snowstorm
+instance, use `transport: 'snowstorm'` as shown above.
+
+### CORS, proxies, and custom fetch functions
+
+Browsers enforce CORS at the network boundary. The extension cannot make a
+browser trust a third-party SNOMED/FHIR origin that does not include the
+necessary CORS headers. In practice, this means a browser app must either:
+
+- call a same-origin proxy, or
+- use a backend endpoint that proxies the target terminology server, or
+- pass a custom `fetchFn` so the app can route the request through a trusted
+  server-side path.
+
+The public config API supports this directly:
+
+```js
+const terminologyServices = createDefaultTerminologyServices({
+  fetchFn: async (url, init) => {
+    const response = await fetch(`/api/terminology?target=${encodeURIComponent(url)}`, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        'X-Requested-By': 'bpmn-terminology'
+      }
+    });
+
+    return response;
+  }
+});
+```
+
+This is the supported extension-side hook for CORS-sensitive deployments. The
+browser itself still blocks direct cross-origin requests unless the remote
+server explicitly allows them.
+
+### Out-of-the-box defaults and external overrides
+
+After installation in a bpmn-js app, the extension is designed to work without
+manual provider registration. It ships with sensible defaults for:
+
+- SNOMED CT via Ontoserver/FHIR (`https://r4.ontoserver.csiro.au/fhir` by
+  default)
+- FHIR terminology servers such as LOINC, ICD-10-GM, OPS, and ATC
+- default package-backed providers for common bundled terminology packages
+- automatic discovery of already installed terminology packages in the app
+
+The app can override any of these defaults from the outside by passing the
+public configuration object into `createDefaultTerminologyServices(...)`:
+
+```js
+const terminologyServices = createDefaultTerminologyServices({
+  serverConfig: {
+    fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
+    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
+  },
+  snomedConfig: {
+    transport: 'fhir'
+  },
+  packageDiscovery: {
+    enabled: true,
+    include: ['*'],
+    mode: 'auto'
+  },
+  packageMetadata: {
+    'hl7.terminology.r4': {
+      title: 'HL7 Terminology (Custom)',
+      version: '1.0.0'
+    }
+  },
+  disabledProviderIds: ['atc']
+});
+```
+
+This keeps the package usable in a plain app while still exposing a clean
+extension point for downstream projects that want to point to their own servers,
+package sets, or terminology metadata.
+
+Installed terminology packages are discovered automatically by default when a
+Vite app exposes them through `globalThis.__FDH_TERMINOLOGY_PACKAGES__` or the
+terminology Vite plugin. You can disable the default automatic discovery with
+`packageAutoDiscovery: false`, or provide an explicit package set via
+`packageDiscovery`.
 
 ## Package Discovery with Vite
 
@@ -289,8 +420,9 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-The demo keeps server endpoints and terminology discovery settings in
-[`demo/src/terminology-config.js`](demo/src/terminology-config.js).
+The demo uses the extension's default Ontoserver/FHIR configuration. The
+public service configuration supports switching to a custom Snowstorm
+instance, a same-origin proxy, or another FHIR terminology server.
 
 ## Documentation
 

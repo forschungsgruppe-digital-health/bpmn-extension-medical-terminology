@@ -55,12 +55,24 @@ export {
   discoverPackageProviders
 } from './services/PackageProviderDiscovery.js';
 export {
+  formatPackageDisplayName,
+  formatPackageProviderDisplayName
+} from './services/PackageMetadata.js';
+export {
   createPackageTerminologyProvider,
   createPackageCollectionProvider,
   createPackageFallbackProvider,
   createTerminologyServices,
   createTerminologyModule
 } from './services/TerminologyServices.js';
+export {
+  DEFAULT_PACKAGE_PROVIDER_IDS,
+  createPackagePresetProvider,
+  createHl7TerminologyR4PackageProvider,
+  createIheXdsClassCodeProvider,
+  createIheXdsTypeCodeProvider,
+  createKdlProvider
+} from './providers/presets/index.js';
 export {
   createDefaultServerConfig,
   createDefaultFhirProviderConfigs,

@@ -24,13 +24,16 @@ import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import './styles.css';
 
-import annotatedBpmn from '../public/sample.bpmn?raw';
+import annotatedBpmn from '../../examples/valid/lung-cancer-staging-annotated.bpmn?raw';
 import plainBpmn from '../../examples/valid/lung-cancer-staging.bpmn?raw';
+
+globalThis.__FDH_TERMINOLOGY_PACKAGES__ = discoveredPackages;
+globalThis.__FDH_TERMINOLOGY_PACKAGE_METADATA__ = packageMetadata;
 
 let modeler;
 
 const SAMPLES = {
-  annotated: { label: 'Terminology annotations (term:)', xml: annotatedBpmn },
+  annotated: { label: 'Lung cancer — annotated (term:)', xml: annotatedBpmn },
   plain: { label: 'Lung cancer — plain BPMN (no extensions)', xml: plainBpmn },
   demo: { label: 'Demo sample', url: './sample.bpmn' }
 };
@@ -87,10 +90,7 @@ async function bootstrap() {
   }
 
   if (DEMO_FEATURES.showTerminology) {
-    const terminologyServices = await createDemoTerminologyServices(
-      discoveredPackages,
-      packageMetadata
-    );
+    const terminologyServices = await createDemoTerminologyServices();
     const terminologyServicesModule = createTerminologyModule(terminologyServices);
 
     additionalModules.push(

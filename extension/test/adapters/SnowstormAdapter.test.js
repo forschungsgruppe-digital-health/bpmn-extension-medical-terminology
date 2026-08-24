@@ -88,6 +88,16 @@ describe('SnowstormAdapter', () => {
       expect(calledUrl).toContain('MAIN/SNOMEDCT-DE/concepts');
     });
 
+    it('should resolve relative base URLs against the current origin', async () => {
+      const mockFetch = createMockFetch({ items: [], total: 0 });
+      const adapter = new SnowstormAdapter({ baseUrl: '/snowstorm-api', fetchFn: mockFetch });
+
+      await adapter.search({ term: 'pneumonia', limit: 5, offset: 0 });
+
+      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+      expect(calledUrl.pathname).toContain('/snowstorm-api/MAIN/concepts');
+    });
+
     it('should handle empty items', async () => {
       const adapter = new SnowstormAdapter({ baseUrl: BASE_URL, fetchFn: createMockFetch({}) });
       const result = await adapter.search({ term: 'xyz', limit: 5, offset: 0 });

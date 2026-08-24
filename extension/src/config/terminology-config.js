@@ -1,4 +1,9 @@
 import { SnomedCtProvider } from '../providers/SnomedCtProvider.js';
+import { FhirProvider } from '../providers/FhirProvider.js';
+import {
+  DEFAULT_PACKAGE_PROVIDER_IDS,
+  createPackagePresetProvider
+} from '../providers/presets/index.js';
 import {
   collectPackageCodeSystemsFromGlob,
   collectPackageCodeSystemsFromModules,
@@ -7,20 +12,22 @@ import {
 import { DEFAULT_PACKAGE_METADATA_GLOBAL_KEY } from '../services/PackageMetadata.js';
 import { createTerminologyModule, createTerminologyServices } from '../services/TerminologyServices.js';
 
-const DEFAULT_SERVER_CONFIG = Object.freeze({
+export const DEFAULT_SERVER_CONFIG = Object.freeze({
   fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-  snowstormBaseUrl: 'https://snowstorm-training.snomedtools.org/snowstorm/snomed-ct'
+  snowstormBaseUrl: 'https://snowstorm.snomedtools.org/snowstorm/snomed-ct'
 });
 
-const DEFAULT_SNOMED_CONFIG = Object.freeze({
+export const DEFAULT_SNOMED_CONFIG = Object.freeze({
   id: 'snomed-ct',
   displayName: 'SNOMED CT',
   systemUri: 'http://snomed.info/sct',
+  transport: 'fhir',
+  valueSetUri: 'http://snomed.info/sct?fhir_vs',
   branch: 'MAIN',
   languageStrategy: 'header'
 });
 
-const DEFAULT_FHIR_PROVIDER_CONFIGS = Object.freeze([
+export const DEFAULT_FHIR_PROVIDER_CONFIGS = Object.freeze([
   {
     id: 'loinc',
     displayName: 'LOINC',
@@ -86,6 +93,39 @@ function filterDisabled(providers, disabledProviderIds) {
   return providers.filter(provider => !disabledProviderIds.has(provider.id));
 }
 
+function createDefaultSnomedProvider(snomedConfig, serverConfig, fetchFn) {
+  const resolvedConfig = {
+    ...DEFAULT_SNOMED_CONFIG,
+    ...snomedConfig
+  };
+  const transport = resolvedConfig.transport || 'fhir';
+  const requestFetchFn = resolvedConfig.fetchFn || fetchFn;
+
+  if (transport === 'fhir') {
+    return new FhirProvider({
+      ...resolvedConfig,
+      baseUrl: resolvedConfig.baseUrl
+        || serverConfig.snomedBaseUrl
+        || serverConfig.fhirBaseUrl,
+      fetchFn: requestFetchFn
+    });
+  }
+
+  if (transport === 'snowstorm') {
+    return new SnomedCtProvider({
+      ...resolvedConfig,
+      baseUrl: resolvedConfig.baseUrl
+        || serverConfig.snomedBaseUrl
+        || serverConfig.snowstormBaseUrl,
+      fetchFn: requestFetchFn
+    });
+  }
+
+  throw new Error(
+    `Unsupported SNOMED transport "${transport}". Expected "fhir" or "snowstorm".`
+  );
+}
+
 export function createDefaultServerConfig(serverConfig = {}) {
   return {
     ...DEFAULT_SERVER_CONFIG,
@@ -96,6 +136,7 @@ export function createDefaultServerConfig(serverConfig = {}) {
 export function createDefaultFhirProviderConfigs(config = {}) {
   const {
     fhirBaseUrl,
+    fetchFn,
     fhirProviderOverrides = [],
     additionalFhirProviders = [],
     disabledProviderIds = []
@@ -103,7 +144,8 @@ export function createDefaultFhirProviderConfigs(config = {}) {
 
   const mergedDefaults = mergeById(DEFAULT_FHIR_PROVIDER_CONFIGS, fhirProviderOverrides).map(provider => ({
     ...provider,
-    baseUrl: provider.baseUrl || fhirBaseUrl
+    baseUrl: provider.baseUrl || fhirBaseUrl,
+    ...(fetchFn ? { fetchFn: provider.fetchFn || fetchFn } : {})
   }));
 
   const providers = [
@@ -114,18 +156,40 @@ export function createDefaultFhirProviderConfigs(config = {}) {
   return filterDisabled(providers, toDisabledSet(disabledProviderIds));
 }
 
+function validatePackageProviderOptions(packageProviderOptions) {
+  const knownProviderIds = new Set(DEFAULT_PACKAGE_PROVIDER_IDS);
+  const unknownProviderId = Object.keys(packageProviderOptions)
+    .find(providerId => !knownProviderIds.has(providerId));
+
+  if (unknownProviderId) {
+    throw new Error(`Unknown bundled package provider "${unknownProviderId}".`);
+  }
+}
+
+function getCoveredSystemUris(providers) {
+  return new Set(providers.flatMap(provider =>
+    typeof provider.getAll === 'function'
+      ? provider.getAll().map(concept => concept.system)
+      : []
+  ));
+}
+
 export function createDefaultPackageProviders(config = {}) {
   const {
+    packageProviderOptions = {},
     additionalPackageProviders = [],
     packageDiscovery = {},
-    packageAutoDiscovery = false,
+    packageAutoDiscovery = true,
     packageMetadata: configuredPackageMetadata = {},
-    disabledProviderIds = []
+    disabledProviderIds = [],
+    hl7CodeSystems
   } = config;
 
-  const autoDiscoveryOptions = packageAutoDiscovery === true
-    ? {}
-    : (packageAutoDiscovery || null);
+  validatePackageProviderOptions(packageProviderOptions);
+
+  const autoDiscoveryOptions = packageAutoDiscovery === false
+    ? null
+    : (packageAutoDiscovery || {});
   const autoDiscoveryPackages = autoDiscoveryOptions
     ? (
       autoDiscoveryOptions.packages
@@ -159,17 +223,28 @@ export function createDefaultPackageProviders(config = {}) {
     || packageDiscovery?.packageNames
     || (autoDiscoveryOptions ? ['*'] : undefined);
   const discoveryMode = packageDiscovery?.mode || (packageDiscovery?.packageNames?.length ? 'whitelist' : 'auto');
+  const resolvedHl7CodeSystems = hl7CodeSystems || packageCodeSystems['hl7.terminology.r4'];
+
+  const presetProviders = DEFAULT_PACKAGE_PROVIDER_IDS.map(providerId => createPackagePresetProvider(providerId, {
+    ...(packageProviderOptions[providerId] || {}),
+    packageMetadata: packageProviderOptions[providerId]?.packageMetadata || packageMetadata,
+    ...(providerId === 'hl7-terminology-r4-package' && resolvedHl7CodeSystems
+      ? { codeSystems: resolvedHl7CodeSystems }
+      : {})
+  })).filter(Boolean);
 
   const discoveredPackageProviders = (packageDiscovery?.enabled || Boolean(autoDiscoveryOptions))
     ? discoverPackageProviders(packageCodeSystems, {
       ...packageDiscovery,
       ...(discoveryInclude ? { include: discoveryInclude } : {}),
       metadata: packageMetadata,
-      mode: discoveryMode
+      mode: discoveryMode,
+      excludeSystemUris: getCoveredSystemUris(presetProviders)
     })
     : [];
 
   const providers = [
+    ...presetProviders,
     ...additionalPackageProviders,
     ...discoveredPackageProviders
   ];
@@ -181,6 +256,7 @@ export function createDefaultTerminologyConfig(config = {}) {
   const {
     serverConfig = {},
     loaderConfig = {},
+    fetchFn,
     enableSnomed = true,
     enableFhirDefaults = true,
     enablePackageDefaults = true,
@@ -196,13 +272,7 @@ export function createDefaultTerminologyConfig(config = {}) {
 
   const defaultProviders = [
     ...(enableSnomed
-      ? [
-        new SnomedCtProvider({
-          ...DEFAULT_SNOMED_CONFIG,
-          ...snomedConfig,
-          baseUrl: snomedConfig.baseUrl || resolvedServerConfig.snowstormBaseUrl
-        })
-      ]
+      ? [ createDefaultSnomedProvider(snomedConfig, resolvedServerConfig, fetchFn) ]
       : []),
   ];
 
@@ -221,6 +291,7 @@ export function createDefaultTerminologyConfig(config = {}) {
         ...createDefaultFhirProviderConfigs({
           ...config,
           fhirBaseUrl: resolvedServerConfig.fhirBaseUrl,
+          fetchFn,
           disabledProviderIds
         }),
         ...filterDisabled(fhirProviders, disabledProviderIdSet)
@@ -230,6 +301,7 @@ export function createDefaultTerminologyConfig(config = {}) {
       ? false
       : {
         fhirBaseUrl: resolvedServerConfig.fhirBaseUrl,
+        ...(fetchFn ? { fetchFn } : {}),
         ...loaderConfig
       }
   };

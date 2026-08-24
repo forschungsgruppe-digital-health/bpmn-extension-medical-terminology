@@ -11,6 +11,21 @@ function normalizeLanguage(lang) {
   return String(lang).split(',')[0].split(';')[0].split('-')[0];
 }
 
+function resolveBaseUrl(baseUrl) {
+  const rawBaseUrl = String(baseUrl || '').trim();
+
+  if (!rawBaseUrl) {
+    throw new Error('SnowstormAdapter requires a baseUrl.');
+  }
+
+  if (/^(?:[a-z]+:)?\/\//i.test(rawBaseUrl) || rawBaseUrl.startsWith('data:') || rawBaseUrl.startsWith('blob:')) {
+    return rawBaseUrl.replace(/\/$/, '');
+  }
+
+  const origin = globalThis.location?.origin || globalThis.location?.href || 'http://localhost';
+  return new URL(rawBaseUrl, origin).toString().replace(/\/$/, '');
+}
+
 export class SnowstormAdapter {
 
   /**
@@ -22,7 +37,7 @@ export class SnowstormAdapter {
    * @param {Record<string, string>} [config.headers]
    */
   constructor(config) {
-    this._baseUrl = config.baseUrl;
+    this._baseUrl = resolveBaseUrl(config.baseUrl);
     this._branch = config.branch || 'MAIN';
     this._auth = config.auth;
     this._fetch = config.fetchFn || globalThis.fetch.bind(globalThis);
