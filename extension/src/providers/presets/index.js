@@ -62,10 +62,22 @@ function warnMissingHl7PackageCodeSystems() {
 }
 
 function getPackageMetadata(preset, config) {
-  return {
+  const metadata = {
     ...DEFAULT_PACKAGE_METADATA[preset.packageName],
     ...config.packageMetadata?.[preset.packageName]
   };
+
+  if (
+    preset.normalizeDefaultTitle
+    && metadata.title === DEFAULT_PACKAGE_METADATA[preset.packageName]?.title
+  ) {
+    return {
+      ...metadata,
+      title: preset.packageName
+    };
+  }
+
+  return metadata;
 }
 
 export function loadHl7TerminologyR4CodeSystemsFromGlob(globFn) {
@@ -87,6 +99,7 @@ const PACKAGE_PROVIDER_PRESETS = Object.freeze({
   'hl7-terminology-r4-package': Object.freeze({
     id: 'hl7-terminology-r4-package',
     packageName: 'hl7.terminology.r4',
+    normalizeDefaultTitle: true,
     resolveCodeSystems: config => config.codeSystems || loadHl7TerminologyR4CodeSystems(),
     returnNullIfEmpty: true
   }),

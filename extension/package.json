@@ -14,12 +14,15 @@
   "dependencies": {
     "de.ihe-d.terminology": "https://packages.simplifier.net/de.ihe-d.terminology/3.0.1",
     "dvmd.kdl.r4": "https://packages.simplifier.net/dvmd.kdl.r4/2025.0.1",
+    "hl7.fhir.r4.core": "https://packages.simplifier.net/hl7.fhir.r4.core/4.0.1",
+    "hl7.fhir.uv.extensions.r4": "https://packages.simplifier.net/hl7.fhir.uv.extensions.r4/5.2.0",
     "hl7.terminology.r4": "https://packages.simplifier.net/hl7.terminology.r4/7.1.0"
   },
   "exports": {
     ".": "./src/index.js",
     "./moddle": "./src/moddle/clinical.json",
     "./properties-panel": "./src/properties-panel/index.js",
+    "./properties-panel.css": "./src/properties-panel/properties-panel.css",
     "./vite": "./src/vite/plugin.js",
     "./vite/types": "./src/vite/types.d.ts",
     "./types": "./src/types.d.ts"

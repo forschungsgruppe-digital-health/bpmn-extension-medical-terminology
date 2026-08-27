@@ -97,7 +97,9 @@ describe('AnnotationHelper', () => {
     });
 
     it('should validate ID format', () => {
+      expect(isValidId('term-ann-1')).toBe(true);
       expect(isValidId('term-ann_1')).toBe(true);
+      expect(isValidId('-term-ann-')).toBe(true);
       expect(isValidId('term-ann 1')).toBe(false);
     });
   });

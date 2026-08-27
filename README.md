@@ -87,6 +87,7 @@ import {
   TerminologyPropertiesPanelModule,
   createDefaultTerminologyModule
 } from '@forschungsgruppe-digital-health/terminology';
+import '@forschungsgruppe-digital-health/terminology/properties-panel.css';
 
 const modeler = new BpmnModeler({
   container: '#canvas',
@@ -99,6 +100,11 @@ const modeler = new BpmnModeler({
   }
 });
 ```
+
+The package CSS contains only the structural styles for the terminology
+entries. Import the official bpmn-js and properties-panel styles in the host
+application as usual; the terminology styles inherit its fonts, colors, and
+CSS variables.
 
 ## Programmatic Usage
 
@@ -165,10 +171,12 @@ available with sensible defaults, so the extension works out of the box after
 | `packageAutoDiscovery` | Enable Vite-driven package discovery |
 | `loaderConfig` | Override or disable provider loading |
 
-Package-backed provider labels use `Package title (version) — component`.
+Bundled package provider labels use `Package name (version) — component`.
 For example, the bundled IHE XDS providers are labelled by their package and
-their distinct document class or document type component. Override only the
-component label while preserving the package metadata:
+their distinct document class or document type component. The default HL7
+provider follows the same package-name convention instead of repeating the
+package title abbreviation. Override only the component label while preserving
+the package metadata:
 
 ```js
 createDefaultTerminologyServices({

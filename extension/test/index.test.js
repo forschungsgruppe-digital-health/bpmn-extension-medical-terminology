@@ -122,7 +122,7 @@ describe('@forschungsgruppe-digital-health/terminology – core exports', () => 
 
     expect(panelConfig.showClinicalDomain).toBe(true);
     expect(panelConfig.showAnnotations).toBe(true);
-    expect(panelConfig.showMappingTarget).toBe(false);
+    expect(panelConfig.showMappingTarget).toBeUndefined();
   });
 
   it('should export moddle descriptor as JSON', async () => {

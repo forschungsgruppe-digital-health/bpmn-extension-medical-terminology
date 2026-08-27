@@ -200,7 +200,7 @@ describe('TerminologyServices', () => {
     });
 
     expect(providers.find(provider => provider.id === 'hl7-terminology-r4-package').displayName)
-      .toBe('HL7 Terminology (THO) (7.1.0)');
+      .toBe('hl7.terminology.r4 (7.1.0)');
     expect(providers.find(provider => provider.id === 'ihe-xds-class').displayName)
       .toBe('de.ihe-d.terminology (3.0.1) — IHE XDS Document Class');
     expect(providers.find(provider => provider.id === 'ihe-xds-type').displayName)

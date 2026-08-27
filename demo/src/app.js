@@ -22,6 +22,7 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
+import '@forschungsgruppe-digital-health/terminology/properties-panel.css';
 import './styles.css';
 
 import annotatedBpmn from '../../examples/valid/lung-cancer-staging-annotated.bpmn?raw';
@@ -96,8 +97,7 @@ async function bootstrap() {
     additionalModules.push(
       createTerminologyPropertiesPanelModule({
         showClinicalDomain: DEMO_FEATURES.showTerminologyClinicalDomain,
-        showAnnotations: DEMO_FEATURES.showTerminologyAnnotations,
-        showMappingTarget: DEMO_FEATURES.showTerminologyMappingTarget
+        showAnnotations: DEMO_FEATURES.showTerminologyAnnotations
       }),
       terminologyServicesModule
     );

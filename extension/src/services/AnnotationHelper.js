@@ -4,7 +4,7 @@
  */
 
 const DEFAULT_ANN_PREFIX = 'term-ann';
-const ANN_ID_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$/;
+const ANN_ID_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 export function getExtensionElement(bo, type) {
   if (!bo.extensionElements) return undefined;
@@ -80,7 +80,7 @@ export function ensureAnnotationsContainer(bo, moddle) {
   return container;
 }
 
-export function addAnnotation(bo, moddle, { id, aspect, mode, text, codings, target, existingIds }) {
+export function addAnnotation(bo, moddle, { id, aspect, mode, text, codings, existingIds }) {
   const container = ensureAnnotationsContainer(bo, moddle);
   const props = {
     id: (id || '').trim() || createId(

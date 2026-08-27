@@ -209,18 +209,14 @@ describe('terminology properties panel UI', () => {
     expect(xml).not.toContain('fhirmap:');
   });
 
-  it('hides the mapping target section when configured', async () => {
+  it('does not render the FHIR mapping target section', async () => {
     const context = await createTestContext({
-      id: 'Task_Configured',
+      id: 'Task_NoMappingTarget',
       type: 'bpmn:Task',
-      name: 'Configured Task'
+      name: 'No Mapping Target Task'
     });
 
-    setServices(context, {
-      terminologyPropertiesConfig: {
-        showMappingTarget: false
-      }
-    });
+    setServices(context);
 
     render(h(AnnotationListEntry, { element: context.element }));
     fireEvent.click(screen.getByText('+ Add annotation'));
@@ -228,7 +224,7 @@ describe('terminology properties panel UI', () => {
     expect(screen.queryByText('Mapping target (optional)')).toBeNull();
   });
 
-  it('updates the terminology dropdown when providers change at runtime', async () => {
+  it('sorts the terminology dropdown alphabetically when providers change at runtime', async () => {
     const context = await createTestContext({
       id: 'Task_DynamicProviders',
       type: 'bpmn:Task',
@@ -270,8 +266,41 @@ describe('terminology properties panel UI', () => {
     listeners.get('provider:registered').forEach(listener => listener());
 
     await waitFor(() => {
-      expect(Array.from(terminologySelect.options).map(option => option.value)).toEqual(['', 'snomed-ct', 'loinc']);
+      expect(Array.from(terminologySelect.options).map(option => option.value)).toEqual(['', 'loinc', 'snomed-ct']);
     });
+  });
+
+  it('sorts terminology providers by their displayed name', async () => {
+    const context = await createTestContext({
+      id: 'Task_SortedProviders',
+      type: 'bpmn:Task',
+      name: 'Sorted Providers Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [...PROVIDERS].reverse(),
+        search: vi.fn(),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+
+    const terminologySelect = getControlByLabel(view.container, 'Terminology');
+
+    expect(Array.from(terminologySelect.options).map(option => option.textContent)).toEqual([
+      '– select –',
+      'ATC',
+      'IHE XDS classCode',
+      'IHE XDS typeCode',
+      'KDL',
+      'LOINC',
+      'OPS',
+      'SNOMED CT'
+    ]);
   });
 
   it('hides the terminology dropdown when no providers are available', async () => {
@@ -515,7 +544,7 @@ describe('terminology properties panel UI', () => {
     expect(getControlByLabel(view.container, 'ID').closest('.bio-properties-panel-entry').className).toContain('has-error');
   });
 
-  it('recreates the chemotherapy task without adding a mapping target', async () => {
+  it('recreates the chemotherapy task without adding unsupported target data', async () => {
     const context = await createTestContext({
       id: 'Task_Chemo',
       type: 'bpmn:Task',
@@ -556,7 +585,6 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('<term:annotation id="term-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
     expect(xml).toContain('<term:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
     expect(xml).toContain('<term:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
-    expect(xml).not.toContain('<term:target');
   });
 
   it('recreates the discharge letter data object annotations via the UI', async () => {

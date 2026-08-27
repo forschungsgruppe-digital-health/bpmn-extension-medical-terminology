@@ -1,0 +1,354 @@
+.clinical-annotations {
+  --term-panel-text: var(--text-base-color, inherit);
+  --term-panel-muted: var(--description-color, currentColor);
+  --term-panel-border: var(--input-border-color, currentColor);
+  --term-panel-surface: var(--group-background-color, transparent);
+  --term-panel-input-surface: var(--input-background-color, transparent);
+  --term-panel-hover-surface: var(--dropdown-item-hover-background-color, transparent);
+  --term-panel-focus-surface: var(--input-focus-background-color, transparent);
+  --term-panel-accent: var(--link-color, currentColor);
+  --term-panel-focus-border: var(--input-focus-border-color, var(--link-color, currentColor));
+
+  color: var(--term-panel-text);
+  line-height: 1.4;
+}
+
+.clinical-annotations,
+.clinical-annotations *,
+.clinical-annotations *::before,
+.clinical-annotations *::after {
+  box-sizing: border-box;
+}
+
+.clinical-annotations button,
+.clinical-annotations input,
+.clinical-annotations select,
+.clinical-annotations textarea {
+  font: inherit;
+}
+
+.clinical-annotations .annotation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.clinical-annotations .annotation-item {
+  position: relative;
+  padding: 6px 8px;
+  background: var(--term-panel-surface);
+  border: 1px solid var(--term-panel-border);
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.clinical-annotations .annotation-item--saved {
+  border-left-color: var(--term-panel-accent);
+}
+
+.clinical-annotations .annotation-item--active {
+  border-color: var(--term-panel-focus-border);
+}
+
+.clinical-annotations .annotation-item__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.clinical-annotations .annotation-item__remove,
+.clinical-annotations .selected-coding__remove {
+  flex-shrink: 0;
+  margin-left: auto;
+  padding: 0 1px;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--term-panel-muted);
+  cursor: pointer;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.clinical-annotations .annotation-item__remove:hover,
+.clinical-annotations .selected-coding__remove:hover {
+  color: var(--term-panel-accent);
+  background: var(--term-panel-hover-surface);
+}
+
+.clinical-annotations .annotation-item__text {
+  margin-bottom: 2px;
+  color: var(--term-panel-muted);
+  font-style: italic;
+  line-height: 1.3;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.clinical-annotations .annotation-item__coding {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 1px 0;
+  line-height: 1.3;
+}
+
+.clinical-annotations .coding-system {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--term-panel-focus-surface);
+  color: var(--term-panel-accent);
+  font-size: 0.8em;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.clinical-annotations .coding-code {
+  color: var(--term-panel-accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.clinical-annotations .coding-display {
+  color: var(--term-panel-muted);
+  font-size: 0.85em;
+  line-height: 1.3;
+}
+
+.clinical-annotations .selected-codings {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clinical-annotations .selected-coding {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 6px;
+  border: 1px solid var(--term-panel-border);
+  border-radius: 4px;
+  background: var(--term-panel-input-surface);
+}
+
+.clinical-annotations .selected-coding__content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.clinical-annotations .selected-coding__remove {
+  margin-left: 0;
+}
+
+.clinical-annotations .annotation-empty {
+  padding: 16px 8px;
+  color: var(--term-panel-muted);
+  font-size: 0.9em;
+  text-align: center;
+}
+
+.clinical-annotations .annotation-add-btn,
+.clinical-annotations .annotation-submit-btn {
+  display: block;
+  width: 100%;
+  padding: 7px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.clinical-annotations .annotation-add-btn {
+  border: 1px dashed var(--term-panel-border);
+  background: var(--term-panel-input-surface);
+  color: var(--term-panel-accent);
+}
+
+.clinical-annotations .annotation-submit-btn {
+  border: 1px solid var(--term-panel-focus-border);
+  background: var(--term-panel-focus-surface);
+  color: var(--term-panel-accent);
+  font-weight: 600;
+}
+
+.clinical-annotations .annotation-add-btn:hover,
+.clinical-annotations .annotation-submit-btn:hover {
+  background: var(--term-panel-hover-surface);
+}
+
+.clinical-annotations .annotation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--term-panel-border);
+  border-radius: 4px;
+  background: var(--term-panel-surface);
+}
+
+.clinical-annotations .annotation-form .bio-properties-panel-entry {
+  margin: 0;
+}
+
+.clinical-annotations .annotation-form .bio-properties-panel-textfield,
+.clinical-annotations .annotation-form .bio-properties-panel-textarea {
+  margin: 0;
+}
+
+.clinical-annotations .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.clinical-annotations .form-hint {
+  color: var(--term-panel-muted);
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.clinical-annotations .form-row select,
+.clinical-annotations .form-row input,
+.clinical-annotations .form-row textarea {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--term-panel-border);
+  border-radius: 4px;
+  background: var(--term-panel-input-surface);
+  color: var(--term-panel-text);
+  resize: vertical;
+}
+
+.clinical-annotations .form-row select:focus,
+.clinical-annotations .form-row input:focus,
+.clinical-annotations .form-row textarea:focus {
+  border-color: var(--term-panel-focus-border);
+  outline: 2px solid var(--focus-outline-color, transparent);
+  outline-offset: 1px;
+}
+
+.clinical-annotations .search-field {
+  position: relative;
+}
+
+.clinical-annotations .search-input-shell {
+  display: grid;
+  align-items: center;
+  border: 1px solid var(--term-panel-border);
+  border-radius: 4px;
+  background: var(--term-panel-input-surface);
+}
+
+.clinical-annotations .search-input-shell > * {
+  grid-area: 1 / 1;
+}
+
+.clinical-annotations .search-input-shell--focused {
+  border-color: var(--term-panel-focus-border);
+  outline: 2px solid var(--focus-outline-color, transparent);
+  outline-offset: 1px;
+}
+
+.clinical-annotations .search-input-ghost {
+  padding: 5px 8px;
+  pointer-events: none;
+  font: inherit;
+  white-space: pre;
+}
+
+.clinical-annotations .search-input-ghost__typed {
+  visibility: hidden;
+}
+
+.clinical-annotations .search-input-ghost__completion {
+  color: var(--term-panel-muted);
+}
+
+.clinical-annotations .search-input-field {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--term-panel-text);
+}
+
+.clinical-annotations .search-input-field::placeholder {
+  color: var(--term-panel-muted);
+}
+
+.clinical-annotations .search-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  left: 0;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--term-panel-border);
+  border-radius: 4px;
+  background: var(--dropdown-item-background-color, var(--term-panel-surface));
+  box-shadow: 0 8px 16px rgb(0 0 0 / 15%);
+}
+
+.clinical-annotations .search-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--term-panel-border);
+  cursor: pointer;
+}
+
+.clinical-annotations .search-suggestion:last-child {
+  border-bottom: 0;
+}
+
+.clinical-annotations .search-suggestion:hover,
+.clinical-annotations .search-suggestion--active {
+  background: var(--term-panel-hover-surface);
+}
+
+.clinical-annotations .search-suggestion__label {
+  color: var(--term-panel-text);
+  font: inherit;
+}
+
+.clinical-annotations .search-suggestion__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clinical-annotations .form-fieldset {
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--term-panel-border);
+  border-radius: 4px;
+  background: var(--term-panel-surface);
+}
+
+.clinical-annotations .form-fieldset legend {
+  padding: 0 4px;
+  color: var(--term-panel-muted);
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}

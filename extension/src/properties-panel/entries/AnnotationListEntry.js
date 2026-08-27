@@ -12,20 +12,11 @@ import {
   isValidId,
   removeAnnotation
 } from '../../services/AnnotationHelper.js';
-import { resolveTerminologyPropertiesConfig } from '../config.js';
 import {
   normalizeConcepts,
   getConceptLabel,
   getAutocompleteSuffix
 } from './search-utils.js';
-
-
-const TRANSFORMS = [
-  { value: '', label: '– no target –' },
-  { value: 'copy', label: 'copy (Code → target)' },
-  { value: 'fixed', label: 'fixed (fixed value)' },
-  { value: 'translate', label: 'translate (ConceptMap)' }
-];
 
 export function AnnotationListEntry(props) {
   const { element } = props;
@@ -34,9 +25,6 @@ export function AnnotationListEntry(props) {
   const elementRegistry = useService('elementRegistry', false);
   const terminologyRegistry = useService('terminologyRegistry', false);
   const terminologyProviderLoader = useService('terminologyProviderLoader', false);
-  const terminologyPropertiesConfig = resolveTerminologyPropertiesConfig(
-    useService('terminologyPropertiesConfig', false)
-  );
 
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(createEmptyForm());
@@ -55,16 +43,12 @@ export function AnnotationListEntry(props) {
 
   const bo = element.businessObject;
   const annotations = getAnnotations(bo);
-  const showMappingTarget = terminologyPropertiesConfig.showMappingTarget;
 
   function createEmptyForm() {
     return {
       id: '',
       text: '',
-      codings: [],
-      targetElement: '',
-      targetTransform: '',
-      targetValue: ''
+      codings: []
     };
   }
 
@@ -73,7 +57,18 @@ export function AnnotationListEntry(props) {
   }
 
   function getSearchableProviders() {
-    return getRegisteredProviders().filter(provider => provider.capabilities?.search !== false);
+    return getRegisteredProviders()
+      .filter(provider => provider.capabilities?.search !== false)
+      .sort((first, second) => {
+        const firstLabel = first.displayName || first.id || '';
+        const secondLabel = second.displayName || second.id || '';
+        const labelOrder = firstLabel.localeCompare(secondLabel, undefined, {
+          numeric: true,
+          sensitivity: 'base'
+        });
+
+        return labelOrder || first.id.localeCompare(second.id);
+      });
   }
 
   function getSelectedProvider() {
@@ -327,20 +322,10 @@ export function AnnotationListEntry(props) {
 
     setFormError('');
 
-    let target = null;
-    if (nextFormData.targetTransform && nextFormData.targetElement) {
-      target = {
-        element: nextFormData.targetElement,
-        transform: nextFormData.targetTransform,
-        value: nextFormData.targetValue || undefined
-      };
-    }
-
     addAnnotation(bo, moddle, {
       id,
       text: nextFormData.text || undefined,
-      codings: nextFormData.codings,
-      target
+      codings: nextFormData.codings
     });
 
     // Force re-render and mark model as changed
@@ -436,7 +421,7 @@ export function AnnotationListEntry(props) {
         return;
       }
 
-      if (e.key === 'Tab' && !e.shiftKey && !searchTerm.trim() && canSubmitFromCodingArea(formData)) {
+      if (e.key === 'Tab' && !e.shiftKey && !searchTerm.trim()) {
         e.preventDefault();
         e.stopPropagation();
         handleAdd();
@@ -506,18 +491,6 @@ export function AnnotationListEntry(props) {
       ...current,
       codings: current.codings.filter((_, codingIndex) => codingIndex !== index)
     }));
-  }
-
-  function hasTargetData(currentFormData) {
-    return Boolean(
-      currentFormData.targetElement ||
-      currentFormData.targetTransform ||
-      currentFormData.targetValue
-    );
-  }
-
-  function canSubmitFromCodingArea(currentFormData) {
-    return !hasTargetData(currentFormData);
   }
 
   function updateField(field, value) {
@@ -629,13 +602,6 @@ export function AnnotationListEntry(props) {
                   ${c.display && html`<span class="coding-display">${c.display}</span>`}
                 </div>
               `)}
-              ${showMappingTarget && ann.target && html`
-                <div class="annotation-item__target">
-                  → <code>${ann.target.element}</code>
-                  <span class="target-transform">[${ann.target.transform}]</span>
-                  ${ann.target.value && html`<span> = ${ann.target.value}</span>`}
-                </div>
-              `}
             </div>
           `)}
         </div>
@@ -692,7 +658,7 @@ export function AnnotationListEntry(props) {
                  class="bio-properties-panel-input"
                  value=${selectedProviderId}
                  onChange=${handlePreset}
-                 onKeyDownCapture=${!selectedProviderId && canSubmitFromCodingArea(formData) ? handleSubmitOnTab : undefined}
+                 onKeyDownCapture=${!selectedProviderId ? handleSubmitOnTab : undefined}
                >
                  <option value="">– select –</option>
                  ${searchableProviders.map(p =>
@@ -791,48 +757,6 @@ export function AnnotationListEntry(props) {
               onClick=${() => handleAdd()}
             >Save annotation</button>
           </div>
-
-          ${showMappingTarget && html`
-            <fieldset class="form-fieldset form-fieldset--mapping">
-              <legend>Mapping target (optional)</legend>
-              <div class="form-row">
-                <label class="bio-properties-panel-label">FHIRPath (target element)</label>
-                <input
-                  class="bio-properties-panel-input"
-                  type="text"
-                  placeholder="e.g. DocumentReference.type"
-                  value=${formData.targetElement}
-                  onInput=${(e) => updateField('targetElement', e.target.value)}
-                />
-              </div>
-              <div class="form-row">
-                <label class="bio-properties-panel-label">Transform</label>
-                <select
-                  class="bio-properties-panel-input"
-                  value=${formData.targetTransform}
-                  onChange=${(e) => updateField('targetTransform', e.target.value)}
-                  onKeyDownCapture=${(formData.targetTransform !== 'fixed' && formData.targetTransform !== 'translate') ? handleSubmitOnTab : undefined}
-                >
-                  ${TRANSFORMS.map(t =>
-                    html`<option value=${t.value}>${t.label}</option>`
-                  )}
-                </select>
-              </div>
-              ${(formData.targetTransform === 'fixed' || formData.targetTransform === 'translate') && html`
-                <div class="form-row">
-                  <label class="bio-properties-panel-label">${formData.targetTransform === 'fixed' ? 'Fixed value' : 'ConceptMap URL'}</label>
-                  <input
-                    class="bio-properties-panel-input"
-                    type="text"
-                    placeholder=${formData.targetTransform === 'fixed' ? 'e.g. final' : 'https://...'}
-                    value=${formData.targetValue}
-                    onInput=${(e) => updateField('targetValue', e.target.value)}
-                    onKeyDownCapture=${handleSubmitOnTab}
-                  />
-                </div>
-              `}
-            </fieldset>
-          `}
         </div>
       `}
     </div>

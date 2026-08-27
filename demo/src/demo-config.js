@@ -3,7 +3,6 @@ export const DEMO_FEATURES = Object.freeze({
   showTerminology: true,
   showTerminologyClinicalDomain: true,
   showTerminologyAnnotations: true,
-  showTerminologyMappingTarget: false,
   showXmlDownload: true,
   showXmlPreview: true,
   showFooter: true
