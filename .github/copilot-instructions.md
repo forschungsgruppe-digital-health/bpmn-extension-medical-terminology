@@ -37,7 +37,7 @@ command before proposing a commit or PR.
 
 ## Hard rules (see `AGENTS.md`)
 
-- Clinical data goes only in `<extensionElements>` under the custom prefix (`term:` / `fhirmap:`),
+- Clinical data goes only in `<extensionElements>` under the custom `term:` prefix,
   never in the `bpmn:` / `bpmndi:` namespace, and never by changing the BPMN core structure.
 - Renaming or removing a moddle type/property is a breaking (MAJOR) change and needs human sign-off.
 - ESM only; package names use `@forschungsgruppe-digital-health/*` (or `bpmn-js-*` / `bpmnlint-plugin-*`).

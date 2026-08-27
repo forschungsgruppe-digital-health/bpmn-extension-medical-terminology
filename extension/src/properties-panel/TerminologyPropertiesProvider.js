@@ -1,5 +1,4 @@
 import { is } from 'bpmn-js/lib/util/ModelUtil';
-import { ClinicalDomainEntry } from './entries/ClinicalDomainEntry.js';
 import { AnnotationListEntry } from './entries/AnnotationListEntry.js';
 import { resolveTerminologyPropertiesConfig } from './config.js';
 
@@ -31,14 +30,6 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
     if (!TARGET_TYPES.some(type => is(element, type))) return groups;
 
     const entries = [];
-
-    if (config.showClinicalDomain) {
-      entries.push({
-        id: 'clinical-domain',
-        component: ClinicalDomainEntry,
-        isEdited: () => !!element.businessObject.get('term:clinicalDomain')
-      });
-    }
 
     if (config.showAnnotations) {
       entries.push({

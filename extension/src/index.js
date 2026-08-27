@@ -9,7 +9,6 @@ export {
 // ─── Core ────────────────────────────────────────────────────
 export { TerminologyProvider } from './core/TerminologyProvider.js';
 export { TerminologyRegistry } from './core/TerminologyRegistry.js';
-export { ASPECTS, MODES, TRANSFORMS, CLINICAL_DOMAINS } from './core/types.js';
 
 // ─── Adapters ────────────────────────────────────────────────
 export { SnowstormAdapter } from './adapters/SnowstormAdapter.js';

@@ -12,33 +12,32 @@ allowed-tools: Read, Grep, Glob, Bash
 > and the release roadmap. Output is Markdown returned as your message for human
 > review. Do not write a file.
 
-Argument format: a path or a Feature ID, e.g. `packages/terminology/src/providers`,
-`packages/fhir-mapping/src/moddle/fhir-mapping.json`, or `F-TERM-SNOMED-PROVIDER`.
-Feature ID format is `F-<PKG>-<NAME>` where `<PKG>` is `TERM`, `FHIRMAP`, `VUE`,
-or `TOOL`. Mirror the `feature-inventarist` skill so a single classification slots
-straight into a full inventory.
+Argument format: a path or a Feature ID, e.g. `extension/src/providers` or
+`F-TERM-SNOMED-PROVIDER`. Feature ID format is `F-<PKG>-<NAME>` where `<PKG>` is
+`TERM` or `TOOL`. Mirror the `feature-inventarist` skill so a single
+classification slots straight into a full inventory.
 
 This is an npm-workspaces **ESM** monorepo of **bpmn-js extension libraries**
-(`packages/terminology` → `term:`, `packages/fhir-mapping` → `fhirmap:`,
-`packages/demo` → Vue 3 wrapper). Plain **JavaScript + JSDoc, no TypeScript**;
+(`extension` → `term:`, `demo` → host wrapper). Plain **JavaScript + JSDoc, no TypeScript**;
 tested with **Vitest**; clinical data lives only in BPMN `<extensionElements>`
 under the custom prefix. See `AGENTS.md`.
 
 1. **Locate** every artifact for this feature across the dimensions that count here:
-   - Source file(s) under `packages/*/src/**` (and `tools/**` for `TOOL` features).
+   - Source file(s) under `extension/src/**` and `demo/src/**` (and `tools/**` for
+     `TOOL` features).
    - The matching entry in `src/index.js` re-exports and the `exports` map in
-     `packages/*/package.json` (`./moddle`, `./properties-panel`,
-     `./providers/presets`, …). Note any divergence between the two as a finding;
+     `extension/package.json` (`./moddle`, `./properties-panel`,
+     …). Note any divergence between the two as a finding;
      do not reconcile it.
-   - The moddle type(s) it reads/writes, by exact `prefix:Type`
-     (`packages/*/src/moddle/*.json`, e.g. `term:Annotation`, `fhirmap:Mapping`).
+   - The moddle type(s) it reads/writes, by exact `term:Type`
+     (`extension/src/moddle/*.json`, e.g. `term:Annotation`).
    - The properties-panel provider/entry that surfaces it
-     (`packages/*/src/properties-panel/**`, e.g. `*PropertiesProvider.js`,
-     `AnnotationListEntry`, `ClinicalDomainEntry`, `FhirMappingListEntry`).
-   - Example/doc usage: `examples/**`, `docs/**`, `docs/user-stories/*.md`.
+     (`extension/src/properties-panel/**`, e.g. `*PropertiesProvider.js`,
+       `AnnotationListEntry`).
+   - Example/doc usage: `examples/**`, `docs/**`.
 
 2. **Analyze maturity:**
-   - Run the relevant Vitest specs if any exist (`packages/*/test/**/*.test.js`)
+   - Run the relevant Vitest specs if any exist (`extension/test/**/*.test.js`)
      and report what is covered; if none, mark coverage `no test found` (PROVISIONAL).
    - Look for TODO/FIXME, hardcoded values (URLs, terminology codes, FHIR
      versions), and missing error handling.
@@ -49,7 +48,7 @@ under the custom prefix. See `AGENTS.md`.
 
 3. **Identify dependencies:**
    - Other features/exports called by this one (intra- and cross-package, e.g. a
-     `packages/demo` composable wrapping a `terminology`/`fhir-mapping` export).
+     `demo` consuming an `extension` export).
    - External surfaces: terminology adapters (Snowstorm / generic FHIR terminology
      servers), the moddle namespace/prefix it binds to, peer dependencies
      (`bpmn-js`, `@bpmn-io/properties-panel`, Vue).

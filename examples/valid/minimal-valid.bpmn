@@ -3,7 +3,7 @@
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:myext="http://example.com/schema/my-extension/1.0"
+                  xmlns:term="https://clinical-bpmn.org/terminology/v1"
                   id="Definitions_valid"
                   targetNamespace="http://example.com/bpmn">
   <bpmn:process id="Process_1" isExecutable="false">
@@ -12,9 +12,9 @@
     </bpmn:startEvent>
     <bpmn:task id="Task_1" name="Reviewed task">
       <bpmn:extensionElements>
-        <myext:annotation category="quality" reviewed="true">
-          <myext:note author="example">Looks good.</myext:note>
-        </myext:annotation>
+        <term:annotations>
+          <term:annotation id="term-ann-1" text="Synthetic reviewed task"/>
+        </term:annotations>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>

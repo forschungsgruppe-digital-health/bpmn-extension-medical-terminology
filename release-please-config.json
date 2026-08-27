@@ -3,7 +3,20 @@
   "packages": {
     "extension": {
       "component": "terminology",
-      "release-type": "node"
+      "release-type": "node",
+      "extra-files": [
+        {
+          "type": "json",
+          "path": "extension/lint/bpmnlint-plugin-terminology/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "extension/src/moddle/clinical.json",
+          "jsonpath": "$.version"
+        },
+        "schema/clinical-semantics.xsd"
+      ]
     }
   },
   "plugins": [

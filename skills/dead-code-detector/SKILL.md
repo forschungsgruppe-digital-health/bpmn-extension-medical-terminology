@@ -1,6 +1,6 @@
 ---
 name: dead-code-detector
-description: Identify unused exports, dead modules, uncalled functions, and orphaned moddle types / properties-panel entries across the npm-workspaces ESM packages (terminology, fhir-mapping, demo). Use before refactoring or trimming a grown package. Detection only — reports candidates with confidence levels and a suggested action; never deletes or edits anything.
+description: Identify unused exports, dead modules, uncalled functions, and orphaned moddle types / properties-panel entries across the npm-workspaces ESM packages (extension, demo). Use before refactoring or trimming a grown package. Detection only — reports candidates with confidence levels and a suggested action; never deletes or edits anything.
 ---
 
 # dead-code-detector
@@ -24,10 +24,10 @@ when there is no static `import`:
 - Re-exported from a package's `src/index.js` or named in its `package.json`
   `exports` map (e.g. `./moddle`, `./properties-panel`, `./providers/presets`). A
   subpath export is a **public entry point** — assume external consumers import it.
-- Referenced by string from a moddle descriptor (`packages/*/src/moddle/*.json`):
+- Referenced by string from a moddle descriptor (`extension/src/moddle/*.json`):
   `name`, `superClass`, `type`, and `extends` values bind types/properties by name,
   not by import. A moddle type with no descriptor reference may still be data on
-  existing `.bpmn` files — that is `term:`/`fhirmap:` extension content, not dead code.
+  existing `.bpmn` files — that is `term:` extension content, not dead code.
 - Registered into bpmn-js / properties-panel by convention rather than by direct call
   (a `*PropertiesProvider`, a module's `__init__`/`$inject`, a group/entry factory
   pulled in by the panel). Grep the `properties-panel/` dirs and `index.js` wiring
@@ -41,7 +41,7 @@ when there is no static `import`:
 Run from the repo root. Prefer the workspace graph over guesses.
 
 - **Unused exports / dead modules (JS).** Build the import graph across
-  `packages/*/src/**` and the `exports`/`main` entry points. Flag an exported symbol
+  `extension/src/**` and the `exports`/`main` entry points. Flag an exported symbol
   when no other module, no `index.js` re-export, no `exports` subpath, and no
   test/example imports it. Flag a `.js` file when nothing imports it and it is not an
   entry point. If `knip` or `ts-prune` is available you may run it, but verify each
@@ -49,18 +49,18 @@ Run from the repo root. Prefer the workspace graph over guesses.
 - **Uncalled functions / unreachable branches.** Within a module, find top-level or
   exported functions with zero call sites in the workspace, tests, and examples.
 - **Orphaned moddle types/properties.** For each type/property in
-  `packages/*/src/moddle/*.json`, check whether it is referenced by another descriptor
+  `extension/src/moddle/*.json`, check whether it is referenced by another descriptor
   entry, by a properties-panel provider, by `examples/**/*.bpmn`, or by tests.
   Removing/renaming a moddle type or property is a **breaking (MAJOR)** change and
   needs human sign-off — never propose it as a quick cleanup.
 - **Orphaned properties-panel entries.** Groups/entries defined but never returned by
   a provider, or providers never registered into a panel module.
-- **Unused dependencies.** Compare each `packages/*/package.json` `dependencies` /
+- **Unused dependencies.** Compare `extension/package.json` `dependencies` /
   `peerDependencies` against actual imports. `bpmn-js` / `bpmn-js-properties-panel`
   are **peers** — absence of a direct import does not make them unused.
-- **Cross-package check.** terminology ↔ fhir-mapping ↔ demo: does an export consumed
-  by another package still exist on both ends? Does `demo` (the Vue composables) reference
-  terminology/fhir-mapping exports that were removed or renamed?
+- **Cross-package check.** extension ↔ demo: does an export consumed by the demo
+  still exist on both ends? Does `demo` reference extension exports that were
+  removed or renamed?
 
 ## Confidence levels
 

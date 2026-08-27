@@ -7,10 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 > **Monorepo note.** Per-package version history is authoritative and is generated
-> automatically by [release-please](https://github.com/googleapis/release-please) in each
-> package's own `CHANGELOG.md` under [`packages/`](packages/) once a release is cut. Tagged
+> automatically by [release-please](https://github.com/googleapis/release-please) in the
+> extension package's own `CHANGELOG.md` once a release is cut. Tagged
 > releases are also listed under
-> [GitHub Releases](https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics/releases).
+> [GitHub Releases](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/releases).
 > This root changelog records repository-wide and cross-cutting changes (documentation,
 > tooling, governance, repository structure) that are not tied to a single package version.
 
@@ -22,14 +22,18 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Removed the legacy `term:clinicalDomain` descriptor property and its
+  properties-panel configuration; terminology semantics now consist only of
+  annotations and codings under `bpmn:extensionElements`. This is a breaking
+  descriptor/API change and requires a major release.
+- Removed the obsolete public `ASPECTS`, `MODES`, and `TRANSFORMS` constants
+  that belonged to the retired mapping model.
 - Consolidated the narrative documentation under [`docs/`](docs/) as the single point of
-  truth — the arc42 architecture docs (`docs/ARCHITECTURE.md` + `docs/arc42/`) and
-  the BPMN/bpmn.io extension primer (`docs/EXTENDING.md`). Only the conventional
+  truth — the arc42 architecture docs (`docs/ARCHITECTURE.md` + `docs/arc42/`) and the
+  BPMN/bpmn.io extension primer (`docs/EXTENDING.md`). Only the conventional
   files remain at the repository root (`README.md`, `LICENSE`, `CONTRIBUTING.md`,
   `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `AGENTS.md`, `CLAUDE.md`).
-- The Vue 3 integration is now the private, unpublished
-  `@forschungsgruppe-digital-health/demo` package (renamed from `vue`). The publishable
-  packages are `@forschungsgruppe-digital-health/terminology` and
-  `@forschungsgruppe-digital-health/fhir-mapping`.
+- The bpmn-js integration is now the private, unpublished `demo` workspace. The
+  publishable package is `@forschungsgruppe-digital-health/terminology`.
 
-[Unreleased]: https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/v0.1.0...HEAD

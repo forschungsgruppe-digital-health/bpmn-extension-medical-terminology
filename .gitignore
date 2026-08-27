@@ -8,9 +8,6 @@ dist/
 # docs/ is the tracked documentation home; only the local scratch fixture is ignored
 /docs/sample.bpmn
 
-# GitHub Pages build output (demo app; built into site/ by Vite, deployed in CI)
-/site/
-
 # OS files
 .DS_Store
 Thumbs.db

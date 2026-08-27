@@ -143,12 +143,10 @@ const SEARCH_RESULTS = {
 };
 
 let AnnotationListEntry;
-let ClinicalDomainEntry;
 
 describe('terminology properties panel UI', () => {
   beforeAll(async () => {
     ({ AnnotationListEntry } = await import('../../src/properties-panel/entries/AnnotationListEntry.js'));
-    ({ ClinicalDomainEntry } = await import('../../src/properties-panel/entries/ClinicalDomainEntry.js'));
   });
 
   beforeEach(() => {
@@ -175,12 +173,6 @@ describe('terminology properties panel UI', () => {
 
     setServices(context);
 
-    const clinicalDomainView = render(h(ClinicalDomainEntry, { element: context.element }));
-    fireEvent.change(screen.getByLabelText('Clinical domain'), {
-      target: { value: 'staging' }
-    });
-    clinicalDomainView.unmount();
-
     const annotationView = render(h(AnnotationListEntry, { element: context.element }));
     await createAnnotation(annotationView.container, {
       text: 'Clinical TNM staging to determine tumor stage',
@@ -202,26 +194,9 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('Task_Staging', xml);
 
     expect(xml).toContain('id="Task_Staging"');
-    expect(xml).toContain('term:clinicalDomain="staging"');
     expect(xml).toContain('<term:annotation id="term-ann-1" text="Clinical TNM staging to determine tumor stage">');
     expect(xml).toContain('<term:coding system="http://snomed.info/sct" code="254292007" display="Tumor staging (tumor staging)"');
     expect(xml).toContain('<term:coding system="http://loinc.org" code="21908-9" display="Stage group.clinical Cancer"');
-    expect(xml).not.toContain('fhirmap:');
-  });
-
-  it('does not render the FHIR mapping target section', async () => {
-    const context = await createTestContext({
-      id: 'Task_NoMappingTarget',
-      type: 'bpmn:Task',
-      name: 'No Mapping Target Task'
-    });
-
-    setServices(context);
-
-    render(h(AnnotationListEntry, { element: context.element }));
-    fireEvent.click(screen.getByText('+ Add annotation'));
-
-    expect(screen.queryByText('Mapping target (optional)')).toBeNull();
   });
 
   it('sorts the terminology dropdown alphabetically when providers change at runtime', async () => {
@@ -553,12 +528,6 @@ describe('terminology properties panel UI', () => {
 
     setServices(context);
 
-    const clinicalDomainView = render(h(ClinicalDomainEntry, { element: context.element }));
-    fireEvent.change(screen.getByLabelText('Clinical domain'), {
-      target: { value: 'therapy' }
-    });
-    clinicalDomainView.unmount();
-
     const annotationView = render(h(AnnotationListEntry, { element: context.element }));
     await createAnnotation(annotationView.container, {
       
@@ -581,7 +550,6 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('Task_Chemo', xml);
 
     expect(xml).toContain('id="Task_Chemo"');
-    expect(xml).toContain('term:clinicalDomain="therapy"');
     expect(xml).toContain('<term:annotation id="term-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
     expect(xml).toContain('<term:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
     expect(xml).toContain('<term:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
@@ -595,12 +563,6 @@ describe('terminology properties panel UI', () => {
     });
 
     setServices(context);
-
-    const clinicalDomainView = render(h(ClinicalDomainEntry, { element: context.element }));
-    fireEvent.change(screen.getByLabelText('Clinical domain'), {
-      target: { value: 'documentation' }
-    });
-    clinicalDomainView.unmount();
 
     const annotationView = render(h(AnnotationListEntry, { element: context.element }));
 
@@ -634,7 +596,6 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('DataObj_DischargeLetter', xml);
 
     expect(xml).toContain('id="DataObj_DischargeLetter"');
-    expect(xml).toContain('term:clinicalDomain="documentation"');
     expect(xml).toContain('<term:annotation id="term-ann-1" text="Medical discharge report upon completion of follow-up">');
     expect(xml).toContain('<term:coding system="http://loinc.org" code="18842-5" display="Discharge summary"');
     expect(xml).toContain('<term:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Medical discharge report"');
@@ -650,12 +611,6 @@ describe('terminology properties panel UI', () => {
     });
 
     setServices(context);
-
-    const clinicalDomainView = render(h(ClinicalDomainEntry, { element: context.element }));
-    fireEvent.change(screen.getByLabelText('Clinical domain'), {
-      target: { value: 'diagnostics' }
-    });
-    clinicalDomainView.unmount();
 
     const annotationView = render(h(AnnotationListEntry, { element: context.element }));
 
@@ -689,7 +644,6 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('DataObj_MRI', xml);
 
     expect(xml).toContain('id="DataObj_MRI"');
-    expect(xml).toContain('term:clinicalDomain="diagnostics"');
     expect(xml).toContain('<term:annotation id="term-ann-1" text="MRI scan report of the thorax as input document for TNM staging">');
     expect(xml).toContain('<term:coding system="http://loinc.org" code="18748-4" display="Diagnostic imaging study"');
     expect(xml).toContain('<term:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"');
@@ -709,7 +663,6 @@ describe('terminology properties panel UI', () => {
 
     setServices(context);
 
-    await setClinicalDomain(context, 'DataObj_MRI', 'diagnostics');
     await addAnnotationToElement(context, 'DataObj_MRI', {
       text: 'MRI scan report of the thorax as input document for TNM staging',
       codings: [
@@ -735,7 +688,6 @@ describe('terminology properties panel UI', () => {
       ]
     });
 
-    await setClinicalDomain(context, 'Task_Staging', 'staging');
     await addAnnotationToElement(context, 'Task_Staging', {
       text: 'Clinical TNM staging to determine tumor stage',
       codings: [
@@ -757,7 +709,6 @@ describe('terminology properties panel UI', () => {
       codings: []
     });
 
-    await setClinicalDomain(context, 'Task_Surgery', 'therapy');
     await addAnnotationToElement(context, 'Task_Surgery', {
       
       text: 'Lobectomy or pneumonectomy for operable lung cancer Stage I-II',
@@ -775,7 +726,6 @@ describe('terminology properties panel UI', () => {
       ]
     });
 
-    await setClinicalDomain(context, 'Task_Chemo', 'therapy');
     await addAnnotationToElement(context, 'Task_Chemo', {
       
       text: 'Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV',
@@ -793,7 +743,6 @@ describe('terminology properties panel UI', () => {
       ]
     });
 
-    await setClinicalDomain(context, 'DataObj_DischargeLetter', 'documentation');
     await addAnnotationToElement(context, 'DataObj_DischargeLetter', {
       text: 'Medical discharge report upon completion of follow-up',
       codings: [
@@ -819,7 +768,6 @@ describe('terminology properties panel UI', () => {
       ]
     });
 
-    await setClinicalDomain(context, 'Task_Followup', 'follow-up');
     await addAnnotationToElement(context, 'Task_Followup', {
       text: 'Structured follow-up assessment with imaging surveillance and lab monitoring',
       codings: [
@@ -845,7 +793,6 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('<term:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
     expect(xml).toContain('id="Task_Followup"');
     expect(xml).toContain('<term:coding system="http://loinc.org" code="18776-5" display="Plan of care note"');
-    expect(xml).not.toContain('fhirmap:');
   });
 });
 
@@ -1004,14 +951,6 @@ async function createAnnotation(container, config) {
   await waitFor(() => {
     expect(screen.queryByText('+ Add annotation')).toBeTruthy();
   });
-}
-
-async function setClinicalDomain(context, elementId, value) {
-  const view = render(h(ClinicalDomainEntry, { element: context.elements[elementId] }));
-  fireEvent.change(screen.getByLabelText('Clinical domain'), {
-    target: { value }
-  });
-  view.unmount();
 }
 
 async function addAnnotationToElement(context, elementId, config) {

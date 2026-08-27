@@ -4,7 +4,9 @@ This repository contains the formal XML Schema Definition (XSD) for extending BP
 
 ## Contents
 
-- `clinical-semantics.xsd`: The XSD defining the `https://clinical-bpmn.org/terminology/v1` namespace. It provides mechanisms to annotate BPMN elements with standardized terminology codes (e.g., SNOMED CT, LOINC, ICD-10).
+- `clinical-semantics.xsd`: The generated XSD defining the `https://clinical-bpmn.org/terminology/v1` namespace. It is derived from `extension/src/moddle/clinical.json` and provides the structural vocabulary for terminology annotations.
+
+Regenerate it after changing the moddle descriptor with `npm run xsd:gen`.
 
 ## Usage
 
@@ -19,8 +21,7 @@ To use these extensions in your BPMN 2.0 XML files, declare the namespace and in
     xmlns:term="https://clinical-bpmn.org/terminology/v1">
     
   <bpmn:process id="Process_1">
-    <!-- The clinicalDomain attribute can be added to FlowNodes, DataObjects, etc. -->
-    <bpmn:task id="Task_1" name="Measure Blood Pressure" term:clinicalDomain="Nursing">
+    <bpmn:task id="Task_1" name="Measure Blood Pressure">
       <bpmn:extensionElements>
         <term:annotations>
           <!-- A single annotation with a coding concept -->

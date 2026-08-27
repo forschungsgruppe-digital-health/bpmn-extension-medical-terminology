@@ -80,7 +80,7 @@ export function ensureAnnotationsContainer(bo, moddle) {
   return container;
 }
 
-export function addAnnotation(bo, moddle, { id, aspect, mode, text, codings, existingIds }) {
+export function addAnnotation(bo, moddle, { id, text, codings, existingIds }) {
   const container = ensureAnnotationsContainer(bo, moddle);
   const props = {
     id: (id || '').trim() || createId(

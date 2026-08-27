@@ -27,7 +27,7 @@ Discover the doc surface; do not assume a fixed list. Enumerate with
 - **`docs/`:** user stories (`docs/user-stories/*-mvp.md`), any design notes. The
   `docs/` directory also holds a built demo (`docs/index.html`, `docs/assets/**`,
   `docs/sample.bpmn`) — that is generated output, **not** documentation; exclude it.
-- **Per-package & example docs:** `packages/*/README.md`, `examples/*/README.md`.
+- **Per-package & example docs:** `extension/README.md`, `examples/*/README.md`.
 - **Embedded process docs:** `skills/**/SKILL.md` + `skills/README.md`, the agent
   pointer files under `.github/` (`copilot-instructions.md`,
   `instructions/*.instructions.md`, `prompts/*.prompt.md`), and process-bearing
@@ -47,13 +47,13 @@ Evaluate each role against each concern. Every finding is tagged with its
   `release-please-config.json` ↔ CI)? Are the conformance layers described the same
   way everywhere (bpmnlint / moddle roundtrip / XSD core / package conventions)?
   *release/publishing:* who owns releases; is the linked-version lockstep across
-  `terminology`/`fhir-mapping` (and the private `demo`) stated once and consistently? *usage:* can a new
+  `terminology` (and the private `demo`) stated once and consistently? *usage:* can a new
   maintainer find "how we work" on one path without contradictions?
 - **Library consumer (downstream developer)** — *development:* can I install, import
   the ESM entry points, wire the moddle descriptor and properties-panel provider, and
   run the example without guessing? Are commands copy-pasteable and current
   (`npm install --legacy-peer-deps`, the `check:*`/`verify` scripts)? Are the
-  `term:` / `fhirmap:` prefixes and namespace URIs documented to match the moddle
+  `term:` prefix and namespace URI documented to match the moddle
   descriptors? *release/publishing:* is the GitHub Packages registry/scope install
   story (`@forschungsgruppe-digital-health/*`, `https://npm.pkg.github.com`) clear?
   *usage:* is there one obvious entry point and an accurate doc map?
@@ -140,9 +140,9 @@ Always cite evidence as `file:line`.
      (bpmnlint / moddle roundtrip / XSD core / package conventions) and their
      blocking/informational status; compare doc claims against it (and against the
      `package.json` scripts) rather than re-deriving.
-   - `skills/moddle-extension-review` → whether docs describe the `term:`/`fhirmap:`
+   - `skills/moddle-extension-review` → whether docs describe the `term:`
      moddle types, prefixes, and namespace URIs as the descriptors actually define them
-     (`packages/*/src/moddle/*.json`).
+     (`extension/src/moddle/*.json`).
    - `skills/bpmn-naming-publishing` → whether the publishing/naming docs match the
      enforced conventions (scope prefix, ESM, license, entry points, peer deps, GitHub
      Packages registry). Run `npm run check:packages` only if a doc claim needs it.
@@ -181,7 +181,7 @@ Always cite evidence as `file:line`.
   mark uncertainty as UNVERIFIED.
 - **Verify before flagging** (see §3) — a recalled fact is not evidence.
 - **Respect review boundaries.** Moddle descriptor files
-  (`packages/*/src/moddle/*.json`) require human sign-off, and a renamed/removed type
+  (`extension/src/moddle/*.json`) require human sign-off, and a renamed/removed type
   or property is a breaking (MAJOR) change. You may report doc issues touching them but
   must only *propose* — never change them — and note that human review applies.
 

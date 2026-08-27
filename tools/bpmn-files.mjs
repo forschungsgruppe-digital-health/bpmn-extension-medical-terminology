@@ -22,7 +22,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /** Directories scanned for `.bpmn` files when no explicit paths are given. */
-const ROOTS = ['examples/valid', 'examples/minimal', 'docs'];
+// Only current terminology fixtures are part of the default conformance set.
+const ROOTS = ['examples/valid', 'docs'];
 
 /** Directory names never descended into (build output, deps, VCS). */
 const EXCLUDE_DIRS = new Set(['node_modules', 'dist', '.git', 'coverage']);

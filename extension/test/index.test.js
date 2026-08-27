@@ -30,14 +30,6 @@ describe('@forschungsgruppe-digital-health/terminology – core exports', () => 
     expect(typeof mod.TerminologyRegistry).toBe('function');
   });
 
-  it('should export type constants', async () => {
-    const mod = await import('../src/core/types.js');
-    expect(mod.ASPECTS).toBeDefined();
-    expect(mod.MODES).toBeDefined();
-    expect(mod.TRANSFORMS).toBeDefined();
-    expect(mod.CLINICAL_DOMAINS).toBeDefined();
-  });
-
   it('should export SnowstormAdapter', async () => {
     const mod = await import('../src/adapters/SnowstormAdapter.js');
     expect(mod.SnowstormAdapter).toBeDefined();
@@ -116,13 +108,10 @@ describe('@forschungsgruppe-digital-health/terminology – core exports', () => 
     expect(mod.DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG).toBeDefined();
     expect(mod.resolveTerminologyPropertiesConfig).toBeDefined();
 
-    const panelConfig = mod.resolveTerminologyPropertiesConfig({
-      showMappingTarget: false
-    });
+    const panelConfig = mod.resolveTerminologyPropertiesConfig({});
 
-    expect(panelConfig.showClinicalDomain).toBe(true);
+    expect(panelConfig).not.toHaveProperty('showClinicalDomain');
     expect(panelConfig.showAnnotations).toBe(true);
-    expect(panelConfig.showMappingTarget).toBeUndefined();
   });
 
   it('should export moddle descriptor as JSON', async () => {
@@ -130,6 +119,10 @@ describe('@forschungsgruppe-digital-health/terminology – core exports', () => 
     expect(descriptor.name).toBe('ClinicalTerminology');
     expect(descriptor.prefix).toBe('term');
     expect(descriptor.uri).toBe('https://clinical-bpmn.org/terminology/v1');
-    expect(descriptor.types.length).toBeGreaterThan(0);
+    expect(descriptor.types.map(type => type.name)).toEqual([
+      'Annotations',
+      'Annotation',
+      'Coding'
+    ]);
   });
 });

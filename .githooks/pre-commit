@@ -22,7 +22,7 @@ staged=$(git diff --cached --name-only --diff-filter=ACMR)
 
 status=0
 
-if printf '%s\n' "$staged" | grep -qE '\.bpmn$|packages/.*/src/moddle/.*\.json$'; then
+if printf '%s\n' "$staged" | grep -qE '\.bpmn$|extension/src/moddle/.*\.json$'; then
   echo "[pre-commit] BPMN conformance check…"
   npm run -s check:conformance || status=1
 fi

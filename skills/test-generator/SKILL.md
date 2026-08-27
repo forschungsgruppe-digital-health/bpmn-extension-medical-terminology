@@ -1,6 +1,6 @@
 ---
 name: test-generator
-description: Write Vitest characterization tests that pin the CURRENT behavior of a bpmn-js extension module (providers, registries, moddle/properties-panel glue, mapping helpers) before refactoring it. Use before any non-trivial refactor in packages/terminology, packages/fhir-mapping, or packages/demo. Detection/analysis only — captures behavior as tests; never "fixes" observed bugs and never edits the code under test.
+description: Write Vitest characterization tests that pin the CURRENT behavior of a bpmn-js extension module (providers, registries, and moddle/properties-panel glue) before refactoring it. Use before any non-trivial refactor in extension or demo. Detection/analysis only — captures behavior as tests; never "fixes" observed bugs and never edits the code under test.
 ---
 
 # Characterization tests before a refactor
@@ -17,7 +17,7 @@ is the only signal that the refactor preserved behavior.
 
 ESM monorepo, plain JavaScript + JSDoc (no TypeScript), tested with **Vitest**
 (`vitest run` per package; `npm test` runs all workspaces). Tests sit under
-`packages/<pkg>/test/**`, mirroring `packages/<pkg>/src/**`, and import the unit
+`extension/test/**`, mirroring `extension/src/**`, and import the unit
 under test by relative path (e.g. `../../src/providers/StaticProvider.js`).
 
 Typical units you will characterize:
@@ -26,10 +26,9 @@ Typical units you will characterize:
   `providers/*` (StaticProvider, FhirProvider, SnomedCtProvider, presets),
   `adapters/*` (FhirTerminologyAdapter, SnowstormAdapter),
   `services/AnnotationHelper`.
-- **fhir-mapping** — `services/MappingHelper`, `core/types`, the `fhirmap:` glue.
-- **moddle + properties-panel** — `src/moddle/*.json` descriptors and the
+- **moddle + properties-panel** — `extension/src/moddle/*.json` descriptors and the
   `properties-panel/` providers/entries that read and write the `<extensionElements>`
-  (`term:` / `fhirmap:`) onto BPMN business objects.
+  (`term:`) onto BPMN business objects.
 
 ## Approach
 
@@ -46,7 +45,7 @@ Typical units you will characterize:
    resolution/rejection). Async providers return Promises — `await` them.
 4. **Write the tests** with Vitest (`describe`/`it`/`expect`, `async` where the
    unit is async). One behavior per `it`; name each test after the behavior it pins.
-5. **Run until green:** `npm test --workspace=packages/<pkg>` (or `vitest run` in
+5. **Run until green:** `npm test --workspace=extension` (or `vitest run` in
    the package). Only once green is the module safe to hand back for refactoring.
 
 ## Hard guardrails
@@ -64,7 +63,7 @@ Typical units you will characterize:
 
 ## After the tests are green
 
-If the change touches a moddle descriptor (`packages/*/src/moddle/*.json`) or any
+If the change touches a moddle descriptor (`extension/src/moddle/*.json`) or any
 `.bpmn`, the conformance gate is the other half of the safety net — run it and read
 its report (`skills/bpmn-conformance/SKILL.md`):
 

@@ -1,6 +1,6 @@
 # BPMN Extension Medical Terminology
 
-[![CI](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/ci.yml/badge.svg)](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/ci.yml)
+[![CI](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml/badge.svg)](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
@@ -437,6 +437,12 @@ instance, a same-origin proxy, or another FHIR terminology server.
 | Document | Audience | Content |
 |---|---|---|
 | [README.md](README.md) | Users and integrators | Features, setup, usage, and discovery |
+| [Extending bpmn.io](docs/EXTENDING.md) | Developers and contributors | BPMN 2.0, bpmn.io, moddle, properties panel, linting, and validation primer |
+| [Terminology extension user story](docs/user-stories/terminology-extension-mvp.md) | Maintainers and stakeholders | Dated current scope, implemented capabilities, and planned follow-up |
+| [Architecture](docs/ARCHITECTURE.md) | Contributors and integrators | Complete arc42 architecture documentation |
+| [Architecture decisions](docs/adr/) | Maintainers and contributors | Accepted ADRs and ADR template |
+| [Schema](schema/README.md) | XML/tooling integrators | Generated terminology XSD and usage |
+| [Valid BPMN examples](examples/valid/README.md) | Contributors and users | Synthetic conformance fixtures |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Development, testing, branching, and publishing |
 | [AGENTS.md](AGENTS.md) | Automation and agents | Repository rules and quality gates |
 

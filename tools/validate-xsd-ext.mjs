@@ -16,12 +16,13 @@
 // never drift from the source of truth here.
 //
 // Requires: xmllint (libxml2-utils) and a prior `npm install`.
-import { readFileSync, writeFileSync, mkdtempSync, existsSync, globSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { generateXsd, extensionTags } from './moddle-to-xsd.mjs';
+import { resolveBpmnFiles } from './bpmn-files.mjs';
 
 const BPMN_NS = 'http://www.omg.org/spec/BPMN/20100524/MODEL';
 
@@ -41,7 +42,7 @@ try {
 }
 
 const descriptor = JSON.parse(
-  readFileSync(new URL('../extension/model/myExtension.json', import.meta.url), 'utf8')
+  readFileSync(new URL('../extension/src/moddle/clinical.json', import.meta.url), 'utf8')
 );
 const { xsd, warnings } = generateXsd(descriptor);
 warnings.forEach((w) => console.error(`warning: ${w}`));
@@ -101,7 +102,7 @@ if (probe) {
   console.log(`self-check OK: structural errors in <${descriptor.prefix}:${probe}> are rejected`);
 }
 
-const files = globSync('examples/**/*.bpmn');
+const files = resolveBpmnFiles();
 if (!files.length) {
   console.error('No example diagrams found under examples/.');
   process.exit(1);

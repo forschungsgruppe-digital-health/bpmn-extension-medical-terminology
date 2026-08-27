@@ -1,5 +1,5 @@
 {
-  "//": "Shared workspace settings. Treat .bpmn as XML and validate its BPMN core live against the OMG BPMN 2.0 XSD shipped with bpmn-moddle (mirrors `npm run check:xsd`). Requires the recommended extension redhat.vscode-xml. Note: extension content (term:/fhirmap:) is not validated by the XSD — that is the moddle roundtrip's job.",
+  "//": "Shared workspace settings. Treat .bpmn as XML and validate its BPMN core live against the OMG BPMN 2.0 XSD shipped with bpmn-moddle (mirrors `npm run check:xsd`). Requires the recommended extension redhat.vscode-xml. The term: extension XSD is checked by `npm run xsd:ext`; semantic rules such as required IDs remain in bpmnlint.",
   "files.associations": {
     "*.bpmn": "xml"
   },

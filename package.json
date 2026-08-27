@@ -1,6 +1,7 @@
 {
   "name": "clinical-bpmn",
   "private": true,
+  "type": "module",
   "description": "Semantic clinical terminology annotations for BPMN process models",
   "repository": {
     "type": "git",
@@ -16,17 +17,23 @@
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "lint:bpmn": "node tools/lint-bpmn.mjs",
+    "lint:valid": "bpmnlint \"examples/valid/**/*.bpmn\"",
+    "lint:invalid": "bpmnlint \"examples/invalid/**/*.bpmn\"",
     "check:roundtrip": "node tools/moddle-roundtrip.mjs",
     "check:xsd": "bash tools/validate-xsd.sh",
+    "xsd:gen": "node tools/moddle-to-xsd.mjs",
+    "xsd:gen:check": "node tools/moddle-to-xsd.mjs --check",
+    "xsd:ext": "node tools/validate-xsd-ext.mjs",
     "check:packages": "node tools/check-package-conventions.mjs",
-    "check:conformance": "npm run lint:bpmn && npm run check:roundtrip && npm run check:xsd",
+    "check:conformance": "npm run lint:bpmn && npm run check:roundtrip && npm run xsd:gen:check && npm run xsd:ext && npm run check:xsd",
     "verify": "npm run check:packages && npm run check:conformance && npm test",
     "hooks:install": "node tools/setup-hooks.mjs",
     "prepare": "node tools/setup-hooks.mjs"
   },
   "workspaces": [
     "extension",
-    "demo"
+    "demo",
+    "extension/lint/bpmnlint-plugin-terminology"
   ],
   "devDependencies": {
     "@testing-library/preact": "^3.2.4",

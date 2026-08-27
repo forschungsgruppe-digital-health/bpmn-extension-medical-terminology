@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 /**
- * Structural BPMN 2.0 conformance gate (BLOCKING).
+ * BPMN 2.0 and terminology conformance gate (BLOCKING).
  *
  * Runs `bpmnlint` (the bpmn.io linter) over the project's `.bpmn` files using the
- * repo-level `.bpmnlintrc` (extends `bpmnlint:recommended` + `bpmnlint:correctness`).
- * bpmnlint's job here is the BPMN *structure/correctness* — disconnected nodes,
- * missing start/end events, implicit splits, dangling references, etc.
- *
- * Correctness of the clinical `term:` extension DATA is intentionally
- * NOT this tool's concern — that is checked by `tools/moddle-roundtrip.mjs`. See
- * `skills/bpmn-conformance/SKILL.md` for the division of labour.
+ * repo-level `.bpmnlintrc` (standard BPMN rules plus the terminology plugin).
+ * bpmnlint checks BPMN structure/correctness — disconnected nodes, missing
+ * start/end events, implicit splits, dangling references, etc. — and the
+ * configured terminology rules. Extension serialization is checked separately
+ * by `tools/moddle-roundtrip.mjs`. See `skills/bpmn-conformance/SKILL.md` for
+ * the division of labour.
  *
  * Usage: node tools/lint-bpmn.mjs [file.bpmn ...]   (no args -> discover all)
  * Exit:  0 = clean, non-zero = lint errors (or bpmnlint failure).

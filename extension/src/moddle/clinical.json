@@ -2,26 +2,11 @@
   "name": "ClinicalTerminology",
   "uri": "https://clinical-bpmn.org/terminology/v1",
   "prefix": "term",
+  "version": "0.1.0",
   "xml": {
     "tagAlias": "lowerCase"
   },
   "types": [
-    {
-      "name": "Annotatable",
-      "extends": [
-        "bpmn:FlowNode",
-        "bpmn:DataObjectReference",
-        "bpmn:DataStoreReference",
-        "bpmn:MessageFlow"
-      ],
-      "properties": [
-        {
-          "name": "clinicalDomain",
-          "isAttr": true,
-          "type": "String"
-        }
-      ]
-    },
     {
       "name": "Annotations",
       "superClass": [ "Element" ],

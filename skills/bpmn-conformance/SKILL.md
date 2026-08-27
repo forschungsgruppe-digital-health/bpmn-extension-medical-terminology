@@ -1,6 +1,6 @@
 ---
 name: bpmn-conformance
-description: Validate a .bpmn file or a clinical extension change for BPMN 2.0 conformance before commit/PR. Use when editing files under examples/ or docs/, the moddle descriptors (packages/*/src/moddle/*.json), or any .bpmn. Runs bpmnlint (structure), the moddle roundtrip (extension data), and XSD core validation, then explains the results.
+description: Validate a .bpmn file or a clinical extension change for BPMN 2.0 conformance before commit/PR. Use when editing files under examples/ or docs/, the moddle descriptors (extension/src/moddle/*.json), or any .bpmn. Runs bpmnlint (structure and configured terminology rules), the moddle roundtrip (extension data), and XSD core validation, then explains the results.
 ---
 
 # BPMN conformance
@@ -19,8 +19,8 @@ npm run check:conformance      # bpmnlint + moddle roundtrip + XSD core (the gat
 Or individually:
 
 ```bash
-npm run lint:bpmn              # structural BPMN 2.0 (bpmnlint recommended + correctness)
-npm run check:roundtrip        # lossless/stable serialization of term:/fhirmap: data
+npm run lint:bpmn              # BPMN 2.0 plus configured terminology rules
+npm run check:roundtrip        # lossless/stable serialization of term: data
 node tools/moddle-roundtrip.mjs --strict   # promote roundtrip warnings to failures
 npm run check:xsd              # BPMN-core XSD validation (informational)
 bash tools/validate-xsd.sh --strict        # fail on a schema-invalid core
@@ -33,8 +33,8 @@ Scope to specific files by appending paths, e.g.
 
 | Layer | Tool | Checks | Blocking? |
 |---|---|---|---|
-| Structure | `bpmnlint` | disconnected nodes, start/end events, implicit splits, dangling refs | **yes** |
-| Extension data | moddle roundtrip | `term:`/`fhirmap:` content survives parse+serialize, stable output | **yes** on instability; warnings non-fatal (use `--strict`) |
+| Structure and extension rules | `bpmnlint` | disconnected nodes, start/end events, implicit splits, dangling refs, and configured `term:` rules | **yes** |
+| Extension data | moddle roundtrip | `term:` content survives parse+serialize, stable output | **yes** on instability; warnings non-fatal (use `--strict`) |
 | Standard core | XSD (`xmllint`) | BPMN core matches OMG BPMN20.xsd | **no** (informational) |
 
 ## Interpreting results

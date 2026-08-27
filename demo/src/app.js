@@ -96,7 +96,6 @@ async function bootstrap() {
 
     additionalModules.push(
       createTerminologyPropertiesPanelModule({
-        showClinicalDomain: DEMO_FEATURES.showTerminologyClinicalDomain,
         showAnnotations: DEMO_FEATURES.showTerminologyAnnotations
       }),
       terminologyServicesModule

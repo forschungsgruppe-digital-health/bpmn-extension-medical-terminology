@@ -187,7 +187,6 @@ describe('AnnotationHelper', () => {
 
       expect(annotation.$type).toBe('term:Annotation');
       expect(annotation.id).toBe('term-ann-1');
-      expect(annotation.mode).toBeUndefined();
       expect(annotation.text).toBe('CT-Thorax mit Kontrastmittel');
       expect(getAnnotations(bo)).toHaveLength(1);
     });
@@ -196,7 +195,6 @@ describe('AnnotationHelper', () => {
       const bo = createBusinessObject();
       const annotation = addAnnotation(bo, moddle, {});
       expect(annotation.id).toBe('term-ann-1');
-      expect(annotation.mode).toBeUndefined();
     });
 
     it('should keep a manually provided ID', () => {

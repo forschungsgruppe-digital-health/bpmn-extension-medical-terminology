@@ -13,8 +13,7 @@ allowed-tools: Task, Read, Grep, Glob, Write, Bash
 > source, moddle descriptors, or `package.json`.
 
 Scope: the npm-workspaces ESM monorepo of bpmn-js extension libraries —
-`packages/terminology` (`term:`), `packages/fhir-mapping` (`fhirmap:`) and
-`packages/demo`, plus the conformance tooling under `tools/`. Plain JS + JSDoc
+`extension` (`term:`) and `demo`, plus the conformance tooling under `tools/`. Plain JS + JSDoc
 (no TypeScript), Vitest. See `AGENTS.md`.
 
 ## Steps
@@ -25,8 +24,7 @@ Scope: the npm-workspaces ESM monorepo of bpmn-js extension libraries —
 2. Launch the `feature-inventarist` subagent for a full repository scan. It
    returns a Feature Inventory Matrix as a Markdown message (it does not write a
    file) using stable Feature IDs of the form `F-<PKG>-<NAME>` where `<PKG>` is
-   `TERM`, `FHIRMAP`, `VUE`, or `TOOL` (e.g. `F-TERM-SNOMED-PROVIDER`,
-   `F-FHIRMAP-MODDLE`, `F-VUE-USE-TERMINOLOGY`, `F-TOOL-ROUNDTRIP`).
+   `TERM` or `TOOL` (e.g. `F-TERM-SNOMED-PROVIDER`, `F-TOOL-ROUNDTRIP`).
 3. Diff the new scan against the previous snapshot by Feature ID: which features
    are new, changed, or removed?
 4. For **NEW** features: add as `[PROPOSED]` rows (preliminary maturity only).

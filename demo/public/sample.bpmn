@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Definitions_1" targetNamespace="https://clinical-bpmn.org/demo">
   <bpmn2:process id="Process_LungCaMin" name="Lung Cancer Treatment Decision" isExecutable="false">
-    <bpmn2:startEvent id="StartEvent_1" name="Patient with suspected lung cancer" term:clinicalDomain="diagnostics">
+    <bpmn2:startEvent id="StartEvent_1" name="Patient with suspected lung cancer">
       <bpmn2:outgoing>Flow_Start_Staging</bpmn2:outgoing>
     </bpmn2:startEvent>
-    <bpmn2:dataObjectReference id="DataObj_MRI" name="MRI Scan Report" dataObjectRef="DataObject_0aq4k7t" term:clinicalDomain="diagnostics">
+    <bpmn2:dataObjectReference id="DataObj_MRI" name="MRI Scan Report" dataObjectRef="DataObject_0aq4k7t">
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-1" text="MRI scan report of the thorax as input document for TNM staging">
@@ -18,7 +18,7 @@
       </bpmn2:extensionElements>
     </bpmn2:dataObjectReference>
     <bpmn2:dataObject id="DataObject_0aq4k7t" />
-    <bpmn2:task id="Task_Staging" name="Perform TNM Staging" term:clinicalDomain="staging">
+    <bpmn2:task id="Task_Staging" name="Perform TNM Staging">
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-3" text="Clinical TNM staging to determine tumor stage">
@@ -42,7 +42,7 @@
       <bpmn2:outgoing>Flow_GwSplit_Chemo</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="Flow_Staging_GwSplit" sourceRef="Task_Staging" targetRef="Gateway_Split" />
-    <bpmn2:task id="Task_Surgery" name="Surgical Resection" term:clinicalDomain="therapy">
+    <bpmn2:task id="Task_Surgery" name="Surgical Resection">
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-4" text="Lobectomy or pneumonectomy for operable lung cancer Stage I-II">
@@ -55,7 +55,7 @@
       <bpmn2:outgoing>Flow_Surgery_GwJoin</bpmn2:outgoing>
     </bpmn2:task>
     <bpmn2:sequenceFlow id="Flow_GwSplit_Surgery" sourceRef="Gateway_Split" targetRef="Task_Surgery" />
-    <bpmn2:task id="Task_Chemo" name="Systemic Chemotherapy" term:clinicalDomain="therapy">
+    <bpmn2:task id="Task_Chemo" name="Systemic Chemotherapy">
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-5" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">
@@ -75,7 +75,7 @@
     </bpmn2:exclusiveGateway>
     <bpmn2:sequenceFlow id="Flow_Chemo_GwJoin" sourceRef="Task_Chemo" targetRef="Gateway_Join" />
     <bpmn2:sequenceFlow id="Flow_Surgery_GwJoin" sourceRef="Task_Surgery" targetRef="Gateway_Join" />
-    <bpmn2:dataObjectReference id="DataObj_DischargeLetter" name="Discharge Letter" dataObjectRef="DataObject_0228dri" term:clinicalDomain="documentation">
+    <bpmn2:dataObjectReference id="DataObj_DischargeLetter" name="Discharge Letter" dataObjectRef="DataObject_0228dri">
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-6" text="Medical discharge report upon completion of follow-up">
@@ -89,7 +89,7 @@
       </bpmn2:extensionElements>
     </bpmn2:dataObjectReference>
     <bpmn2:dataObject id="DataObject_0228dri" />
-    <bpmn2:task id="Task_Followup" name="Follow-up Assessment" term:clinicalDomain="follow-up">
+    <bpmn2:task id="Task_Followup" name="Follow-up Assessment">
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-8" text="Structured follow-up assessment with imaging surveillance and lab monitoring">
