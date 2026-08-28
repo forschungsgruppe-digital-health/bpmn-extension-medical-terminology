@@ -33,5 +33,5 @@
     }
   ],
   "include-component-in-tag": true,
-  "separate-pull-requests": false
+  "separate-pull-requests": true
 }
