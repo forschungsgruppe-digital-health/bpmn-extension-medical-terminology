@@ -1,26 +1,12 @@
 import { createPackageCollectionProvider } from '../../services/TerminologyServices.js';
 
-import iheXdsClassCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDSclassCode.json';
-import iheXdsTypeCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDStypeCode.json';
+import iheXdsClassCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDSclassCode.json' with { type: 'json' };
+import iheXdsTypeCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDStypeCode.json' with { type: 'json' };
 import ihePackageMetadata from 'de.ihe-d.terminology/package.json' with { type: 'json' };
-import kdlCodeSystem from 'dvmd.kdl.r4/codesystem-kdl.xml.json';
+import kdlCodeSystem from 'dvmd.kdl.r4/codesystem-kdl.xml.json' with { type: 'json' };
 import kdlPackageMetadata from 'dvmd.kdl.r4/package.json' with { type: 'json' };
 import hl7PackageMetadata from 'hl7.terminology.r4/package.json' with { type: 'json' };
-
-const DEFAULT_HL7_CODE_SYSTEM_MODULES = {
-  ...import.meta.glob(
-    '../../../node_modules/hl7.terminology.r4/CodeSystem-*.json',
-    { eager: true, import: 'default' }
-  ),
-  ...import.meta.glob(
-    '../../../../node_modules/hl7.terminology.r4/CodeSystem-*.json',
-    { eager: true, import: 'default' }
-  ),
-  ...import.meta.glob(
-    '../../../../../../node_modules/hl7.terminology.r4/CodeSystem-*.json',
-    { eager: true, import: 'default' }
-  )
-};
+import hl7CodeSystems from './hl7-code-systems.json' with { type: 'json' };
 
 const DEFAULT_PACKAGE_METADATA = Object.freeze({
   [hl7PackageMetadata.name]: hl7PackageMetadata,
@@ -80,19 +66,8 @@ function getPackageMetadata(preset, config) {
   return metadata;
 }
 
-export function loadHl7TerminologyR4CodeSystemsFromGlob(globFn) {
-  if (typeof globFn !== 'function') {
-    return [];
-  }
-
-  return collectUniqueCodeSystems(Object.values(globFn(
-    'hl7.terminology.r4/CodeSystem-*.json',
-    { eager: true, import: 'default' }
-  ) || {}));
-}
-
 export function loadHl7TerminologyR4CodeSystems() {
-  return collectUniqueCodeSystems(Object.values(DEFAULT_HL7_CODE_SYSTEM_MODULES));
+  return collectUniqueCodeSystems(hl7CodeSystems);
 }
 
 const PACKAGE_PROVIDER_PRESETS = Object.freeze({

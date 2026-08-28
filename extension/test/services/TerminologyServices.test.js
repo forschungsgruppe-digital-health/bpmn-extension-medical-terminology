@@ -194,6 +194,36 @@ describe('TerminologyServices', () => {
     });
   });
 
+  it('should warn when explicitly requested package discovery finds no packages', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      createDefaultPackageProviders({
+        packageAutoDiscovery: true
+      });
+
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('No terminology packages were discovered')
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('should not warn when package discovery is disabled', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      createDefaultPackageProviders({
+        packageAutoDiscovery: false
+      });
+
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
   it('should combine package metadata with a component label for bundled providers', () => {
     const providers = createDefaultPackageProviders({
       packageAutoDiscovery: false

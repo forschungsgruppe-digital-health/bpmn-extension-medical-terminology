@@ -69,7 +69,9 @@ canonical `CodeSystem.url` values. A package can expose multiple CodeSystems;
 the service factory creates an aggregate provider while preserving each
 CodeSystem URL in selected codings. `exclude` takes precedence over `include`.
 The default extension also bundles package-backed presets for common HL7,
-IHE XDS, and KDL terminology resources.
+IHE XDS, and KDL terminology resources. HL7's resource list is generated into
+one JSON resource and loaded with a standard ESM import; Vite-only discovery is
+reserved for additional packages.
 
 ## Separation of concerns and design principles
 

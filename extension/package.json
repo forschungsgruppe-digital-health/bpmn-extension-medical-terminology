@@ -1,7 +1,7 @@
 {
   "name": "@forschungsgruppe-digital-health/terminology",
   "version": "0.1.0",
-  "description": "Extensible semantic terminology annotations for BPMN process models",
+  "description": "Extensible medical terminology for BPMN process models",
   "type": "module",
   "scripts": {
     "test": "vitest run"
@@ -14,8 +14,6 @@
   "dependencies": {
     "de.ihe-d.terminology": "https://packages.simplifier.net/de.ihe-d.terminology/3.0.1",
     "dvmd.kdl.r4": "https://packages.simplifier.net/dvmd.kdl.r4/2025.0.1",
-    "hl7.fhir.r4.core": "https://packages.simplifier.net/hl7.fhir.r4.core/4.0.1",
-    "hl7.fhir.uv.extensions.r4": "https://packages.simplifier.net/hl7.fhir.uv.extensions.r4/5.2.0",
     "hl7.terminology.r4": "https://packages.simplifier.net/hl7.terminology.r4/7.1.0"
   },
   "exports": {
@@ -34,20 +32,60 @@
   },
   "keywords": [
     "bpmn",
+    "bpmn-js",
+    "moddle",
+    "healthcare",
+    "clinical",
     "terminology",
+    "interoperability",
     "snomed",
     "loinc",
     "icd-10",
     "fhir",
-    "clinical"
+    "hl7",
+    "mii",
+    "medizininformatik-initiative"
   ],
-  "license": "Apache-2.0",
+  "license": "MIT",
+  "author": {
+    "name": "Marcel Susky",
+    "url": "https://github.com/msusky"
+  },
+  "contributors": [
+    {
+      "name": "Jost Hickmann",
+      "url": "https://github.com/JostHickmann"
+    }
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git",
     "directory": "extension"
   },
-  "homepage": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology#readme",
+  "bugs": {
+    "url": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues"
+  },
+  "homepage": "https://tu-dresden.de/bu/wirtschaft/winf/digital-health",
+  "funding": [
+    {
+      "type": "grant",
+      "url": "https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A"
+    },
+    {
+      "type": "grant",
+      "url": "https://mihubx.de/mihub/"
+    }
+  ],
+  "x-funding": [
+    {
+      "funderName": "Bundesministerium für Forschung, Technologie und Raumfahrt (BMFTR)",
+      "funderIdentifier": "https://ror.org/04pz7b180",
+      "funderIdentifierType": "ROR",
+      "awardNumber": "01ZZ2506A",
+      "awardTitle": "MiHUB – Medical Informatics Hub – Teilprojekt TU Dresden: Projektkoordination und Infrastruktur",
+      "awardURI": "https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A"
+    }
+  ],
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   }

@@ -2,7 +2,7 @@
   "name": "clinical-bpmn",
   "private": true,
   "type": "module",
-  "description": "Semantic clinical terminology annotations for BPMN process models",
+  "description": "Semantic medical terminology for BPMN process models",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git"
@@ -23,10 +23,12 @@
     "check:xsd": "bash tools/validate-xsd.sh",
     "xsd:gen": "node tools/moddle-to-xsd.mjs",
     "xsd:gen:check": "node tools/moddle-to-xsd.mjs --check",
+    "generate:hl7": "node tools/generate-hl7-code-systems.mjs",
+    "generate:hl7:check": "node tools/generate-hl7-code-systems.mjs --check",
     "xsd:ext": "node tools/validate-xsd-ext.mjs",
     "check:packages": "node tools/check-package-conventions.mjs",
     "check:conformance": "npm run lint:bpmn && npm run check:roundtrip && npm run xsd:gen:check && npm run xsd:ext && npm run check:xsd",
-    "verify": "npm run check:packages && npm run check:conformance && npm test",
+    "verify": "npm run check:packages && npm run generate:hl7:check && npm run check:conformance && npm test",
     "hooks:install": "node tools/setup-hooks.mjs",
     "prepare": "node tools/setup-hooks.mjs"
   },
@@ -44,7 +46,7 @@
     "jsdom": "^26.1.0",
     "vitest": "^3.1.1"
   },
-  "license": "Apache-2.0",
+  "license": "MIT",
   "engines": {
     "node": ">=22"
   }

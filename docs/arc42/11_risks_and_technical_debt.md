@@ -17,7 +17,7 @@ prioritization require maintainer review._
 |---|---|---|---|
 | R-4 | Default SNOMED and FHIR providers depend on remote endpoints | `extension/src/config/terminology-config.js`; adapters | Define host-level proxy, authentication, timeout, retry, and offline behavior |
 | R-5 | Browser CORS and remote availability can prevent searches | README and adapter transport design | Use a same-origin proxy or consumer-supplied `fetchFn`; document deployment expectations |
-| R-6 | Bundled FHIR package resources increase application size | ADR-0002; package dependencies | Revisit lazy loading or curated subsets without breaking zero-configuration defaults |
+| R-6 | Eagerly bundled FHIR package resources increase startup and application size | ADR-0002; generated HL7 JSON resource | Revisit lazy loading or curated subsets without breaking zero-configuration defaults |
 | R-7 | External terminology licensing and version selection are deployment concerns | package-backed FHIR resources and provider configuration | Maintain explicit package/version inventories and consumer governance |
 
 ## 11.3 Test and maintenance debt
@@ -27,7 +27,7 @@ prioritization require maintainer review._
 | R-8 | The private demo has no dedicated unit-test script | `demo/package.json` | Keep integration smoke coverage in the build or add focused tests if demo behavior grows |
 | R-9 | The package-convention tool intentionally checks only `extension/` | `tools/check-package-conventions.mjs` | Update the tool if another workspace becomes publishable |
 | R-10 | Raw ESM publishing delegates compatibility to consumer bundlers and Node versions | `extension/package.json`; no build script | Keep peer/runtime support documented and test representative host versions |
-| R-11 | Package discovery depends on bundler-visible JSON resources | `extension/src/vite/plugin.js` | Keep explicit package registration and clear missing-resource errors as supported paths |
+| R-11 | Optional package discovery depends on bundler-visible JSON resources | `extension/src/vite/plugin.js`; ADR-0002 | Keep explicit package registration and clear missing-resource errors as supported paths; bundled defaults must not use this path |
 
 ## 11.4 Supply-chain and data risks
 

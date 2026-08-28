@@ -96,28 +96,6 @@ export class TerminologyRegistry {
   }
 
   /**
-   * Search across ALL registered providers simultaneously.
-   * @deprecated
-   * @param {string} term
-   * @param {import('./types').SearchOptions} [options]
-   * @returns {Promise<Map<string, import('./types').SearchResult>>}
-   */
-  async searchAll(term, options) {
-    const results = new Map();
-    const searches = [...this._providers.entries()].map(
-      async ([id, provider]) => {
-        try {
-          results.set(id, await provider.search(term, options));
-        } catch {
-          results.set(id, { concepts: [], total: 0 });
-        }
-      }
-    );
-    await Promise.allSettled(searches);
-    return results;
-  }
-
-  /**
    * Look up a single concept.
    * @param {string} code
    * @param {string} providerId

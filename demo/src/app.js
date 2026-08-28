@@ -14,9 +14,6 @@ import { DEMO_FEATURES } from './demo-config.js';
 import {
   createDemoTerminologyServices
 } from './terminology-config.js';
-import discoveredPackages, {
-  packageMetadata
-} from 'virtual:fdh-terminology-packages';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
@@ -27,9 +24,6 @@ import './styles.css';
 
 import annotatedBpmn from '../../examples/valid/lung-cancer-staging-annotated.bpmn?raw';
 import plainBpmn from '../../examples/valid/lung-cancer-staging.bpmn?raw';
-
-globalThis.__FDH_TERMINOLOGY_PACKAGES__ = discoveredPackages;
-globalThis.__FDH_TERMINOLOGY_PACKAGE_METADATA__ = packageMetadata;
 
 let modeler;
 
@@ -136,7 +130,7 @@ async function bootstrap() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'clinical-annotated.bpmn';
+      a.download = 'medical-terminology.bpmn';
       a.click();
       URL.revokeObjectURL(url);
     });

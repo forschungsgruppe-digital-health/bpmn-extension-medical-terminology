@@ -12,12 +12,12 @@ import {
 import { DEFAULT_PACKAGE_METADATA_GLOBAL_KEY } from '../services/PackageMetadata.js';
 import { createTerminologyModule, createTerminologyServices } from '../services/TerminologyServices.js';
 
-export const DEFAULT_SERVER_CONFIG = Object.freeze({
+const DEFAULT_SERVER_CONFIG = Object.freeze({
   fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
   snowstormBaseUrl: 'https://snowstorm.snomedtools.org/snowstorm/snomed-ct'
 });
 
-export const DEFAULT_SNOMED_CONFIG = Object.freeze({
+const DEFAULT_SNOMED_CONFIG = Object.freeze({
   id: 'snomed-ct',
   displayName: 'SNOMED CT',
   systemUri: 'http://snomed.info/sct',
@@ -27,7 +27,7 @@ export const DEFAULT_SNOMED_CONFIG = Object.freeze({
   languageStrategy: 'header'
 });
 
-export const DEFAULT_FHIR_PROVIDER_CONFIGS = Object.freeze([
+const DEFAULT_FHIR_PROVIDER_CONFIGS = Object.freeze([
   {
     id: 'loinc',
     displayName: 'LOINC',
@@ -175,6 +175,10 @@ function getCoveredSystemUris(providers) {
 }
 
 export function createDefaultPackageProviders(config = {}) {
+  const autoDiscoveryRequested = Object.prototype.hasOwnProperty.call(
+    config,
+    'packageAutoDiscovery'
+  ) && config.packageAutoDiscovery !== false;
   const {
     packageProviderOptions = {},
     additionalPackageProviders = [],
@@ -194,7 +198,7 @@ export function createDefaultPackageProviders(config = {}) {
     ? (
       autoDiscoveryOptions.packages
       || globalThis?.[autoDiscoveryOptions.globalKey || '__FDH_TERMINOLOGY_PACKAGES__']
-      || collectPackageCodeSystemsFromGlob(autoDiscoveryOptions.globFn || import.meta.glob)
+      || collectPackageCodeSystemsFromGlob(autoDiscoveryOptions.globFn)
     )
     : null;
   const autoDiscoveryMetadata = autoDiscoveryOptions
@@ -216,6 +220,25 @@ export function createDefaultPackageProviders(config = {}) {
         )
         : (autoDiscoveryPackages || {})
     );
+  const packageDiscoveryRequested = Boolean(
+    packageDiscovery?.enabled
+    || packageDiscovery?.packages
+    || packageDiscovery?.packageNames?.length
+    || Object.keys(packageDiscovery?.modules || {}).length
+  );
+
+  if (
+    (autoDiscoveryRequested || packageDiscoveryRequested)
+    && Object.keys(packageCodeSystems || {}).length === 0
+  ) {
+    console.warn(
+      '[terminology] No terminology packages were discovered for automatic package discovery. ' +
+      'If additional package-backed providers are expected, configure `packageDiscovery.packages`, ' +
+      'provide `packageAutoDiscovery.globFn`, or expose ' +
+      '`globalThis.__FDH_TERMINOLOGY_PACKAGES__`. Built-in providers remain available.'
+    );
+  }
+
   const packageMetadata = packageDiscovery?.metadata
     || autoDiscoveryMetadata
     || configuredPackageMetadata;

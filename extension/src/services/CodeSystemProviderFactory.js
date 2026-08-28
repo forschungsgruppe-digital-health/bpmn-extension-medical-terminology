@@ -8,7 +8,7 @@ function slugify(value) {
     .replace(/^-+|-+$/g, '');
 }
 
-export function getCodeSystemDisplayName(codeSystem) {
+function getCodeSystemDisplayName(codeSystem) {
   return codeSystem.title?.trim()
     || codeSystem.name?.trim()
     || codeSystem.id?.trim()

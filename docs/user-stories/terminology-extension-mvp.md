@@ -79,7 +79,7 @@ element,
 
 **Acceptance criteria:**
 
-- The “Clinical annotations” group appears only for the provider's supported
+- The “Medical terminology” group appears only for the provider's supported
   target types.
 - The group can show the annotation-list entry according to
   `TerminologyPropertiesPanelModule` configuration.

@@ -1,5 +1,5 @@
 /**
- * Core type definitions and constants for the terminology package.
+ * Core type definitions for the terminology package.
  *
  * FHIR R4 types from @types/fhir are used for JSDoc annotations.
  * When migrating to R5, update the fhir4.* references to fhir5.*.

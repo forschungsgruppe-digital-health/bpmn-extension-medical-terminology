@@ -1,7 +1,7 @@
 # Security Policy
 
-> **Status: research prototype, under active development — not for production use** (see the
-> [README status banner](README.md)). These libraries are intended for **synthetic data only**;
+> **Status: research prototype, under active development — not for production use.** These
+> libraries are intended for **synthetic data only**;
 > never send real patient data to this project or to its maintainers.
 
 ## Supported versions
@@ -17,7 +17,7 @@ Please report security issues **privately** — do **not** open a public issue f
 vulnerability.
 
 - **Preferred:** open a private
-  [GitHub security advisory](https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics/security/advisories/new)
+  [GitHub security advisory](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/security/advisories/new)
   ("Report a vulnerability").
 - The maintainers (TU Dresden / Forschungsgruppe Digital Health) aim to **acknowledge within 5
   working days** and to share an assessment and remediation plan within **30 days**.
@@ -26,11 +26,11 @@ vulnerability.
 
 ## Scope
 
-**In scope:** the publishable `extension` package, the private `demo` package, the
-moddle parse/serialize path, and the build/release/CI
+**In scope:** the publishable `extension` package, the moddle parse/serialize path,
+and the build/release/CI
 configuration (`.github/workflows/`, `release-please`).
 
-**Out of scope:** the demo app under `examples/`, documentation-only issues, and anything that would
+**Out of scope:** the private demo app under `demo/`, documentation-only issues, and anything that would
 require committing real patient data (prohibited — see below). General code-quality and lint findings
 go through normal issues/PRs, not this process.
 

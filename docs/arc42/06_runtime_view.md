@@ -94,12 +94,15 @@ resource's canonical URL in returned concepts.
 
 ## Scenario 5 — Discover package-backed CodeSystems
 
-At build time, the Vite plugin finds selected `CodeSystem` JSON resources,
-filters them by exact canonical `CodeSystem.url`, and exposes a virtual module
-and optional global. The default service factory groups resources by package,
-creates one provider per package, and combines those providers with the
-built-in defaults. Explicit `include`/`exclude` settings fail fast when a
-configured canonical URL does not exist.
+The bundled HL7 preset imports its generated CodeSystem module directly and
+does not depend on Vite APIs. The Vite plugin remains an optional build-time
+path for additional consumer-selected packages: it finds selected
+`CodeSystem` JSON resources, filters them by exact canonical `CodeSystem.url`,
+and exposes a virtual module and optional global. The default service factory
+groups discovered resources by package, creates one provider per package, and
+combines those providers with the built-in defaults. Explicit
+`include`/`exclude` settings fail fast when a configured canonical URL does not
+exist.
 
 ## Error and edge behavior
 

@@ -27,6 +27,7 @@ npm test
 npm run build --workspace=demo
 npm run check:conformance
 npm run check:packages
+npm run generate:hl7:check
 npm run verify
 npm run dev
 ```
@@ -34,6 +35,8 @@ npm run dev
 `npm run verify` is the required local quality gate. BPMN-core XSD validation
 is informational because the standard schema does not validate foreign
 extension content; moddle roundtrip stability and BPMN linting are blocking.
+When the `hl7.terminology.r4` dependency changes, regenerate the checked-in
+HL7 CodeSystem resource with `npm run generate:hl7`.
 
 ## Terminology extension rules
 

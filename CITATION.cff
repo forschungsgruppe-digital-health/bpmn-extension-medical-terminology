@@ -1,0 +1,51 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+title: "bpmn-extension-medical-terminology"
+abstract: >-
+  Extension for bpmn.io to annotate BPMN process models using medical
+  terminology (e.g. SNOMED CT, LOINC).
+type: software
+authors:
+  - family-names: "Susky"
+    given-names: "Marcel"
+    affiliation: "Technische Universität Dresden, Forschungsgruppe Digital Health"
+    website: "https://github.com/msusky"
+  - family-names: "Hickmann"
+    given-names: "Jost"
+    affiliation: "Technische Universität Dresden, Forschungsgruppe Digital Health"
+    website: "https://github.com/JostHickmann"
+license: MIT
+repository-code: "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology"
+url: "https://tu-dresden.de/bu/wirtschaft/winf/digital-health"
+version: "0.1.0"
+keywords:
+  - "BPMN"
+  - "bpmn-js"
+  - "moddle"
+  - "healthcare"
+  - "clinical processes"
+  - "medical terminology"
+  - "interoperability"
+  - "SNOMED CT"
+  - "LOINC"
+  - "ICD-10"
+  - "FHIR"
+  - "HL7"
+  - "MII"
+  - "Medizininformatik-Initiative"
+references:
+  - type: grant
+    title: "MiHUB – Medical Informatics Hub – Teilprojekt TU Dresden: Projektkoordination und Infrastruktur"
+    number: "01ZZ2506A"
+    authors:
+      - name: "Bundesministerium für Forschung, Technologie und Raumfahrt (BMFTR)"
+        website: "https://www.bmftr.bund.de"
+    institution:
+      name: "Technische Universität Dresden"
+      website: "https://tu-dresden.de"
+    url: "https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A"
+    notes: >-
+      Verbundvorhaben "MiHUB – Digitaler FortschrittsHub Gesundheit" der
+      Medizininformatik-Initiative, Laufzeit 2026-01-01 bis 2029-12-31,
+      Projektträger DLR (PT-DLR).
+    year: 2026

@@ -403,7 +403,7 @@ ExampleProvider.$inject = [ 'propertiesPanel' ];
 
 In this repository,
 [`TerminologyPropertiesProvider.js`](../extension/src/properties-panel/TerminologyPropertiesProvider.js)
-adds the “Clinical annotations” group. Its entries edit
+adds the “Medical terminology” group. Its entries edit
 the `term:Annotations` collection through `modeling.updateModdleProperties`.
 The panel currently targets tasks,
 subprocesses, exclusive gateways, data references, and start, end, and

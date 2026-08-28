@@ -1,11 +1,11 @@
 # BPMN Extension Medical Terminology
 
 [![CI](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml/badge.svg)](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-`@forschungsgruppe-digital-health/terminology` adds machine-readable clinical
-terminology annotations to BPMN process models. It provides a `term:`
+`@forschungsgruppe-digital-health/terminology` adds machine-readable medical
+terminology to BPMN process models. It provides a `term:`
 moddle extension for XML serialization, a bpmn-js properties-panel provider,
 terminology services, and a Vite plugin for discovering terminology packages.
 
@@ -14,8 +14,34 @@ tools that do not understand the extension preserve the model unchanged.
 
 > **Live Demo:** [bpmn-extension-medical-terminology](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
 
+## Funding
+
+This work is part of **MiHUB – Medical Informatics Hub**, a Digital Progress Hub
+(Digitaler FortschrittsHub Gesundheit) of the German Medical Informatics
+Initiative (MII).
+
+MiHUB is funded by the German Federal Ministry of Research, Technology and Space
+(Bundesministerium für Forschung, Technologie und Raumfahrt, BMFTR) under grant
+number **01ZZ2506A** (01/2026 – 12/2029). The responsibility for the content of
+this publication lies with the authors.
+
+- Project: <https://mihubx.de/mihub/>
+- Funding record: [Förderkatalog des Bundes, FKZ 01ZZ2506A](https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A)
+- Funder: BMFTR ([ROR 04pz7b180](https://ror.org/04pz7b180))
+
+<details>
+<summary>Förderhinweis (deutsch)</summary>
+
+Das diesem Repository zugrunde liegende Vorhaben wurde mit Mitteln des
+Bundesministeriums für Forschung, Technologie und Raumfahrt (BMFTR) unter dem
+Förderkennzeichen 01ZZ2506A gefördert. Die Verantwortung für den Inhalt dieser
+Veröffentlichung liegt bei den Autor:innen.
+
+</details>
+
 ## Table of Contents
 
+- [Funding](#funding)
 - [Motivation](#motivation)
 - [Features](#features)
 - [Package](#package)
@@ -26,6 +52,7 @@ tools that do not understand the extension preserve the model unchanged.
 - [Demo](#demo)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
+- [Citation](#citation)
 - [License](#license)
 
 ## Motivation
@@ -131,7 +158,7 @@ await terminologyServices.terminologyProviderLoader
   .ensureProvider('http://terminology.hl7.org/CodeSystem/v3-ActCode');
 
 const results = await terminologyServices.terminologyRegistry
-  .searchAll('pneumonia');
+  .search('pneumonia', 'snomed-ct');
 
 const TerminologyServicesModule =
   createTerminologyModule(terminologyServices);
@@ -318,11 +345,23 @@ This keeps the package usable in a plain app while still exposing a clean
 extension point for downstream projects that want to point to their own servers,
 package sets, or terminology metadata.
 
+The bundled HL7, IHE XDS, and KDL providers do not require the Vite discovery
+plugin. The `packageAutoDiscovery` option is for additional packages exposed by
+the host application; native ESM hosts can provide those packages explicitly
+through `packageDiscovery`.
+
 Installed terminology packages are discovered automatically by default when a
 Vite app exposes them through `globalThis.__FDH_TERMINOLOGY_PACKAGES__` or the
 terminology Vite plugin. You can disable the default automatic discovery with
 `packageAutoDiscovery: false`, or provide an explicit package set via
 `packageDiscovery`.
+
+When package discovery is explicitly enabled but no packages are exposed by the
+bundler, the extension writes an actionable warning to the browser console.
+The built-in package providers remain available; configure
+`packageDiscovery.packages`, provide `packageAutoDiscovery.globFn`, or expose
+`globalThis.__FDH_TERMINOLOGY_PACKAGES__` for additional package-backed
+providers.
 
 ## Package Discovery with Vite
 
@@ -428,9 +467,10 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-The demo uses the extension's default Ontoserver/FHIR configuration. The
-public service configuration supports switching to a custom Snowstorm
-instance, a same-origin proxy, or another FHIR terminology server.
+The demo uses the extension's bundled package providers and default
+Ontoserver/FHIR configuration without terminology-specific Vite setup. The
+public service configuration supports switching to a custom Snowstorm instance,
+a same-origin proxy, or another FHIR terminology server.
 
 ## Documentation
 
@@ -444,6 +484,9 @@ instance, a same-origin proxy, or another FHIR terminology server.
 | [Schema](schema/README.md) | XML/tooling integrators | Generated terminology XSD and usage |
 | [Valid BPMN examples](examples/valid/README.md) | Contributors and users | Synthetic conformance fixtures |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Development, testing, branching, and publishing |
+| [SECURITY.md](SECURITY.md) | Maintainers and security reporters | Vulnerability reporting and data-handling rules |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | All contributors | Community standards and reporting |
+| [CHANGELOG.md](CHANGELOG.md) | Maintainers and release reviewers | Repository-level release history |
 | [AGENTS.md](AGENTS.md) | Automation and agents | Repository rules and quality gates |
 
 ## Contributing
@@ -460,10 +503,31 @@ npm run verify
 the extension test suite. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full
 contributor and publishing guide.
 
+## Citation
+
+If you use this software, please cite it using the metadata in
+[CITATION.cff](CITATION.cff).
+Broader machine-readable software metadata is available in
+[codemeta.json](codemeta.json).
+
 ## License
 
-[Apache License 2.0](LICENSE)
+MIT © Technische Universität Dresden, Forschungsgruppe Digital Health.
+See [LICENSE](LICENSE).
 
-This repository contains software under Apache 2.0. The terminology systems it
-integrates with, including SNOMED CT, LOINC, ICD-10-GM, and KDL, may have
-separate licensing terms that apply independently.
+### bpmn.io watermark
+
+This extension targets [bpmn.io](https://bpmn.io). bpmn-js is a peer dependency and
+is not distributed with this package. bpmn-js is published under MIT terms with one
+additional condition: the code that renders the bpmn.io watermark must not be removed
+or altered, and the watermark must stay fully visible and unobstructed in any website
+or application that uses it. This applies to the playground in `demo/` and to any
+application built on this extension. See <https://bpmn.io/license/>.
+
+### Terminology content
+
+This extension stores code system identifiers and codes only. It ships no SNOMED CT,
+LOINC or ICD-10 content — no display names, descriptions, hierarchies or excerpts.
+Using those terminologies in an application requires the licenses of their respective
+publishers: an Affiliate License via BfArM/MLDS for SNOMED CT, the LOINC Copyright
+Notice and License for LOINC, and the BfArM terms of use for ICD-10-GM.

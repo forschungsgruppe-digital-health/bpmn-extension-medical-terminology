@@ -44,7 +44,6 @@ classDiagram
         +findProviderBySystem(uri)
         +listProviders()
         +search(term, providerId)
-        +searchAll(term)
         +lookup(code, providerId)
         +validate(code, providerId)
     }
@@ -140,7 +139,7 @@ The descriptor uses lower-case XML tag aliases. The schema counterpart is
 ### Properties-panel building block
 
 `TerminologyPropertiesProvider` registers at low priority and contributes the
-“Clinical annotations” group for supported tasks, subprocesses, gateways,
+“Medical terminology” group for supported tasks, subprocesses, gateways,
 events, data references, and other `TARGET_TYPES`. `AnnotationListEntry` edits
 `term:Annotations` and `term:Coding` values. `AnnotationHelper` lazily creates
 `bpmn:ExtensionElements` and wires `$parent` links before bpmn-js commits the

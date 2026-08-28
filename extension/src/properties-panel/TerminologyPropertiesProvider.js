@@ -33,7 +33,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
 
     if (config.showAnnotations) {
       entries.push({
-        id: 'clinical-annotations',
+        id: 'medical-terminology',
         component: AnnotationListEntry,
         isEdited: () => {
           const ext = element.businessObject.extensionElements;
@@ -48,7 +48,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
 
     groups.push({
       id: 'clinical-terminology',
-      label: translate('Clinical annotations'),
+      label: translate('Medical terminology'),
       entries
     });
 

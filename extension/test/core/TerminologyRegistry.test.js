@@ -138,45 +138,6 @@ describe('TerminologyRegistry', () => {
     });
   });
 
-  // ─── searchAll ────────────────────────────────────────────
-
-  describe('searchAll()', () => {
-    it('should search all providers and aggregate results', async () => {
-      registry.register(createMockProvider({
-        id: 'a',
-        search: vi.fn(async () => ({ concepts: [{ code: 'A1' }], total: 1 }))
-      }));
-      registry.register(createMockProvider({
-        id: 'b',
-        search: vi.fn(async () => ({ concepts: [{ code: 'B1' }, { code: 'B2' }], total: 2 }))
-      }));
-
-      const results = await registry.searchAll('term');
-      expect(results.get('a').total).toBe(1);
-      expect(results.get('b').total).toBe(2);
-    });
-
-    it('should handle provider errors gracefully', async () => {
-      registry.register(createMockProvider({
-        id: 'good',
-        search: vi.fn(async () => ({ concepts: [{ code: '1' }], total: 1 }))
-      }));
-      registry.register(createMockProvider({
-        id: 'bad',
-        search: vi.fn(async () => { throw new Error('server down'); })
-      }));
-
-      const results = await registry.searchAll('term');
-      expect(results.get('good').total).toBe(1);
-      expect(results.get('bad')).toEqual({ concepts: [], total: 0 });
-    });
-
-    it('should return empty map when no providers registered', async () => {
-      const results = await registry.searchAll('term');
-      expect(results.size).toBe(0);
-    });
-  });
-
   // ─── lookup ───────────────────────────────────────────────
 
   describe('lookup()', () => {

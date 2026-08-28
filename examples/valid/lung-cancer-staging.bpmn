@@ -5,8 +5,8 @@
     xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
     xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
     id="Definitions_Minimal"
-    targetNamespace="https://clinical-bpmn.org/examples/minimal"
-    exporter="bpmn-js-clinical-semantics"
+    targetNamespace="https://clinical-bpmn.org/examples/terminology"
+    exporter="clinical-bpmn-demo"
     exporterVersion="0.1.0">
 
   <!-- ============================================================

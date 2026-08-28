@@ -1,10 +1,10 @@
 # BPMN Medical Terminology Extension
 
-This repository contains the formal XML Schema Definition (XSD) for extending BPMN 2.0 models with semantic clinical annotations.
+This repository contains the formal XML Schema Definition (XSD) for extending BPMN 2.0 models with semantic medical terminology.
 
 ## Contents
 
-- `clinical-semantics.xsd`: The generated XSD defining the `https://clinical-bpmn.org/terminology/v1` namespace. It is derived from `extension/src/moddle/clinical.json` and provides the structural vocabulary for terminology annotations.
+- `clinical-semantics.xsd`: The generated XSD defining the `https://clinical-bpmn.org/terminology/v1` namespace. It is derived from `extension/src/moddle/clinical.json` and provides the structural vocabulary for medical terminology.
 
 Regenerate it after changing the moddle descriptor with `npm run xsd:gen`.
 

@@ -1,4 +1,3 @@
-// ─── FHIR Version Configuration ─────────────────────────────
 export {
   ACTIVE_FHIR_VERSION,
   FHIR_R4,
@@ -6,29 +5,23 @@ export {
   FHIR_MIME_TYPE
 } from './core/fhir-version.js';
 
-// ─── Core ────────────────────────────────────────────────────
 export { TerminologyProvider } from './core/TerminologyProvider.js';
 export { TerminologyRegistry } from './core/TerminologyRegistry.js';
 
-// ─── Adapters ────────────────────────────────────────────────
 export { SnowstormAdapter } from './adapters/SnowstormAdapter.js';
 export { FhirTerminologyAdapter } from './adapters/FhirTerminologyAdapter.js';
 
-// ─── Providers ───────────────────────────────────────────────
 export { SnomedCtProvider } from './providers/SnomedCtProvider.js';
 export { FhirProvider } from './providers/FhirProvider.js';
 export { StaticProvider } from './providers/StaticProvider.js';
 export { FallbackProvider } from './providers/FallbackProvider.js';
 
-// ─── moddle descriptor ───────────────────────────────────────
-export { default as TerminologyModdleDescriptor } from './moddle/clinical.json';
+export { default as TerminologyModdleDescriptor } from './moddle/clinical.json' with { type: 'json' };
 
-// ─── Properties Panel module (for bpmn-js additionalModules) ─
 export { default as TerminologyPropertiesPanelModule } from './properties-panel/index.js';
 export { createTerminologyPropertiesPanelModule } from './properties-panel/index.js';
 export { DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG } from './properties-panel/config.js';
 
-// ─── Helpers ─────────────────────────────────────────────────
 export {
   getAnnotations,
   addAnnotation,

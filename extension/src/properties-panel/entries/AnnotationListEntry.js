@@ -577,7 +577,7 @@ export function AnnotationListEntry(props) {
   ]);
 
   return html`
-    <div class="clinical-annotations">
+    <div class="medical-terminology">
 
       <!-- Existing annotations list -->
       ${annotations.length > 0 && html`

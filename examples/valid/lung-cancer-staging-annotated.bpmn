@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Definitions_Minimal_Annotated" targetNamespace="https://clinical-bpmn.org/examples/minimal" exporter="bpmn-js-clinical-semantics" exporterVersion="0.1.0">
+<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Definitions_Minimal_Annotated" targetNamespace="https://clinical-bpmn.org/examples/terminology" exporter="clinical-bpmn-demo" exporterVersion="0.1.0">
 
   <!-- ============================================================
        Annotated BPMN Example: Lung Cancer Treatment Decision
@@ -7,7 +7,7 @@
 
        Same process as lung-cancer-staging.bpmn, enriched with:
 
-       term:annotations — clinical terminology annotations
+       term:annotations — medical terminology
        (SNOMED CT, LOINC, OPS codes on each task)
 
        The annotations use the term: namespace only.
@@ -25,7 +25,7 @@
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-1" text="MRI scan report of the thorax as input document for TNM staging">
-            <term:coding system="http://loinc.org" code="18748-4" display="Diagnostic imaging study"/>
+            <term:coding system="http://loinc.org" version="2.82" code="18748-4" display="Diagnostic imaging study"/>
             <term:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"/>
           </term:annotation>
           <term:annotation id="term-ann-2">
@@ -40,8 +40,8 @@
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-3" text="Clinical TNM staging to determine tumor stage">
-            <term:coding system="http://snomed.info/sct" code="254292007" display="Tumor staging (tumor staging)"/>
-            <term:coding system="http://loinc.org" code="21908-9" display="Stage group.clinical Cancer"/>
+            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="254292007" display="Tumor staging (tumor staging)"/>
+            <term:coding system="http://loinc.org" version="2.82" code="21908-9" display="Stage group.clinical Cancer"/>
           </term:annotation>
         </term:annotations>
       </bpmn2:extensionElements>
@@ -71,7 +71,7 @@
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-5" text="Lobectomy or pneumonectomy for operable lung cancer Stage I-II">
-            <term:coding system="http://snomed.info/sct" code="359615001" display="Partial lobectomy of lung (procedure)"/>
+            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="359615001" display="Partial lobectomy of lung (procedure)"/>
             <term:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"/>
           </term:annotation>
         </term:annotations>
@@ -85,7 +85,7 @@
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-6" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">
-            <term:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"/>
+            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="367336001" display="Chemotherapy (procedure)"/>
             <term:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"/>
           </term:annotation>
         </term:annotations>
@@ -106,7 +106,7 @@
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-7" text="Medical discharge report upon completion of follow-up">
-            <term:coding system="http://loinc.org" code="18842-5" display="Discharge summary"/>
+            <term:coding system="http://loinc.org" version="2.82" code="18842-5" display="Discharge summary"/>
             <term:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Medical discharge report"/>
           </term:annotation>
           <term:annotation id="term-ann-8">
@@ -121,8 +121,8 @@
       <bpmn2:extensionElements>
         <term:annotations>
           <term:annotation id="term-ann-9" text="Structured follow-up assessment with imaging surveillance and lab monitoring">
-            <term:coding system="http://snomed.info/sct" code="390906007" display="Follow-up encounter (procedure)"/>
-            <term:coding system="http://loinc.org" code="18776-5" display="Plan of care note"/>
+            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="390906007" display="Follow-up encounter (procedure)"/>
+            <term:coding system="http://loinc.org" version="2.82" code="18776-5" display="Plan of care note"/>
           </term:annotation>
         </term:annotations>
       </bpmn2:extensionElements>
