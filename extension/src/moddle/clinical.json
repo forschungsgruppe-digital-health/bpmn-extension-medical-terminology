@@ -9,7 +9,9 @@
   "types": [
     {
       "name": "Annotations",
-      "superClass": [ "Element" ],
+      "superClass": [
+        "Element"
+      ],
       "properties": [
         {
           "name": "values",
@@ -20,7 +22,9 @@
     },
     {
       "name": "Annotation",
-      "superClass": [ "Element" ],
+      "superClass": [
+        "Element"
+      ],
       "properties": [
         {
           "name": "id",
@@ -41,12 +45,30 @@
     },
     {
       "name": "Coding",
-      "superClass": [ "Element" ],
+      "superClass": [
+        "Element"
+      ],
       "properties": [
-        { "name": "system", "isAttr": true, "type": "String" },
-        { "name": "version", "isAttr": true, "type": "String" },
-        { "name": "code", "isAttr": true, "type": "String" },
-        { "name": "display", "isAttr": true, "type": "String" }
+        {
+          "name": "system",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "version",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "code",
+          "isAttr": true,
+          "type": "String"
+        },
+        {
+          "name": "display",
+          "isAttr": true,
+          "type": "String"
+        }
       ]
     }
   ]
