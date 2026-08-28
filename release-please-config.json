@@ -1,25 +1,37 @@
 {
   "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
-  "release-type": "node",
-  "bump-minor-pre-major": true,
-  "bump-patch-for-minor-pre-major": true,
-  "include-v-in-tag": true,
   "pull-request-title-pattern": "chore${scope}: release${component} ${version}",
-  "changelog-sections": [
-    { "type": "feat", "section": "Features" },
-    { "type": "fix", "section": "Bug Fixes" },
-    { "type": "perf", "section": "Performance" },
-    { "type": "docs", "section": "Documentation", "hidden": false },
-    { "type": "refactor", "section": "Refactoring", "hidden": true },
-    { "type": "chore", "section": "Miscellaneous", "hidden": true }
-  ],
   "packages": {
-    ".": {
+    "extension": {
+      "component": "terminology",
+      "release-type": "node",
       "extra-files": [
-        { "type": "json", "path": "extension/lint/bpmnlint-plugin-myext/package.json", "jsonpath": "$.version" },
-        { "type": "json", "path": "extension/model/myExtension.json", "jsonpath": "$.version" },
-        "extension/model/myExtension.xsd"
+        {
+          "type": "json",
+          "path": "extension/lint/bpmnlint-plugin-terminology/package.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "extension/src/moddle/clinical.json",
+          "jsonpath": "$.version"
+        },
+        "schema/clinical-semantics.xsd"
       ]
     }
-  }
+  },
+  "plugins": [
+    {
+      "type": "node-workspace",
+      "updatePeerDependencies": true,
+      "merge": false
+    },
+    {
+      "type": "linked-versions",
+      "groupName": "clinical-bpmn",
+      "components": ["terminology"]
+    }
+  ],
+  "include-component-in-tag": true,
+  "separate-pull-requests": false
 }

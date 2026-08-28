@@ -1,16 +1,75 @@
-import MyExtPropertiesProvider from './MyExtPropertiesProvider.js';
+export {
+  ACTIVE_FHIR_VERSION,
+  FHIR_R4,
+  FHIR_R5,
+  FHIR_MIME_TYPE
+} from './core/fhir-version.js';
 
-/**
- * The OPTIONAL bpmn-js editor module for this extension, injected via
- * `additionalModules`. It adds a properties-panel group for authoring the
- * <myext:annotation> data. The extension data is valid with or without this
- * module — the moddle descriptor and the lint plugin are what define and
- * enforce it. This only changes the editing experience.
- *
- * A real extension can add more here: a custom renderer, palette entries,
- * context-pad actions, or modeling rules.
- */
-export default {
-  __init__: ['myExtPropertiesProvider'],
-  myExtPropertiesProvider: ['type', MyExtPropertiesProvider]
-};
+export { TerminologyProvider } from './core/TerminologyProvider.js';
+export { TerminologyRegistry } from './core/TerminologyRegistry.js';
+
+export { SnowstormAdapter } from './adapters/SnowstormAdapter.js';
+export { FhirTerminologyAdapter } from './adapters/FhirTerminologyAdapter.js';
+
+export { SnomedCtProvider } from './providers/SnomedCtProvider.js';
+export { FhirProvider } from './providers/FhirProvider.js';
+export { StaticProvider } from './providers/StaticProvider.js';
+export { FallbackProvider } from './providers/FallbackProvider.js';
+
+export { default as TerminologyModdleDescriptor } from './moddle/clinical.json' with { type: 'json' };
+
+export { default as TerminologyPropertiesPanelModule } from './properties-panel/index.js';
+export { createTerminologyPropertiesPanelModule } from './properties-panel/index.js';
+export { DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG } from './properties-panel/config.js';
+
+export {
+  getAnnotations,
+  addAnnotation,
+  createId,
+  getUsedIds,
+  getCodingKey,
+  getUsedCodingKeys,
+  isValidId,
+  removeAnnotation,
+  getAnnotationsContainer,
+  ensureAnnotationsContainer,
+  ensureExtensionElements
+} from './services/AnnotationHelper.js';
+
+export { createStaticProviderFromCodeSystem } from './services/CodeSystemProviderFactory.js';
+export { loadCodeSystemFromFhir } from './services/FhirCodeSystemLoader.js';
+export { createFhirTerminologyProviderLoader } from './services/TerminologyProviderLoader.js';
+export {
+  DEFAULT_DISCOVERY_INCLUDE,
+  DEFAULT_DISCOVERY_EXCLUDE,
+  collectPackageCodeSystemsFromGlob,
+  collectPackageCodeSystemsFromModules,
+  discoverPackageProviders
+} from './services/PackageProviderDiscovery.js';
+export {
+  formatPackageDisplayName,
+  formatPackageProviderDisplayName
+} from './services/PackageMetadata.js';
+export {
+  createPackageTerminologyProvider,
+  createPackageCollectionProvider,
+  createPackageFallbackProvider,
+  createTerminologyServices,
+  createTerminologyModule
+} from './services/TerminologyServices.js';
+export {
+  DEFAULT_PACKAGE_PROVIDER_IDS,
+  createPackagePresetProvider,
+  createHl7TerminologyR4PackageProvider,
+  createIheXdsClassCodeProvider,
+  createIheXdsTypeCodeProvider,
+  createKdlProvider
+} from './providers/presets/index.js';
+export {
+  createDefaultServerConfig,
+  createDefaultFhirProviderConfigs,
+  createDefaultPackageProviders,
+  createDefaultTerminologyConfig,
+  createDefaultTerminologyServices,
+  createDefaultTerminologyModule
+} from './config/terminology-config.js';

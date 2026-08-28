@@ -1,0 +1,57 @@
+{
+  "version": "2.0.0",
+  "comment": "Conformance & quality checks runnable from the IDE (Terminal > Run Task…). These call the SAME npm scripts as the git hooks and CI — single source of truth.",
+  "tasks": [
+    {
+      "label": "Conformance: all (lint + roundtrip + xsd)",
+      "type": "shell",
+      "command": "npm run check:conformance",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Conformance: bpmnlint (structure)",
+      "type": "shell",
+      "command": "npm run lint:bpmn",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Conformance: moddle roundtrip",
+      "type": "shell",
+      "command": "npm run check:roundtrip",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Conformance: moddle roundtrip (strict)",
+      "type": "shell",
+      "command": "node tools/moddle-roundtrip.mjs --strict",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Conformance: XSD core (informational)",
+      "type": "shell",
+      "command": "npm run check:xsd",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Package conventions",
+      "type": "shell",
+      "command": "npm run check:packages",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    },
+    {
+      "label": "Verify (packages + conformance + tests)",
+      "type": "shell",
+      "command": "npm run verify",
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true }
+    }
+  ]
+}

@@ -1,45 +1,36 @@
-# AGENTS.md
+# AGENTS.md — BPMN Extension Medical Terminology
 
-Canonical context for AI coding agents working in this repository. Tool-specific
-files (e.g. `CLAUDE.md`) import this file; point other agents (Cursor, Codex, …)
-at it too.
+This repository publishes one raw-ESM bpmn-js extension:
+`@forschungsgruppe-digital-health/terminology`. Its source and tests live in
+`extension/`; the private integration demo lives in `demo/`.
 
-## Project
-A template for a custom BPMN 2.0 / bpmn.io extension with automated conformance
-checks. Node 22, ES modules.
+## Quality gate
 
-- `extension/` — the custom extension you author (moddle model descriptor, lint plugin, optional bpmn-js modules).
-- `examples/valid/` and `examples/invalid/` — abstract diagrams used as positive and negative validation fixtures.
-- `tools/` — deterministic checkers; their exit code is the source of truth for pass/fail.
-- `skills/` — agent skills that orchestrate the checkers.
-- `demo/` — private (non-published) bpmn-js modeler playground for trying the extension by hand; an npm workspace. NOT a pass/fail gate.
-- `.devcontainer/` + `.github/workflows/pages.yml` — reproducible dev/Codespaces env and the GitHub Pages deploy for `demo/`.
+Run `npm run verify` before release work. It combines:
 
-## Always do
-- Run `npm run validate` before proposing a commit or PR.
-- Keep custom data in its own namespace; never reuse the `bpmn:` prefix for extension data.
-- Treat `tools/` output as the decision. Do not declare conformance from your own reading of a diagram.
+- `npm run check:packages` — publish conventions for `extension/package.json`
+- `npm run check:conformance` — BPMN linting, terminology moddle roundtrip, and
+  informational BPMN-core XSD validation
+- `npm test` — Vitest suite
 
-## Ask first
-- Adding a runtime dependency (extensions should rely on `peerDependencies`).
-- Changing the extension's `uri` or `prefix` (this breaks diagrams already in the wild).
-- Editing files under `examples/invalid/` (they must keep failing lint).
+Install dependencies with `npm install --legacy-peer-deps`.
 
-## Never do
-- Never report "XSD passed" as "extension valid" — the XSD does not cover `<extensionElements>`.
-- Never hand-edit the version in `package.json` or `.release-please-manifest.json`; Release Please owns it.
-- Never publish manually or outside the release workflow without an explicit request.
+## Hard rules
 
-## Commits & releases
-Use [Conventional Commits](https://www.conventionalcommits.org/): `fix:` → patch,
-`feat:` → minor, `feat!:`/`BREAKING CHANGE:` → major. Release Please turns these
-into a release PR and publishes on merge. See `CONTRIBUTING.md`.
+- Store clinical semantics only in `term:` elements under
+  `bpmn:extensionElements`; never alter BPMN core or BPMN-DI structures.
+- Commit only obviously synthetic clinical data.
+- Renaming or removing a terminology moddle type or property is a breaking
+  change and requires human sign-off.
+- Keep the package ESM-only and preserve the
+  `@forschungsgruppe-digital-health/terminology` package name.
 
-## Commands
-- Full check: `npm run validate`
-- Lint, valid (must pass): `npm run lint:valid`
-- Lint, invalid (must fail): `npm run lint:invalid`
-- Round-trip: `npm run roundtrip`
-- XSD core: `npm run xsd`
-- Extension XSD (optional, structure-only): generate `npm run xsd:gen`, drift-guard `npm run xsd:gen:check`, validate `npm run xsd:ext`
-- Conventions: `npm run conventions`
+## Repository layout
+
+- `extension/` — published terminology package
+- `demo/` — private bpmn-js example
+- `examples/valid/` and `examples/invalid/` — BPMN fixtures
+- `tools/` — deterministic conformance and package checks
+
+Changes land through pull requests into `dev`; releases are promoted with a
+separate `dev` to `main` pull request.

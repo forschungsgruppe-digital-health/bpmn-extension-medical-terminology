@@ -9,9 +9,10 @@
 // cross-element rules) that XSD cannot express.
 //
 // Usage:
-//   node tools/moddle-to-xsd.mjs                 # write <descriptor>.xsd next to the descriptor
+//   node tools/moddle-to-xsd.mjs                 # write the current schema
 //   node tools/moddle-to-xsd.mjs --check         # exit 1 if the on-disk XSD is stale (CI drift guard)
-//   node tools/moddle-to-xsd.mjs --descriptor extension/model/other.json
+//   node tools/moddle-to-xsd.mjs --descriptor extension/src/moddle/other.json
+//   node tools/moddle-to-xsd.mjs --output path/to/output.xsd
 //
 // Supported descriptor subset (the common case; anything else is warned about):
 //   - types with "superClass": ["Element"] (top-level extension elements)
@@ -176,16 +177,21 @@ if (isMain) {
   const args = process.argv.slice(2);
   const check = args.includes('--check');
   const dIdx = args.indexOf('--descriptor');
+  const oIdx = args.indexOf('--output');
   const descriptorPath =
     dIdx >= 0 && args[dIdx + 1]
       ? args[dIdx + 1]
-      : fileURLToPath(new URL('../extension/model/myExtension.json', import.meta.url));
+      : fileURLToPath(new URL('../extension/src/moddle/clinical.json', import.meta.url));
+  const outPath =
+    oIdx >= 0 && args[oIdx + 1]
+      ? args[oIdx + 1]
+      : dIdx >= 0
+        ? descriptorPath.replace(/\.json$/, '.xsd')
+        : fileURLToPath(new URL('../schema/clinical-semantics.xsd', import.meta.url));
 
   const descriptor = JSON.parse(readFileSync(descriptorPath, 'utf8'));
   const { xsd, warnings } = generateXsd(descriptor);
   warnings.forEach((w) => console.error(`warning: ${w}`));
-
-  const outPath = descriptorPath.replace(/\.json$/, '.xsd');
 
   if (check) {
     let current = '';

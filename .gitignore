@@ -1,5 +1,46 @@
+# Dependencies
 node_modules/
-*.log
+
+# Build output
 dist/
+*.tsbuildinfo
+
+# docs/ is the tracked documentation home; only the local scratch fixture is ignored
+/docs/sample.bpmn
+
+# OS files
 .DS_Store
-package-lock.json
+Thumbs.db
+
+# IDE / Editor
+.idea/
+.vscode/*
+# …but keep the shared, committed editor config (tasks/recommended extensions/settings)
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# Environment / secrets
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cache
+.cache/
+.vitest/
+.eslintcache
+
+# Coverage reports
+coverage/
+
+# Package tarballs
+*.tgz
+
+# Local-only analysis report (intentionally not committed)
+/CODE-HEALTH-TOOLING-REPORT.md

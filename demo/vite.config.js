@@ -1,8 +1,25 @@
 import { defineConfig } from 'vite';
 
-// For GitHub Pages (project site) the app is served from /<repo>/, so assets
-// must be requested from that sub-path. The Pages workflow sets BASE_PATH;
-// locally (dev / preview) it defaults to "/".
 export default defineConfig({
-  base: process.env.BASE_PATH || '/'
+  base: process.env.BASE_PATH || '/',
+  server: {
+    proxy: {
+      '/snowstorm-api': {
+        target: 'https://snowstorm.snomedtools.org',
+        changeOrigin: true,
+        rewrite: path => path.replace(/^\/snowstorm-api/, '/snowstorm/snomed-ct')
+      }
+    }
+  },
+  resolve: {
+    preserveSymlinks: true
+  },
+  optimizeDeps: {
+    force: true
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+    sourcemap: true
+  }
 });

@@ -1,0 +1,8 @@
+{
+  "name": "bpmnlint-plugin-terminology",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Custom bpmnlint rules for the terminology BPMN extension.",
+  "main": "index.js",
+  "license": "MIT"
+}

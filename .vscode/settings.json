@@ -1,0 +1,13 @@
+{
+  "//": "Shared workspace settings. Treat .bpmn as XML and validate its BPMN core live against the OMG BPMN 2.0 XSD shipped with bpmn-moddle (mirrors `npm run check:xsd`). Requires the recommended extension redhat.vscode-xml. The term: extension XSD is checked by `npm run xsd:ext`; semantic rules such as required IDs remain in bpmnlint.",
+  "files.associations": {
+    "*.bpmn": "xml"
+  },
+  "xml.fileAssociations": [
+    {
+      "pattern": "**/*.bpmn",
+      "systemId": "node_modules/bpmn-moddle/resources/bpmn/xsd/BPMN20.xsd"
+    }
+  ],
+  "xml.validation.enabled": true
+}

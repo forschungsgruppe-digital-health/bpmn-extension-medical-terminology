@@ -1,330 +1,595 @@
-# BPMN Extension Template
+# BPMN Extension Medical Terminology
 
-A GitHub template repository for building, validating, and publishing your own
-**custom BPMN 2.0 / [bpmn.io](https://bpmn.io) extension**. It ships a working
-example extension, positive and negative validation fixtures, deterministic
-check tools, agent skills, and CI workflows so that conformance is enforced
-automatically from the first commit.
+[![CI](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml/badge.svg)](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-> Use this repo as a GitHub template (green **Use this template** button), then
-> rename the placeholder extension (`myext` / `MyExtension`) to your own.
->
-> **New to bpmn.io?** Read [`docs/concepts.md`](docs/concepts.md) first — it
-> explains what a BPMN extension *is*, what each library (bpmn-js, bpmn-moddle,
-> bpmnlint, diagram-js) does, and how the XSD and the moddle descriptor divide
-> the work. The rest of this README assumes those terms.
+`@forschungsgruppe-digital-health/terminology` adds machine-readable medical
+terminology to BPMN process models. It provides a `term:`
+moddle extension for XML serialization, a bpmn-js properties-panel provider,
+terminology services, and a Vite plugin for discovering terminology packages.
 
-**Where to start:** [`docs/concepts.md`](docs/concepts.md) (what a BPMN extension
-*is* & how the libraries fit) → [Using the template](#using-the-template) (how to
-build one) → [Modeling playground](#modeling-playground-demo) (see it run) →
-[`extension/`](extension/) (where your code goes).
+All annotations are stored as standard BPMN 2.0 `extensionElements`, so BPMN
+tools that do not understand the extension preserve the model unchanged.
 
----
+> **Live Demo:** [bpmn-extension-medical-terminology](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
 
-## Anatomy of a BPMN extension
+## Funding
 
-A bpmn.io extension is made of a few independent parts. Only the first is
-strictly required; the rest are added as your use case needs them.
+This work is part of **MiHUB – Medical Informatics Hub**, a Digital Progress Hub
+(Digitaler FortschrittsHub Gesundheit) of the German Medical Informatics
+Initiative (MII).
 
-| Part | Required? | Location | What it does |
-|------|-----------|----------|--------------|
-| **Moddle model descriptor** | Yes | `extension/model/*.json` | Declares the data your extension stores in the BPMN XML (a namespace, prefix, and typed properties). This is what makes your custom data readable and writable. |
-| **Lint plugin** | Recommended | `extension/lint/bpmnlint-plugin-myext/` | Custom [bpmnlint](https://github.com/bpmn-io/bpmnlint) rules that enforce the *semantics* of your data — constraints the XSD cannot express. |
-| **bpmn-js modules** | Optional | `extension/src/` | Editor/viewer behaviour: custom renderer, palette entries, context-pad actions, modeling rules, properties-panel groups. Injected via `additionalModules`. Ships a sample properties-panel provider you can run in the [demo](#modeling-playground-demo). |
-| **Examples** | Recommended | `examples/` | Abstract diagrams that exercise the extension, used as test fixtures. |
+MiHUB is funded by the German Federal Ministry of Research, Technology and Space
+(Bundesministerium für Forschung, Technologie und Raumfahrt, BMFTR) under grant
+number **01ZZ2506A** (01/2026 – 12/2029). The responsibility for the content of
+this publication lies with the authors.
 
-### How the pieces fit together
+- Project: <https://mihubx.de/mihub/>
+- Funding record: [Förderkatalog des Bundes, FKZ 01ZZ2506A](https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A)
+- Funder: BMFTR ([ROR 04pz7b180](https://ror.org/04pz7b180))
 
-Your three authored parts each teach a different layer of the toolchain about
-your data, and the validation tools each cover a different slice of the file.
-The crux: the **moddle descriptor** defines the *shape* of your data, the
-**lint plugin** enforces its *semantics*, and the **BPMN20.xsd never touches it
-at all** (it validates the `bpmn:` core only). For the per-library background
-behind this picture, see [`docs/concepts.md`](docs/concepts.md).
+<details>
+<summary>Förderhinweis (deutsch)</summary>
 
-```mermaid
-flowchart TB
-  subgraph AUTHOR["What you author — extension/"]
-    M["Moddle descriptor<br/>model/*.json (required)"]
-    L["bpmnlint plugin<br/>lint/ (recommended)"]
-    S["bpmn-js modules<br/>src/ (optional)"]
-  end
+Das diesem Repository zugrunde liegende Vorhaben wurde mit Mitteln des
+Bundesministeriums für Forschung, Technologie und Raumfahrt (BMFTR) unter dem
+Förderkennzeichen 01ZZ2506A gefördert. Die Verantwortung für den Inhalt dieser
+Veröffentlichung liegt bei den Autor:innen.
 
-  subgraph FILE["A .bpmn diagram"]
-    C["BPMN core elements<br/>bpmn: namespace"]
-    E["Your data under extensionElements<br/>myext: namespace"]
-  end
+</details>
 
-  M -->|"defines the shape of"| E
-  L -->|"validates semantics of"| E
-  S -->|"renders / edits"| E
+## Table of Contents
 
-  C -->|"checked by"| XSD["BPMN20.xsd<br/>(core only)"]
-  E -.->|"NOT covered — processContents=lax"| XSD
-  E -->|"checked by"| RT["moddle round-trip"]
-```
+- [Funding](#funding)
+- [Motivation](#motivation)
+- [Features](#features)
+- [Package](#package)
+- [Quick Start](#quick-start)
+- [Programmatic Usage](#programmatic-usage)
+- [Package Discovery with Vite](#package-discovery-with-vite)
+- [Generated XML](#generated-xml)
+- [Demo](#demo)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Citation](#citation)
+- [License](#license)
 
-### How the data lives in the XML
+## Motivation
 
-Custom data is attached under the standard `bpmn:extensionElements` of any
-element, in **your own namespace** — never the `bpmn:` namespace. The example
-descriptor defines an `Annotation` element with a `category` attribute and
-nested `note` children:
+BPMN 2.0 is widely used for modelling clinical pathways, but its elements do
+not carry machine-readable clinical terminology semantics. A task labelled
+“CT-Thorax” has no link to a SNOMED CT procedure code or an IHE XDS document
+type. This limits reliable clinical process automation and interoperability.
 
-```xml
-<bpmn:task id="Task_1" name="Reviewed task">
-  <bpmn:extensionElements>
-    <myext:annotation category="quality" reviewed="true">
-      <myext:note author="example">Looks good.</myext:note>
-    </myext:annotation>
-  </bpmn:extensionElements>
-</bpmn:task>
-```
+This extension adds terminology annotations for systems such as SNOMED CT,
+LOINC, ICD-10-GM, OPS, IHE XDS, KDL, and other FHIR-hosted code systems.
+Terminology annotations are optional and remain isolated in the `term:`
+namespace under BPMN `extensionElements`.
 
-The matching moddle descriptor (`extension/model/myExtension.json`):
+## Features
 
-```json
-{
-  "name": "MyExtension",
-  "uri": "http://example.com/schema/my-extension/1.0",
-  "prefix": "myext",
-  "types": [
-    {
-      "name": "Annotation",
-      "superClass": ["Element"],
-      "properties": [
-        { "name": "category", "type": "String", "isAttr": true },
-        { "name": "reviewed", "type": "Boolean", "isAttr": true, "default": false },
-        { "name": "note", "type": "Note", "isMany": true }
-      ]
-    }
-  ]
-}
-```
+- Multi-code annotations on BPMN Tasks, DataObjects, Events, Gateways, and
+  MessageFlows.
+- Provider architecture for SNOMED CT via Ontoserver/FHIR by default or a
+  custom Snowstorm endpoint, package-backed HL7 resources, IHE XDS, and KDL.
+- Stable annotation IDs and optional coded entries.
+- Offline static providers for small terminology systems.
+- Interactive bpmn-js properties-panel integration.
+- Terminology registry with search, lookup, and validation operations.
+- Package-backed terminology providers with automatic or explicit discovery.
+- Vite resource filtering by exact canonical `CodeSystem.url`.
+- Raw ESM package with no library build step.
 
-Key descriptor conventions: types that hang off `extensionElements` use
-`"superClass": ["Element"]`; XML attributes use `"isAttr": true`; repeatable
-children use `"isMany": true`; element text uses `"isBody": true`.
+## Package
 
----
+| Package | Location | Description |
+|---|---|---|
+| `@forschungsgruppe-digital-health/terminology` | [`extension/`](extension/) | Terminology annotations, providers, moddle extension, properties panel, and Vite discovery |
+| Demo | [`demo/`](demo/) | Private bpmn-js integration example |
 
-## Repository layout
-
-```
-.
-├── AGENTS.md                  # canonical agent context (read by 30+ tools)
-├── CLAUDE.md                  # imports AGENTS.md
-├── CONTRIBUTING.md            # dev workflow + Conventional Commits + releases
-├── LICENSE                    # MIT
-├── .bpmnlintrc                # lint config: recommended + your plugin + moddle ext
-├── package.json               # validation scripts + conventions
-├── release-please-config.json # SemVer release automation (Release Please v4)
-├── .release-please-manifest.json
-├── docs/
-│   ├── concepts.md            # primer: what an extension is + how the libs fit
-│   └── adr/                   # architecture decision records (TEMPLATE.md)
-├── extension/                 # >>> YOUR extension goes here <<<
-│   ├── model/
-│   │   ├── myExtension.json    # moddle descriptor (rename me) — source of truth
-│   │   └── myExtension.xsd     # generated from the descriptor (npm run xsd:gen)
-│   ├── lint/
-│   │   └── bpmnlint-plugin-myext/
-│   │       ├── index.js
-│   │       └── rules/annotation-requires-category.js
-│   └── src/                    # optional bpmn-js modules
-│       ├── index.js            # the additionalModules entry
-│       └── MyExtPropertiesProvider.js  # sample properties-panel group
-├── demo/                       # interactive modeler playground (private, not published)
-│   ├── index.html
-│   ├── vite.config.js          # base path comes from $BASE_PATH (for Pages)
-│   └── src/main.js             # Modeler wired to the descriptor + src module
-├── examples/
-│   ├── valid/                  # positive fixtures — must pass lint
-│   └── invalid/                # negative fixtures — must fail lint
-├── tools/
-│   ├── validate-xsd.sh         # BPMN-core XSD validation (xmllint)
-│   ├── moddle-roundtrip.mjs    # fromXML -> toXML with extension registered
-│   ├── moddle-to-xsd.mjs       # generate extension XSD from the descriptor
-│   ├── validate-xsd-ext.mjs    # validate examples vs BPMN core + extension XSD
-│   └── check-package-conventions.mjs
-├── skills/                     # agent skills (vendor-neutral)
-│   ├── bpmn-conformance/
-│   ├── moddle-extension-review/
-│   ├── bpmn-naming-publishing/
-│   └── architecture-review/
-├── .devcontainer/             # reproducible dev env / Codespaces (modeler preinstalled)
-└── .github/workflows/
-    ├── validate.yml            # runs all checks on push / PR
-    ├── pages.yml               # builds demo/ → GitHub Pages
-    └── release-please.yml      # SemVer release PR + npm publish on merge
-```
-
----
-
-## Using the template
-
-1. **Create your repo** from this template and clone it.
-2. **Install dependencies:** `npm install` (Node 22+; an `engines` field enforces
-   this). It also pulls the bpmn-js UI stack and Vite via the `demo/` workspace —
-   that is expected, not bloat (the published package ships only `extension/`).
-3. **Rename the placeholder** everywhere: `myext` → your prefix,
-   `MyExtension` → your name, and rename
-   `extension/lint/bpmnlint-plugin-myext/` accordingly. Set a stable, owned
-   `uri` in the descriptor.
-4. **Model your data** in `extension/model/<your>.json`.
-5. **Write rules** in the lint plugin for any constraint the XSD cannot check.
-6. **Add fixtures:** a positive diagram in `examples/valid/` and a deliberately
-   broken one in `examples/invalid/` for every rule you add.
-7. **Run the full check:** `npm run validate`.
-8. *(Optional)* add bpmn-js modules under `extension/src/` for editor behaviour.
-9. *(Optional)* `npm run xsd:gen` to emit `extension/model/<name>.xsd` for
-   XSD-native consumers, and `npm run xsd:ext` to validate the examples against
-   BPMN core **and** that extension XSD.
-
----
-
-## Modeling playground (demo)
-
-`demo/` is an interactive bpmn-js modeler for trying the extension **by hand**:
-open a diagram, select the task, edit the `Annotation (myext)` group in the
-properties panel, and download the XML to see your custom data. It wires the
-**real** descriptor (`moddleExtensions` — the *data* layer) and the sample
-`extension/src/` module (`additionalModules` — the *UI* layer), so it exercises
-your actual artifacts, not copies. See [`docs/concepts.md`](docs/concepts.md) for
-what each slot does.
+Install the published package from GitHub Packages:
 
 ```bash
-npm install     # installs the demo too (it is a workspace)
-npm run demo    # vite dev server → http://localhost:5173
+npm install @forschungsgruppe-digital-health/terminology
 ```
 
-Three surfaces, one `demo/` build:
+Configure the `@forschungsgruppe-digital-health` scope to use
+`https://npm.pkg.github.com` before installing from GitHub Packages.
 
-| Surface | How | Good for |
-|---------|-----|----------|
-| **Local** | `npm run demo` | day-to-day authoring |
-| **Dev container / Codespaces** | open in a container — `.devcontainer/` installs deps and auto-starts the modeler on a forwarded port | zero-setup contribution / live walkthrough |
-| **GitHub Pages** | `.github/workflows/pages.yml` builds `demo/` and publishes a static site; enable **Settings → Pages → Source: GitHub Actions** | a permanent public "try it" link |
+## Quick Start
 
-The playground is a **private, non-published** workspace (excluded from the npm
-package) and is **not** a pass/fail gate — the deterministic checks remain the
-source of truth. Its bundle is public when deployed, so keep only
-abstract/synthetic diagrams in `examples/`.
+### Prerequisites
 
----
+- Node.js 22 or later for development
+- An application using bpmn-js 15 or later
+- `bpmn-js-properties-panel` 5 or later when using the properties panel
 
-## Validation pipeline
+### Integrate into a bpmn-js modeler
 
-| Stage | Command | What it proves |
-|-------|---------|----------------|
-| Lint (positive) | `npm run lint:valid` | Valid diagrams satisfy `bpmnlint:recommended` + your rules. |
-| Lint (negative) | `npm run lint:invalid` | Broken diagrams **are** rejected — proves your rules fire. CI inverts the exit code. |
-| Round-trip | `npm run roundtrip` | Custom extension data parses and serialises through `bpmn-moddle` without warnings or loss. |
-| XSD core | `npm run xsd` | The standard BPMN structure validates against the official `BPMN20.xsd`. |
-| Conventions | `npm run conventions` | `package.json` follows bpmn.io naming/publishing rules. |
-| XSD extension *(opt-in)* | `npm run xsd:ext` | Example diagrams validate against `BPMN20.xsd` **and** a generated extension XSD — the **structure** of your custom data. |
+```js
+import BpmnModeler from 'bpmn-js/lib/Modeler';
+import {
+  TerminologyModdleDescriptor,
+  TerminologyPropertiesPanelModule,
+  createDefaultTerminologyModule
+} from '@forschungsgruppe-digital-health/terminology';
+import '@forschungsgruppe-digital-health/terminology/properties-panel.css';
 
-`npm run validate` chains the common subset. `xsd:ext` is **not** in that chain
-(it needs the generated XSD and only checks structure); run it on its own when
-you want XSD-level validation of the extension data.
+const modeler = new BpmnModeler({
+  container: '#canvas',
+  additionalModules: [
+    TerminologyPropertiesPanelModule,
+    createDefaultTerminologyModule()
+  ],
+  moddleExtensions: {
+    term: TerminologyModdleDescriptor
+  }
+});
+```
 
-> **Important scope boundary.** Out of the box the XSD step validates the **BPMN
-> core only**. Elements under `<extensionElements>` are parsed with
-> `processContents="lax"`, so a stock validator does **not** check your custom
-> data, and there is no official, freely runnable OMG conformance CLI. Your
-> extension's correctness is established by the **round-trip** and the **lint
-> plugin** — never read "XSD core passed" as "extension valid".
->
-> **Optional extension XSD.** If you (or your consumers) want XSD-native
-> validation of the custom data too, `npm run xsd:gen` derives an XSD from the
-> moddle descriptor (`extension/model/<name>.xsd`) and `npm run xsd:ext`
-> validates the examples against `BPMN20.xsd` + that XSD in one pass (via a
-> driver schema; `BPMN20.xsd` is never patched). It is **generated from the
-> descriptor** — the single source of truth — so the two cannot drift, and a
-> built-in self-check fails loudly if the `lax` wildcard ever skips your schema.
-> It still only covers **structure**; required attributes and cross-element
-> rules stay in the lint plugin. See [`docs/concepts.md`](docs/concepts.md).
+The package CSS contains only the structural styles for the terminology
+entries. Import the official bpmn-js and properties-panel styles in the host
+application as usual; the terminology styles inherit its fonts, colors, and
+CSS variables.
 
-The tools are the source of truth: the pass/fail decision is deterministic and
-made by `bpmnlint`, `bpmn-moddle`, and `xmllint` — not by a language model. The
-agent skills only orchestrate and explain them, which keeps the workflow
-reliable and independent of any particular agent or model.
+## Programmatic Usage
 
----
+```js
+import {
+  SnomedCtProvider,
+  createTerminologyModule,
+  createTerminologyServices,
+  addAnnotation
+} from '@forschungsgruppe-digital-health/terminology';
 
-## Continuous integration
+const terminologyServices = createTerminologyServices({
+  providers: [
+    new SnomedCtProvider({
+      baseUrl: 'https://snowstorm.example.com'
+    })
+  ],
+  loaderConfig: {
+    fhirBaseUrl: 'https://fhir.example.com'
+  }
+});
 
-- **`validate.yml`** runs on every push to `main` and every pull request:
-  installs deps and `xmllint`, then runs the positive lint, the negative lint
-  (asserting failure), the round-trip, the XSD core check, the extension-XSD
-  drift guard (`xsd:gen:check`) and dual conformance (`xsd:ext`), and the
-  conventions check.
-- **`pages.yml`** builds the `demo/` playground (`vite build`) and deploys it to
-  GitHub Pages on every push to `main`. Enable it once under
-  **Settings → Pages → Source: GitHub Actions**; it is independent of the
-  validation and release workflows.
-- **`release-please.yml`** runs on every push to `main`: it maintains a release
-  PR from your Conventional Commits and, once that PR is merged, tags the
-  release and publishes to npm with provenance. Add an `NPM_TOKEN` secret first.
+await terminologyServices.terminologyProviderLoader
+  .ensureProvider('http://terminology.hl7.org/CodeSystem/v3-ActCode');
 
----
+const results = await terminologyServices.terminologyRegistry
+  .search('pneumonia', 'snomed-ct');
 
-## Versioning & publishing
+const TerminologyServicesModule =
+  createTerminologyModule(terminologyServices);
 
-Versioning follows [SemVer](https://semver.org/) and is automated by
-[Release Please](https://github.com/googleapis/release-please) (manifest config
-in `release-please-config.json` + `.release-please-manifest.json`). You do not
-bump versions by hand — your **commit types** drive the next version:
+addAnnotation(businessObject, moddle, {
+  id: 'term-ann-1',
+  text: 'CT-Thorax mit Kontrastmittel',
+  codings: [{
+    system: 'http://snomed.info/sct',
+    code: '169069000',
+    display: 'CT of chest'
+  }]
+});
+```
 
-| Commit | Release effect |
-|--------|----------------|
-| `fix:` | PATCH |
-| `feat:` | MINOR |
-| `feat!:` / `BREAKING CHANGE:` | MAJOR (MINOR while pre-1.0) |
+`createDefaultTerminologyServices()` provides the standard service setup used
+by the demo and by a plain app after installation: SNOMED CT, FHIR
+terminology-server providers, and package-backed terminology providers are all
+available with sensible defaults, so the extension works out of the box after
+`npm install`.
 
-The flow: merge Conventional Commits → Release Please opens a release PR
-(bumping `package.json` + manifest, writing `CHANGELOG.md`) → merge it → the
-release is tagged and published. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for
-the commit convention and the rationale behind in-workflow publishing.
+### Default service configuration
 
-One release bumps **all** of the extension's artifacts to the same version — via
-`extra-files` in `release-please-config.json` it updates the lint-plugin
-`package.json`, the moddle descriptor's `version`, and the generated XSD,
-alongside the root `package.json`. The namespace `uri` (`…/1.0`) is **not**
-bumped: it is the *data-format contract* version, changed by hand only when you
-intentionally break the format. See
-[ADR-0001](docs/adr/0001-versioning-and-release-please.md).
+| Option | Purpose |
+|---|---|
+| `serverConfig` | Override FHIR, SNOMED, and Snowstorm server base URLs |
+| `enableSnomed` | Enable or disable the default SNOMED provider |
+| `enableFhirDefaults` | Enable or disable built-in FHIR providers |
+| `enablePackageDefaults` | Enable or disable bundled package providers |
+| `disabledProviderIds` | Disable providers by ID |
+| `snomedConfig` | Override SNOMED provider settings |
+| `fhirProviderOverrides` | Override built-in FHIR providers |
+| `additionalFhirProviders` | Add additional FHIR providers |
+| `additionalPackageProviders` | Add package-backed providers |
+| `packageProviderOptions` | Override a bundled package provider's `componentLabel` or complete `displayName` |
+| `packageDiscovery` | Configure explicit package registration and filtering |
+| `packageAutoDiscovery` | Use packages exposed by a bundler or host application |
+| `loaderConfig` | Override or disable provider loading |
 
-Follow bpmn.io naming conventions so the ecosystem can discover your package
-(enforced by `npm run conventions`):
+Bundled and generated package provider labels use `Package name (version) —
+component`. For example, the bundled IHE XDS providers are labelled by their
+package and their distinct document class or document type component. Generated
+registries use the canonical package name even when the package manifest also
+contains a longer title. Override only the component label while preserving the
+package metadata:
 
-- bpmn-js modules: name starts with **`bpmn-js-`**.
-- lint plugins: name starts with **`bpmnlint-plugin-`**.
-- Declare `bpmn-js` / `diagram-js` as **`peerDependencies`**, never hard deps.
-- If `extension/src/` uses the properties panel, also declare
-  `@bpmn-io/properties-panel` and `bpmn-js-properties-panel` as **optional**
-  peers (this template's `package.json` shows the pattern).
-- Ship **ES modules** (`"type": "module"`), set a `license`.
+```js
+createDefaultTerminologyServices({
+  packageProviderOptions: {
+    'ihe-xds-class': {
+      componentLabel: 'XDS document class'
+    }
+  }
+});
+```
 
----
+Set `displayName` instead when the application needs to replace the entire
+label.
 
-## Agent skills
+Package discovery creates one aggregate provider per package. When exactly one
+CodeSystem is selected from a package, its FHIR `title`, `name`, `id`, or
+canonical URL is appended as the component. `componentLabels` overrides that
+component by package name and canonical CodeSystem URL. Invalid provider IDs,
+package names, or CodeSystem URLs fail fast with a descriptive error.
 
-The `skills/` directory contains portable `SKILL.md` capabilities that work
-across compatible coding agents (Claude Code, Codex, Cursor, and others). Each
-skill wraps the deterministic tools above:
+TypeScript consumers can import the public configuration types from
+`@forschungsgruppe-digital-health/terminology/types`.
 
-- **bpmn-conformance** — run the full conformance pipeline and report per stage.
-- **moddle-extension-review** — review a model descriptor for structure and namespace hygiene.
-- **bpmn-naming-publishing** — check packaging/naming before release.
-- **architecture-review** — multi-axis code & architecture review (correctness, readability, architecture, security, performance), vendored from [addyosmani/agent-skills](https://github.com/addyosmani/agent-skills) (MIT).
+Example:
 
-`AGENTS.md` is the single source of project context; `CLAUDE.md` imports it (and
-other agents — Cursor, Codex — can be pointed at the same file), so you maintain
-guidance once.
+```js
+import {
+  createDefaultTerminologyServices
+} from '@forschungsgruppe-digital-health/terminology';
 
----
+const terminologyServices = createDefaultTerminologyServices({
+  serverConfig: {
+    fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
+    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
+  },
+  snomedConfig: {
+    transport: 'fhir'
+  },
+  disabledProviderIds: ['atc'],
+  fhirProviderOverrides: [
+    {
+      id: 'icd-10-gm',
+      expandParameters: { valueSetVersion: '2024' }
+    }
+  ]
+});
+```
+
+The default SNOMED provider uses the FHIR API at
+`https://r4.ontoserver.csiro.au/fhir`. To use a custom Snowstorm deployment
+or a same-origin proxy, keep the provider ID unchanged and change its
+transport and base URL.
+
+```js
+const terminologyServices = createDefaultTerminologyServices({
+  snomedConfig: {
+    transport: 'snowstorm',
+    baseUrl: '/api/snowstorm/snomed-ct'
+  }
+});
+```
+
+For another FHIR terminology server, keep `transport: 'fhir'` and set
+`serverConfig.snomedBaseUrl` or `snomedConfig.baseUrl`. For a Snowstorm
+instance, use `transport: 'snowstorm'` as shown above.
+
+### CORS, proxies, and custom fetch functions
+
+Browsers enforce CORS at the network boundary. The extension cannot make a
+browser trust a third-party SNOMED/FHIR origin that does not include the
+necessary CORS headers. In practice, this means a browser app must either:
+
+- call a same-origin proxy, or
+- use a backend endpoint that proxies the target terminology server, or
+- pass a custom `fetchFn` so the app can route the request through a trusted
+  server-side path.
+
+The public config API supports this directly:
+
+```js
+const terminologyServices = createDefaultTerminologyServices({
+  fetchFn: async (url, init) => {
+    const response = await fetch(`/api/terminology?target=${encodeURIComponent(url)}`, {
+      ...init,
+      headers: {
+        ...init?.headers,
+        'X-Requested-By': 'bpmn-terminology'
+      }
+    });
+
+    return response;
+  }
+});
+```
+
+This is the supported extension-side hook for CORS-sensitive deployments. The
+browser itself still blocks direct cross-origin requests unless the remote
+server explicitly allows them.
+
+### Out-of-the-box defaults and external overrides
+
+After installation in a bpmn-js app, the extension is designed to work without
+manual provider registration. It ships with sensible defaults for:
+
+- SNOMED CT via Ontoserver/FHIR (`https://r4.ontoserver.csiro.au/fhir` by
+  default)
+- FHIR terminology servers such as LOINC, ICD-10-GM, OPS, and ATC
+- default package-backed providers for common bundled terminology packages
+- automatic discovery of already installed terminology packages in the app
+
+The app can override any of these defaults from the outside by passing the
+public configuration object into `createDefaultTerminologyServices(...)`:
+
+```js
+const terminologyServices = createDefaultTerminologyServices({
+  serverConfig: {
+    fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
+    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
+  },
+  snomedConfig: {
+    transport: 'fhir'
+  },
+  packageDiscovery: {
+    enabled: true,
+    include: ['*'],
+    mode: 'auto'
+  },
+  packageMetadata: {
+    'hl7.terminology.r4': {
+      title: 'HL7 Terminology (Custom)',
+      version: '1.0.0'
+    }
+  },
+  disabledProviderIds: ['atc']
+});
+```
+
+This keeps the package usable in a plain app while still exposing a clean
+extension point for downstream projects that want to point to their own servers,
+package sets, or terminology metadata.
+
+The bundled HL7, IHE XDS, and KDL providers do not require the Vite discovery
+plugin. The `packageAutoDiscovery` option is for additional packages exposed by
+the host application; native ESM hosts can provide those packages explicitly
+through `packageDiscovery`.
+
+Installed terminology packages are discovered automatically by default when a
+Vite app exposes them through `globalThis.__FDH_TERMINOLOGY_PACKAGES__` or the
+terminology Vite plugin. You can disable the default automatic discovery with
+`packageAutoDiscovery: false`, or provide an explicit package set via
+`packageDiscovery`.
+
+When package discovery is explicitly enabled but no packages are exposed by the
+bundler, the extension writes an actionable warning to the browser console.
+The built-in package providers remain available; configure
+`packageDiscovery.packages`, provide `packageAutoDiscovery.globFn`, or expose
+`globalThis.__FDH_TERMINOLOGY_PACKAGES__` for additional package-backed
+providers.
+
+### Cross-bundler discovery
+
+For Webpack, Rollup, esbuild, SSR, or other non-Vite builds, generate a plain
+ESM registry during the application build:
+
+```bash
+npx fdh-terminology-discover \
+  --root . \
+  --out src/generated/terminology-packages.js \
+  --package de.ihe-d.terminology
+```
+
+Register the generated registry without using a bundler plugin:
+
+```js
+import packages, { packageMetadata } from
+  './generated/terminology-packages.js';
+
+createDefaultTerminologyServices({
+  packageAutoDiscovery: false,
+  packageDiscovery: {
+    enabled: true,
+    packages,
+    metadata: packageMetadata
+  }
+});
+```
+
+The generated file contains ordinary ESM data and does not require a JSON
+loader or Vite-specific API. Use `--include <package>=<CodeSystem.url>` to keep
+only selected CodeSystems in the generated registry. Supplying `--include` or
+`--package` selects an explicit package set; it does not mean automatic
+discovery of every installed package. Use `--exclude-package` when automatic
+discovery should remain enabled while omitting complete packages.
+
+The CLI is optional. The runtime API is bundler-neutral and can receive an
+already imported package collection directly:
+
+```js
+import aerztlicheFachrichtungen from
+  'de.ihe-d.terminology/CodeSystem-AerztlicheFachrichtungen.json' with { type: 'json' };
+
+createDefaultTerminologyServices({
+  packageAutoDiscovery: false,
+  packageDiscovery: {
+    enabled: true,
+    packages: {
+      'de.ihe-d.terminology': [aerztlicheFachrichtungen]
+    }
+  }
+});
+```
+
+An application may also generate the same plain ESM registry with its own
+Node.js, esbuild, Webpack, or Rollup build step. The browser only consumes the
+resulting `packages` object; it cannot scan `node_modules` at runtime.
+
+## Package Discovery with Vite
+
+Install the terminology package that contains the CodeSystems:
+
+```bash
+npm install <your-terminology-package>
+```
+
+Configure the discovered packages and their CodeSystem filters in `vite.config.js`:
+
+```js
+import { defineConfig } from 'vite';
+import { terminologyVitePlugin } from
+  '@forschungsgruppe-digital-health/terminology/vite';
+
+const discoveryPackages = {
+  'de.ihe-d.terminology': { include: ['*'] },
+  'dvmd.kdl.r4': { include: ['*'] },
+  'hl7.terminology.r4': { include: ['*'] },
+  'hl7.fhir.r4.core': {
+    include: ['http://hl7.org/fhir/abstract-types']
+  },
+  'hl7.fhir.uv.extensions.r4': { include: ['*'] }
+};
+
+export default defineConfig({
+  plugins: [
+    terminologyVitePlugin({
+      packages: discoveryPackages
+    })
+  ]
+});
+```
+
+Each package entry supports the documented resource filters:
+
+```js
+const discoveryPackages = {
+  'hl7.fhir.r4.core': {
+    include: ['http://hl7.org/fhir/abstract-types'],
+    exclude: []
+  }
+};
+```
+
+Enable discovery in the terminology services:
+
+```js
+createDefaultTerminologyServices({
+  packageAutoDiscovery: true
+});
+```
+
+The plugin discovers installed FHIR terminology packages from the application's
+dependency graph and exposes them on
+`globalThis.__FDH_TERMINOLOGY_PACKAGES__`. The services create one provider
+per discovered package. Each provider searches all CodeSystems in that package,
+so the properties-panel dropdown stays compact while the selected coding still
+keeps its concrete CodeSystem URL and version.
+
+The package names are explicit keys in `packages`. Within each package,
+`include` and `exclude` match exact canonical `CodeSystem.url` values, never
+filenames. `exclude` takes precedence over `include`, and `include: ['*']`
+loads every CodeSystem from that package. A configured URL that does not exist
+in the package causes an error.
+
+The repository demo itself uses the bundled providers and default terminology
+configuration. The filtered `packages` examples above are integration
+configurations for applications that want to restrict the available package
+content.
+
+## Generated XML
+
+Terminology annotations are persisted as standard BPMN 2.0 extension elements:
+
+```xml
+<bpmn2:dataObject id="DataObj_Befund" name="CT-Befundbericht"
+                  xmlns:term="https://clinical-bpmn.org/terminology/v1">
+  <bpmn2:extensionElements>
+    <term:annotations>
+      <term:annotation id="term-ann-1"
+                       text="CT-Befund Thorax mit KM">
+        <term:coding system="http://snomed.info/sct"
+                     code="169069000"
+                     display="CT of chest (procedure)"/>
+      </term:annotation>
+    </term:annotations>
+  </bpmn2:extensionElements>
+</bpmn2:dataObject>
+```
+
+Clinical data belongs only in `term:` elements under
+`bpmn:extensionElements`. It must not change BPMN core or BPMN-DI structures.
+
+## Demo
+
+The interactive demo is deployed to GitHub Pages on pushes to `main`:
+
+[bpmn-extension-medical-terminology demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
+
+Run it locally:
+
+```bash
+git clone https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git
+cd bpmn-extension-medical-terminology
+npm install --legacy-peer-deps
+npm run dev
+```
+
+The demo uses the extension's bundled package providers and default
+Ontoserver/FHIR configuration without terminology-specific Vite setup. The
+public service configuration supports switching to a custom Snowstorm instance,
+a same-origin proxy, or another FHIR terminology server.
+
+## Documentation
+
+| Document | Audience | Content |
+|---|---|---|
+| [README.md](README.md) | Users and integrators | Features, setup, usage, and discovery |
+| [Extending bpmn.io](docs/EXTENDING.md) | Developers and contributors | BPMN 2.0, bpmn.io, moddle, properties panel, linting, and validation primer |
+| [Terminology extension user story](docs/user-stories/terminology-extension-mvp.md) | Maintainers and stakeholders | Dated current scope, implemented capabilities, and planned follow-up |
+| [Architecture](docs/ARCHITECTURE.md) | Contributors and integrators | Complete arc42 architecture documentation |
+| [Architecture decisions](docs/adr/) | Maintainers and contributors | Accepted ADRs and ADR template |
+| [Schema](schema/README.md) | XML/tooling integrators | Generated terminology XSD and usage |
+| [Valid BPMN examples](examples/valid/README.md) | Contributors and users | Synthetic conformance fixtures |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Development, testing, branching, and publishing |
+| [SECURITY.md](SECURITY.md) | Maintainers and security reporters | Vulnerability reporting and data-handling rules |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | All contributors | Community standards and reporting |
+| [CHANGELOG.md](CHANGELOG.md) | Maintainers and release reviewers | Repository-level release history |
+| [AGENTS.md](AGENTS.md) | Automation and agents | Repository rules and quality gates |
+
+## Contributing
+
+```bash
+git clone https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git
+cd bpmn-extension-medical-terminology
+npm install --legacy-peer-deps
+npm test
+npm run verify
+```
+
+`npm run verify` runs package-convention checks, BPMN conformance checks, and
+the extension test suite. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full
+contributor and publishing guide.
+
+## Citation
+
+If you use this software, please cite it using the metadata in
+[CITATION.cff](CITATION.cff).
+Broader machine-readable software metadata is available in
+[codemeta.json](codemeta.json).
 
 ## License
 
-MIT. Replace the placeholder in `LICENSE` with your name and year.
+MIT © Technische Universität Dresden, Forschungsgruppe Digital Health.
+See [LICENSE](LICENSE).
+
+### bpmn.io watermark
+
+This extension targets [bpmn.io](https://bpmn.io). bpmn-js is a peer dependency and
+is not distributed with this package. bpmn-js is published under MIT terms with one
+additional condition: the code that renders the bpmn.io watermark must not be removed
+or altered, and the watermark must stay fully visible and unobstructed in any website
+or application that uses it. This applies to the playground in `demo/` and to any
+application built on this extension. See <https://bpmn.io/license/>.
+
+### Terminology content
+
+This extension stores code system identifiers and codes only. It ships no SNOMED CT,
+LOINC or ICD-10 content — no display names, descriptions, hierarchies or excerpts.
+Using those terminologies in an application requires the licenses of their respective
+publishers: an Affiliate License via BfArM/MLDS for SNOMED CT, the LOINC Copyright
+Notice and License for LOINC, and the BfArM terms of use for ICD-10-GM.

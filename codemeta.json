@@ -1,0 +1,19 @@
+{
+  "@context": "https://w3id.org/codemeta/3.0",
+  "@type": "SoftwareSourceCode",
+  "name": "bpmn-extension-medical-terminology",
+  "codeRepository": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology",
+  "license": "https://spdx.org/licenses/MIT",
+  "copyrightYear": 2026,
+  "copyrightHolder": {
+    "@type": "Organization",
+    "name": "Technische Universität Dresden, Forschungsgruppe Digital Health",
+    "url": "https://tu-dresden.de/bu/wirtschaft/winf/digital-health"
+  },
+  "funder": {
+    "@type": "Organization",
+    "name": "Bundesministerium für Forschung, Technologie und Raumfahrt (BMFTR)",
+    "identifier": "https://ror.org/04pz7b180"
+  },
+  "funding": "01ZZ2506A"
+}

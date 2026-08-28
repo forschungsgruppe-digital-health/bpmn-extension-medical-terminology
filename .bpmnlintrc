@@ -1,9 +1,10 @@
 {
   "extends": [
     "bpmnlint:recommended",
-    "plugin:myext/recommended"
+    "bpmnlint:correctness",
+    "plugin:terminology/recommended"
   ],
   "moddleExtensions": {
-    "myext": "./extension/model/myExtension.json"
+    "term": "./extension/src/moddle/clinical.json"
   }
 }

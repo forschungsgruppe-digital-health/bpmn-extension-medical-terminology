@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# Pre-push gate: full verification before code leaves the machine — conformance,
+# packaging conventions and the unit tests. Mirrors the CI pipeline so a green
+# local push is a green CI run. Bypass once with `git push --no-verify`.
+
+# --- locate node (PATH, then nvm) ---------------------------------------------
+if ! command -v node >/dev/null 2>&1; then
+  if [ -n "${NVM_DIR:-}" ] && [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh" >/dev/null 2>&1; fi
+fi
+if ! command -v node >/dev/null 2>&1; then
+  for n in "$HOME/.nvm/versions/node"/*/bin; do [ -d "$n" ] && PATH="$n:$PATH"; done
+  export PATH
+fi
+if ! command -v node >/dev/null 2>&1; then
+  echo "[pre-push] node not found — skipping checks (open a shell where 'node' is available)."
+  exit 0
+fi
+
+echo "[pre-push] running full verification (conformance + packages + tests)…"
+if ! npm run -s verify; then
+  echo "[pre-push] verification failed. Fix the issues, or bypass once with: git push --no-verify"
+  exit 1
+fi
+exit 0

@@ -1,8 +1,8 @@
 {
-  "name": "bpmn-js-my-extension-demo",
+  "name": "clinical-bpmn-demo",
+  "version": "0.1.0",
   "private": true,
-  "version": "0.0.0",
-  "description": "Interactive modeling playground for the MyExtension bpmn.io extension. Not published.",
+  "description": "Demo app for @forschungsgruppe-digital-health/terminology",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,11 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bpmn-io/properties-panel": "^3.24.1",
-    "bpmn-js": "^18.0.0",
-    "bpmn-js-properties-panel": "^5.30.0"
+    "@bpmn-io/properties-panel": "^3.40.5",
+    "@forschungsgruppe-digital-health/terminology": "file:../extension",
+    "bpmn-js": "^18.14.0",
+    "bpmn-js-properties-panel": "^5.53.0"
   },
   "devDependencies": {
-    "vite": "^6.0.0"
+    "vite": "^6.3.5"
   }
 }

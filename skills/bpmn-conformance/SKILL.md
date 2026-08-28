@@ -1,30 +1,54 @@
 ---
 name: bpmn-conformance
-description: Validate a .bpmn file or a custom BPMN extension for BPMN 2.0 conformance and house conventions before commit or PR. Use when checking, validating, or reviewing BPMN diagrams or extension changes.
+description: Validate a .bpmn file or a clinical extension change for BPMN 2.0 conformance before commit/PR. Use when editing files under examples/ or docs/, the moddle descriptors (extension/src/moddle/*.json), or any .bpmn. Runs bpmnlint (structure and configured terminology rules), the moddle roundtrip (extension data), and XSD core validation, then explains the results.
 ---
 
-# BPMN conformance check
+# BPMN conformance
 
-Run the deterministic checks in order and report results per stage. The
-pass/fail decision comes from the tools, never from your own reading.
+The decision is made by deterministic CLI tools, not by you. Your job is to **run
+them, read their reports, and explain failures** — never to hand-wave a pass.
 
-1. `npm run lint:valid` — bpmnlint (`recommended` + plugin rules) over `examples/valid/`. Must pass.
-2. `npm run lint:invalid` — over `examples/invalid/`. Must FAIL. This is a negative test proving the rules actually fire; a pass here means a rule is broken.
-3. `npm run roundtrip` — moddle `fromXML`/`toXML` with the custom extension registered. Confirms extension data parses and serialises without warnings or loss.
-4. `npm run xsd` — validates the BPMN **core** against the official BPMN20.xsd.
+## Run
 
-`npm run validate` chains 1, 3, 4 and the conventions check for the common case.
+From the repo root:
 
-5. *(Optional)* `npm run xsd:ext` — validates the examples against the BPMN core XSD **and** an extension XSD generated from the moddle descriptor, so structural errors in the custom data are caught too. Run `npm run xsd:gen:check` first to confirm the committed XSD is not stale. Still structure-only; semantics stay in step 1.
+```bash
+npm run check:conformance      # bpmnlint + moddle roundtrip + XSD core (the gate)
+```
 
-## Scope boundary — state this in every report
-The plain XSD step (4) checks the BPMN core only. Data under
-`<extensionElements>` is parsed with `processContents="lax"` and is NOT covered
-by it. The optional `xsd:ext` step (5) adds *structural* validation of the
-extension data but never its *semantics*. Extension correctness is established
-by steps 1 and 3 (and, structurally, 5). Never report "XSD passed" as
-"the extension is valid".
+Or individually:
 
-## On failure
-Summarise each failing stage, quote the tool's own message, and propose a
-minimal fix. Do not edit files unless asked.
+```bash
+npm run lint:bpmn              # BPMN 2.0 plus configured terminology rules
+npm run check:roundtrip        # lossless/stable serialization of term: data
+node tools/moddle-roundtrip.mjs --strict   # promote roundtrip warnings to failures
+npm run check:xsd              # BPMN-core XSD validation (informational)
+bash tools/validate-xsd.sh --strict        # fail on a schema-invalid core
+```
+
+Scope to specific files by appending paths, e.g.
+`node tools/moddle-roundtrip.mjs path/to/file.bpmn`.
+
+## Division of labour (do not conflate these)
+
+| Layer | Tool | Checks | Blocking? |
+|---|---|---|---|
+| Structure and extension rules | `bpmnlint` | disconnected nodes, start/end events, implicit splits, dangling refs, and configured `term:` rules | **yes** |
+| Extension data | moddle roundtrip | `term:` content survives parse+serialize, stable output | **yes** on instability; warnings non-fatal (use `--strict`) |
+| Standard core | XSD (`xmllint`) | BPMN core matches OMG BPMN20.xsd | **no** (informational) |
+
+## Interpreting results
+
+- **bpmnlint error** → a real structural defect. Fix the diagram.
+- **roundtrip not stable (`stable=false`)** → serialization is not idempotent — a
+  real bug; investigate the moddle model or the file. Always blocking.
+- **roundtrip warning `unparsable content <term:…>`** → the file uses an extension
+  element the moddle model does **not** define (e.g. `term:target`). That content
+  is silently dropped on save (data loss). Decide: extend the moddle descriptor, or
+  remove the stale content. Non-fatal by default; `--strict` makes it block.
+- **XSD `fails to validate`** → a BPMN-core issue (e.g. a `dataInputAssociation`
+  missing its `targetRef`). Informational because the standard XSD cannot see
+  extension content (it passes via `processContents="lax"`). A green XSD does **not**
+  mean the extensions are valid — that is the roundtrip's verdict.
+
+Never claim "XSD green ⇒ extensions valid". State which layers passed.

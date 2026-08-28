@@ -1,47 +1,61 @@
 name: deploy-demo
 
-# Build the demo/ modeler playground and publish it to GitHub Pages.
-# Enable once under Settings -> Pages -> Source: "GitHub Actions".
-# Independent of validate.yml and release-please.yml — a demo deploy is not a
-# package gate and is not coupled to releases.
-
 on:
   push:
     branches: [main]
-  workflow_dispatch:
 
-# Least-privilege token scopes required by actions/deploy-pages.
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Never run two Pages deploys at once; let an in-progress run finish.
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run tests
+        run: npm test
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: actions/setup-node@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: 22
+          cache: npm
 
-      - name: Install dependencies (workspaces incl. demo)
-        run: npm install --no-audit --no-fund
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
 
-      - name: Build demo
-        # Project Pages serve from https://<owner>.github.io/<repo>/, so assets
-        # must be requested from that sub-path.
-        run: npm --prefix demo run build
-        env:
-          BASE_PATH: /${{ github.event.repository.name }}/
+      - name: Build demo app
+        run: npm run build
 
-      - uses: actions/upload-pages-artifact@v5
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
         with:
           path: demo/dist
 
@@ -52,5 +66,6 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

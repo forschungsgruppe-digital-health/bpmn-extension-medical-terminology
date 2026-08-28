@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- GENERATED from the moddle descriptor by tools/moddle-to-xsd.mjs. Do not edit by hand. -->
+<!-- Scope: STRUCTURE only. Semantic rules (e.g. required attributes) live in the bpmnlint plugin. -->
+<!-- extension version 0.1.0 (kept in sync by Release Please) x-release-please-version -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:term="https://clinical-bpmn.org/terminology/v1"
+            targetNamespace="https://clinical-bpmn.org/terminology/v1"
+            elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+
+  <xsd:element name="annotations" type="term:tAnnotations"/>
+  <xsd:complexType name="tAnnotations">
+    <xsd:sequence>
+      <xsd:element ref="term:annotation" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:element name="annotation" type="term:tAnnotation"/>
+  <xsd:complexType name="tAnnotation">
+    <xsd:sequence>
+      <xsd:element ref="term:coding" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="id" type="xsd:string"/>
+    <xsd:attribute name="text" type="xsd:string"/>
+  </xsd:complexType>
+
+  <xsd:element name="coding" type="term:tCoding"/>
+  <xsd:complexType name="tCoding">
+    <xsd:attribute name="system" type="xsd:string"/>
+    <xsd:attribute name="version" type="xsd:string"/>
+    <xsd:attribute name="code" type="xsd:string"/>
+    <xsd:attribute name="display" type="xsd:string"/>
+  </xsd:complexType>
+
+</xsd:schema>

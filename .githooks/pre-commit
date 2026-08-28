@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# Pre-commit gate: run the deterministic conformance + packaging checks when the
+# relevant files are staged. The SAME npm scripts run here, in the IDE tasks and
+# in CI — single source of truth. Bypass once with `git commit --no-verify`.
+
+# --- locate node (PATH, then nvm) ---------------------------------------------
+if ! command -v node >/dev/null 2>&1; then
+  if [ -n "${NVM_DIR:-}" ] && [ -s "$NVM_DIR/nvm.sh" ]; then . "$NVM_DIR/nvm.sh" >/dev/null 2>&1; fi
+fi
+if ! command -v node >/dev/null 2>&1; then
+  for n in "$HOME/.nvm/versions/node"/*/bin; do [ -d "$n" ] && PATH="$n:$PATH"; done
+  export PATH
+fi
+if ! command -v node >/dev/null 2>&1; then
+  echo "[pre-commit] node not found — skipping checks (open a shell where 'node' is available)."
+  exit 0
+fi
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+status=0
+
+if printf '%s\n' "$staged" | grep -qE '\.bpmn$|extension/src/moddle/.*\.json$'; then
+  echo "[pre-commit] BPMN conformance check…"
+  npm run -s check:conformance || status=1
+fi
+
+if printf '%s\n' "$staged" | grep -qE '(^|/)package\.json$'; then
+  echo "[pre-commit] package conventions…"
+  npm run -s check:packages || status=1
+fi
+
+if [ "$status" -ne 0 ]; then
+  echo "[pre-commit] checks failed. Fix the issues, or bypass once with: git commit --no-verify"
+fi
+exit $status

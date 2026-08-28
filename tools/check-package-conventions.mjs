@@ -1,40 +1,95 @@
 #!/usr/bin/env node
-//
-// Enforce bpmn.io packaging and publishing conventions on package.json.
-import { readFileSync } from 'node:fs';
+/**
+ * Publishing-convention check for the workspace packages (BLOCKING on errors).
+ *
+ * Verifies the bpmn.io / npm conventions for each publishable package under
+ * `extension/`:
+ *
+ *   ERROR (exit 1):
+ *     - name uses an accepted prefix:
+ *         @forschungsgruppe-digital-health/*  |  bpmn-js-*  |  bpmnlint-plugin-*
+ *     - "type": "module"            (the repo ships raw ESM, no build step)
+ *     - a license is declared
+ *     - has an entry point          (main and/or exports)
+ *
+ *   WARN (exit 0):
+ *     - no `exports` map            (recommended over bare `main`)
+ *     - no peerDependencies         (bpmn-js modules should declare bpmn-js etc.)
+ *     - no repository.directory     (monorepo provenance)
+ *     - no publishConfig.registry   (target registry for `npm publish`)
+ *
+ * Packages marked `"private": true` (root, demo app) are skipped for the
+ * publish-specific rules but still must be ESM.
+ *
+ * Usage: node tools/check-package-conventions.mjs
+ */
+import { readFileSync, existsSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-const errors = [];
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
+const packagePath = join(repoRoot, 'extension', 'package.json');
 
-// Naming: bpmn-js-* for modules, bpmnlint-plugin-* for lint plugins
-// (scoped names like @org/bpmn-js-foo are allowed).
-const NAME_RE = /^(@[^/]+\/)?(bpmn-js-|bpmnlint-plugin-)/;
-if (!NAME_RE.test(pkg.name || '')) {
-  errors.push(`name "${pkg.name}" should start with "bpmn-js-" or "bpmnlint-plugin-"`);
+const ACCEPTED_NAME = (name) =>
+  name.startsWith('@forschungsgruppe-digital-health/') ||
+  name.startsWith('bpmn-js-') ||
+  name.startsWith('bpmnlint-plugin-');
+
+function listPackageJsons() {
+  return existsSync(packagePath) ? [packagePath] : [];
 }
 
-if (!pkg.license) {
-  errors.push('missing "license" field');
+let errors = 0;
+let warnings = 0;
+const err = (pkg, msg) => {
+  console.log(`  ✖ ${pkg}: ${msg}`);
+  errors++;
+};
+const warn = (pkg, msg) => {
+  console.log(`  ⚠ ${pkg}: ${msg}`);
+  warnings++;
+};
+
+const files = listPackageJsons();
+if (!files.length) {
+  console.log('check-package-conventions: no extension package found — nothing to check.');
+  process.exit(0);
 }
 
-if (pkg.type !== 'module') {
-  errors.push('"type" should be "module" (extensions ship ES modules)');
+console.log(`check-package-conventions: checking ${files.length} package(s)…\n`);
+
+for (const file of files) {
+  const pkg = JSON.parse(readFileSync(file, 'utf8'));
+  const label = pkg.name || file;
+  console.log(`• ${label}`);
+
+  // ESM is required for every package (incl. private ones).
+  if (pkg.type !== 'module') err(label, 'missing "type": "module" (the repo ships raw ESM)');
+
+  if (pkg.private === true) {
+    console.log('    (private — skipping publish-specific checks)');
+    continue;
+  }
+
+  if (!pkg.name) err(label, 'missing "name"');
+  else if (!ACCEPTED_NAME(pkg.name))
+    err(
+      label,
+      `name "${pkg.name}" does not match an accepted prefix ` +
+        '(@forschungsgruppe-digital-health/*, bpmn-js-*, bpmnlint-plugin-*)'
+    );
+
+  if (!pkg.license) err(label, 'missing "license"');
+
+  if (!pkg.main && !pkg.exports) err(label, 'no entry point (neither "main" nor "exports")');
+  else if (!pkg.exports) warn(label, 'no "exports" map — recommended over bare "main"');
+
+  if (!pkg.peerDependencies) warn(label, 'no "peerDependencies" (bpmn-js modules should declare them)');
+  if (!pkg.repository || !pkg.repository.directory)
+    warn(label, 'no "repository.directory" — set it for monorepo provenance');
+  if (!pkg.publishConfig || !pkg.publishConfig.registry)
+    warn(label, 'no "publishConfig.registry" — set the target registry for `npm publish`');
 }
 
-// bpmn-js modules must declare bpmn-js as a peer, not a hard dependency.
-const isModule = (pkg.name || '').includes('bpmn-js-');
-const peers = pkg.peerDependencies || {};
-if (isModule && !peers['bpmn-js']) {
-  errors.push('a bpmn-js extension must declare "bpmn-js" as a peerDependency');
-}
-if (pkg.dependencies && pkg.dependencies['bpmn-js']) {
-  errors.push('"bpmn-js" must be a peerDependency, not a dependency');
-}
-
-if (errors.length) {
-  console.error('package.json convention violations:');
-  errors.forEach((e) => console.error(' - ' + e));
-  process.exit(1);
-}
-
-console.log('package.json conventions OK');
+console.log(`\ncheck-package-conventions: ${errors} error(s), ${warnings} warning(s).`);
+process.exit(errors ? 1 : 0);

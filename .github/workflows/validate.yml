@@ -2,48 +2,79 @@ name: validate
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
   pull_request:
+    branches: [dev, main]
+
+permissions:
+  contents: read
 
 jobs:
-  validate:
+  build-and-test:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
+    strategy:
+      matrix:
+        node-version: [22]
 
-      - uses: actions/setup-node@v6
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node-version }}
+          cache: npm
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci --legacy-peer-deps
 
-      - name: Install xmllint
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+      - name: Lint BPMN and terminology rules
+        run: npm run lint:bpmn
 
-      - name: Lint valid examples (must pass)
-        run: npm run lint:valid
-
-      - name: Lint invalid examples (negative test, must fail)
+      - name: Reject invalid BPMN fixtures
         run: |
           if npm run lint:invalid; then
-            echo "::error::invalid examples unexpectedly passed lint — a rule is not firing"
+            echo "::error::invalid examples unexpectedly passed lint"
             exit 1
-          else
-            echo "invalid examples correctly rejected"
           fi
 
-      - name: Moddle round-trip
-        run: npm run roundtrip
+      - name: Run tests
+        run: npm test
 
-      - name: XSD core conformance
-        run: npm run xsd
+      - name: Build demo app
+        run: npm run build
 
-      - name: Extension XSD up to date (drift guard)
-        run: npm run xsd:gen:check
+  conformance:
+    name: BPMN conformance & conventions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - name: XSD extension conformance (BPMN core + extension)
-        run: npm run xsd:ext
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
 
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Ensure xmllint is available (for XSD core validation)
+        run: xmllint --version || (sudo apt-get update && sudo apt-get install -y libxml2-utils)
+
+      # Blocking gate: structural BPMN lint + lossless/stable moddle roundtrip +
+      # informational XSD core validation. (XSD is informational by design — the
+      # standard BPMN20.xsd cannot validate extension content; see the tools.)
+      - name: Conformance (bpmnlint + roundtrip + XSD)
+        run: npm run check:conformance
+
+      # Blocking gate: npm/bpmn.io packaging conventions for the workspace packages.
       - name: Package conventions
-        run: npm run conventions
+        run: npm run check:packages
+
+      # Blocking gate: no high/critical CVEs in *production* (shipped) dependencies.
+      # Dev-only advisories are tracked separately and do not block here.
+      - name: Dependency audit (production deps)
+        run: npm audit --omit=dev --audit-level=high
