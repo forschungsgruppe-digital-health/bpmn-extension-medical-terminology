@@ -1,4 +1,6 @@
 export interface PackageMetadata {
+  /** Canonical package name used by generated discovery registries. */
+  packageName?: string;
   title?: string;
   version?: string;
 }

@@ -211,7 +211,7 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
  *   include?: string[],
  *   exclude?: string[],
  *   mode?: 'auto' | 'whitelist',
- *   metadata?: Record<string, { title?: string, version?: string }>,
+ *   metadata?: Record<string, { packageName?: string, title?: string, version?: string }>,
  *   componentLabels?: Record<string, Record<string, string>>,
  *   excludeSystemUris?: Iterable<string>
  * }} [config]

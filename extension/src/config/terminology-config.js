@@ -168,7 +168,9 @@ function validatePackageProviderOptions(packageProviderOptions) {
 
 function getCoveredSystemUris(providers) {
   return new Set(providers.flatMap(provider =>
-    typeof provider.getAll === 'function'
+    typeof provider.getCodeSystemUris === 'function'
+      ? provider.getCodeSystemUris()
+      : typeof provider.getAll === 'function'
       ? provider.getAll().map(concept => concept.system)
       : []
   ));

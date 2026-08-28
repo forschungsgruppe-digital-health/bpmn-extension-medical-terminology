@@ -195,15 +195,15 @@ available with sensible defaults, so the extension works out of the box after
 | `additionalPackageProviders` | Add package-backed providers |
 | `packageProviderOptions` | Override a bundled package provider's `componentLabel` or complete `displayName` |
 | `packageDiscovery` | Configure explicit package registration and filtering |
-| `packageAutoDiscovery` | Enable Vite-driven package discovery |
+| `packageAutoDiscovery` | Use packages exposed by a bundler or host application |
 | `loaderConfig` | Override or disable provider loading |
 
-Bundled package provider labels use `Package name (version) — component`.
-For example, the bundled IHE XDS providers are labelled by their package and
-their distinct document class or document type component. The default HL7
-provider follows the same package-name convention instead of repeating the
-package title abbreviation. Override only the component label while preserving
-the package metadata:
+Bundled and generated package provider labels use `Package name (version) —
+component`. For example, the bundled IHE XDS providers are labelled by their
+package and their distinct document class or document type component. Generated
+registries use the canonical package name even when the package manifest also
+contains a longer title. Override only the component label while preserving the
+package metadata:
 
 ```js
 createDefaultTerminologyServices({
@@ -363,6 +363,63 @@ The built-in package providers remain available; configure
 `globalThis.__FDH_TERMINOLOGY_PACKAGES__` for additional package-backed
 providers.
 
+### Cross-bundler discovery
+
+For Webpack, Rollup, esbuild, SSR, or other non-Vite builds, generate a plain
+ESM registry during the application build:
+
+```bash
+npx fdh-terminology-discover \
+  --root . \
+  --out src/generated/terminology-packages.js \
+  --package de.ihe-d.terminology
+```
+
+Register the generated registry without using a bundler plugin:
+
+```js
+import packages, { packageMetadata } from
+  './generated/terminology-packages.js';
+
+createDefaultTerminologyServices({
+  packageAutoDiscovery: false,
+  packageDiscovery: {
+    enabled: true,
+    packages,
+    metadata: packageMetadata
+  }
+});
+```
+
+The generated file contains ordinary ESM data and does not require a JSON
+loader or Vite-specific API. Use `--include <package>=<CodeSystem.url>` to keep
+only selected CodeSystems in the generated registry. Supplying `--include` or
+`--package` selects an explicit package set; it does not mean automatic
+discovery of every installed package. Use `--exclude-package` when automatic
+discovery should remain enabled while omitting complete packages.
+
+The CLI is optional. The runtime API is bundler-neutral and can receive an
+already imported package collection directly:
+
+```js
+import aerztlicheFachrichtungen from
+  'de.ihe-d.terminology/CodeSystem-AerztlicheFachrichtungen.json' with { type: 'json' };
+
+createDefaultTerminologyServices({
+  packageAutoDiscovery: false,
+  packageDiscovery: {
+    enabled: true,
+    packages: {
+      'de.ihe-d.terminology': [aerztlicheFachrichtungen]
+    }
+  }
+});
+```
+
+An application may also generate the same plain ESM registry with its own
+Node.js, esbuild, Webpack, or Rollup build step. The browser only consumes the
+resulting `packages` object; it cannot scan `node_modules` at runtime.
+
 ## Package Discovery with Vite
 
 Install the terminology package that contains the CodeSystems:
@@ -428,6 +485,11 @@ The package names are explicit keys in `packages`. Within each package,
 filenames. `exclude` takes precedence over `include`, and `include: ['*']`
 loads every CodeSystem from that package. A configured URL that does not exist
 in the package causes an error.
+
+The repository demo itself uses the bundled providers and default terminology
+configuration. The filtered `packages` examples above are integration
+configurations for applications that want to restrict the available package
+content.
 
 ## Generated XML
 
