@@ -55,7 +55,7 @@ export function createPackageTerminologyProvider(config) {
  *   id: string,
  *   displayName?: string,
  *   packageName?: string,
- *   packageMetadata?: { title?: string, version?: string },
+ *   packageMetadata?: { packageName?: string, title?: string, version?: string },
  *   componentLabel?: string,
  *   includeCodeSystemName?: boolean,
  *   codeSystems: import('@types/fhir').fhir4.CodeSystem[],
@@ -81,12 +81,20 @@ export function createPackageCollectionProvider(config) {
     })
     || config.id;
 
-  return new StaticProvider(
+  const provider = new StaticProvider(
     config.id,
     displayName,
     config.systemUri || `package:${config.id}`,
     concepts
   );
+
+  const codeSystemUris = codeSystems
+    .map(codeSystem => codeSystem?.url)
+    .filter(Boolean);
+
+  provider.getCodeSystemUris = () => [...codeSystemUris];
+
+  return provider;
 }
 
 /**

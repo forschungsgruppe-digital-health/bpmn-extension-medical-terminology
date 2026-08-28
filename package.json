@@ -25,6 +25,7 @@
     "xsd:gen:check": "node tools/moddle-to-xsd.mjs --check",
     "generate:hl7": "node tools/generate-hl7-code-systems.mjs",
     "generate:hl7:check": "node tools/generate-hl7-code-systems.mjs --check",
+    "generate:terminology": "node extension/src/cli/generate-terminology-packages.js",
     "xsd:ext": "node tools/validate-xsd-ext.mjs",
     "check:packages": "node tools/check-package-conventions.mjs",
     "check:conformance": "npm run lint:bpmn && npm run check:roundtrip && npm run xsd:gen:check && npm run xsd:ext && npm run check:xsd",

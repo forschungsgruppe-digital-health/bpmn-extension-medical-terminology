@@ -8,6 +8,12 @@ package-discovery plugin. See the
 [repository README](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology#readme)
 for setup and integration examples.
 
+Package discovery is bundler-neutral. For non-Vite applications, the bundled
+`fdh-terminology-discover` CLI can generate a plain ESM package registry, which
+is then passed through `packageDiscovery`. The CLI is optional: applications
+can also import CodeSystem JSON directly and provide a `packages` object. See
+the repository README for the CLI, Vite filtering, and manual-import examples.
+
 Medical terminology data is stored only in `bpmn:extensionElements` under the
 `term:` namespace.
 

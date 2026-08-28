@@ -470,6 +470,33 @@ describe('TerminologyServices', () => {
     expect(provider.displayName).toBe('ACME Terminology (1.2.3) — custom-cs');
   });
 
+  it('should use the canonical package name for generated discovery metadata', () => {
+    const providers = createDefaultPackageProviders({
+      packageDiscovery: {
+        enabled: true,
+        include: ['acme.terminology'],
+        mode: 'whitelist',
+        metadata: {
+          'acme.terminology': {
+            packageName: 'acme.terminology',
+            title: 'ACME Terminology',
+            version: '1.2.3'
+          }
+        },
+        packages: {
+          'acme.terminology': [{
+            resourceType: 'CodeSystem',
+            id: 'custom-cs',
+            url: 'https://example.org/CodeSystem/custom'
+          }]
+        }
+      }
+    });
+
+    expect(providers.find(provider => provider.id === 'pkg-acme-terminology').displayName)
+      .toBe('acme.terminology (1.2.3) — custom-cs');
+  });
+
   it('should allow overriding a discovered CodeSystem component label', () => {
     const providers = createDefaultPackageProviders({
       packageDiscovery: {
@@ -569,6 +596,30 @@ describe('TerminologyServices', () => {
     expect(discoveredProvider.getAll()).toHaveLength(1);
     expect(discoveredProvider.getAll()[0].system)
       .toBe('https://example.org/CodeSystem/additional');
+  });
+
+  it('should exclude preset-covered CodeSystems without concepts from discovery', () => {
+    const emptyCodeSystem = {
+      resourceType: 'CodeSystem',
+      id: 'time-period-ranges',
+      url: 'http://terminology.hl7.org/CodeSystem/time-period-ranges'
+    };
+
+    const providers = createDefaultPackageProviders({
+      packageAutoDiscovery: false,
+      hl7CodeSystems: [emptyCodeSystem],
+      packageDiscovery: {
+        enabled: true,
+        include: ['hl7.terminology.r4'],
+        mode: 'whitelist',
+        packages: {
+          'hl7.terminology.r4': [emptyCodeSystem]
+        }
+      }
+    });
+
+    expect(providers.some(provider => provider.id === 'pkg-hl7-terminology-r4'))
+      .toBe(false);
   });
 
   it('should reject invalid package provider overrides', () => {
