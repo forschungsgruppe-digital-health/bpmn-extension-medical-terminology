@@ -16,7 +16,7 @@
           "path": "src/moddle/clinical.json",
           "jsonpath": "$.version"
         },
-        "../schema/clinical-semantics.xsd"
+        "/schema/clinical-semantics.xsd"
       ]
     }
   },
