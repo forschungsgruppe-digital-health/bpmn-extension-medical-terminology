@@ -14,6 +14,15 @@ is then passed through `packageDiscovery`. The CLI is optional: applications
 can also import CodeSystem JSON directly and provide a `packages` object. See
 the repository README for the CLI, Vite filtering, and manual-import examples.
 
+Install the package with npm:
+
+```bash
+npm install @forschungsgruppe-digital-health/terminology
+```
+
+The package resolves its FHIR terminology dependencies directly from Simplifier;
+no additional npm registry configuration is required for those dependencies.
+
 Medical terminology data is stored only in `bpmn:extensionElements` under the
 `term:` namespace.
 
