@@ -35,7 +35,9 @@ jobs:
       # versions return a conflict and are skipped; any other failure fails the job.
       - name: Publish packages to GitHub Packages
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer an explicit PAT for package publishing (write:packages), because
+          # org/package ACLs may block publishing with GITHUB_TOKEN.
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           for pkg in extension; do
             echo "::group::publish @forschungsgruppe-digital-health/terminology"
@@ -45,6 +47,9 @@ jobs:
               echo "skip $pkg — this version is already published"
             else
               cat publish-err.log
+              if grep -qiE "permission_denied: write_package|403 Forbidden" publish-err.log; then
+                echo "::error::missing package publish permission; configure GH_PACKAGES_TOKEN or PACKAGES_TOKEN with write:packages"
+              fi
               echo "::error::publish failed for terminology"
               exit 1
             fi
