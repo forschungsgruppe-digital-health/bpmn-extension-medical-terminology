@@ -1,6 +1,6 @@
 {
   "name": "@forschungsgruppe-digital-health/terminology",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Extensible medical terminology for BPMN process models",
   "type": "module",
   "scripts": {

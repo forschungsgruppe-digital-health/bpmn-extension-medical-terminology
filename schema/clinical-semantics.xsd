@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- GENERATED from the moddle descriptor by tools/moddle-to-xsd.mjs. Do not edit by hand. -->
 <!-- Scope: STRUCTURE only. Semantic rules (e.g. required attributes) live in the bpmnlint plugin. -->
-<!-- extension version 0.1.0 (kept in sync by Release Please) x-release-please-version -->
+<!-- extension version 0.1.1 (kept in sync by Release Please) x-release-please-version -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
             xmlns:term="https://clinical-bpmn.org/terminology/v1"
             targetNamespace="https://clinical-bpmn.org/terminology/v1"
