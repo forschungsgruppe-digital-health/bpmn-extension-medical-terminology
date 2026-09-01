@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml/badge.svg)](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A522-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A524-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 `@forschungsgruppe-digital-health/terminology` adds machine-readable medical
 terminology to BPMN process models. It provides a `term:`
@@ -101,7 +101,7 @@ Configure the `@forschungsgruppe-digital-health` scope to use
 
 ### Prerequisites
 
-- Node.js 22 or later for development
+- Node.js 24 or later for development
 - An application using bpmn-js 15 or later
 - `bpmn-js-properties-panel` 5 or later when using the properties panel
 

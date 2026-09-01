@@ -8,7 +8,7 @@ cd bpmn-extension-medical-terminology
 npm install --legacy-peer-deps
 ```
 
-Use Node.js 22 or later.
+Use Node.js 24 or later.
 
 ## Layout
 
