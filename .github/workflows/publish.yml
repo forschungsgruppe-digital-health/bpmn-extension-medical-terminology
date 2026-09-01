@@ -8,6 +8,7 @@ name: publish
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,6 +16,8 @@ permissions:
 
 jobs:
   publish:
+    # Manual runs are intentionally limited to the trusted main branch.
+    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4

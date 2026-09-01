@@ -8,15 +8,15 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "extension/lint/bpmnlint-plugin-terminology/package.json",
+          "path": "lint/bpmnlint-plugin-terminology/package.json",
           "jsonpath": "$.version"
         },
         {
           "type": "json",
-          "path": "extension/src/moddle/clinical.json",
+          "path": "src/moddle/clinical.json",
           "jsonpath": "$.version"
         },
-        "schema/clinical-semantics.xsd"
+        "/schema/clinical-semantics.xsd"
       ]
     }
   },
@@ -25,13 +25,8 @@
       "type": "node-workspace",
       "updatePeerDependencies": true,
       "merge": false
-    },
-    {
-      "type": "linked-versions",
-      "groupName": "clinical-bpmn",
-      "components": ["terminology"]
     }
   ],
   "include-component-in-tag": true,
-  "separate-pull-requests": false
+  "separate-pull-requests": true
 }
