@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.1...terminology-v0.1.2) (2026-09-01)
+
+
+### Bug Fixes
+
+* **terminology:** document Simplifier FHIR dependencies ([161df60](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/161df60a2f5ff7c56fd0a345630a744349bbd601))
+* **terminology:** document Simplifier FHIR dependencies ([e51616f](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/e51616f9448812373707e0e3138d59e77e43b40e))
+
 ## [0.1.1](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.0...terminology-v0.1.1) (2026-09-01)
 
 
