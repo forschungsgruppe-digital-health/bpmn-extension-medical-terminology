@@ -346,6 +346,326 @@ describe('terminology properties panel UI', () => {
     });
   });
 
+  it('shows no-results status without treating an empty search as an error', async () => {
+    const context = await createTestContext({
+      id: 'Task_NoSearchMatches',
+      type: 'bpmn:Task',
+      name: 'No Search Matches Task'
+    });
+
+    const search = vi.fn(async () => ({ items: [] }));
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'unknown term' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('No matching terminology concepts found.')).toBeTruthy();
+    });
+
+    expect(search).toHaveBeenCalledWith('unknown term', 'loinc', { limit: 15, offset: 0 });
+    expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
+  });
+
+  it('shows the provider total when it is available', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchResultTotal',
+      type: 'bpmn:Task',
+      name: 'Search Result Total Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => ({
+          items: SEARCH_RESULTS.loinc.slice(0, 2),
+          total: 42
+        })),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'stage' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Showing 2 of 42 results')).toBeTruthy();
+    });
+  });
+
+  it('shows only displayed results when the provider total is unavailable', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchResultCountOnly',
+      type: 'bpmn:Task',
+      name: 'Search Result Count Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => ({
+          items: SEARCH_RESULTS.loinc.slice(0, 2)
+        })),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'stage' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Showing 2 results')).toBeTruthy();
+    });
+
+    expect(screen.queryByText(/of .* results/)).toBeNull();
+  });
+
+  it('does not call a provider or show a result status before a search term is entered', async () => {
+    const context = await createTestContext({
+      id: 'Task_EmptySearch',
+      type: 'bpmn:Task',
+      name: 'Empty Search Task'
+    });
+
+    const search = vi.fn();
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+
+    expect(search).not.toHaveBeenCalled();
+    expect(screen.queryByText('No matching terminology concepts found.')).toBeNull();
+  });
+
+  it('keeps the server error visible instead of reporting a missing coding', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchServerError',
+      type: 'bpmn:Task',
+      name: 'Search Server Error Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw { kind: 'server', status: 503 };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'pneumonia' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
+    });
+
+    expect(screen.queryByText(/Showing .* results/)).toBeNull();
+
+    fireEvent.click(screen.getByText('Save annotation'));
+
+    expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
+    expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
+    expect(screen.queryByText('Please select a coding from the search results or provide free text before saving.')).toBeNull();
+  });
+
+  it('shows a data-specific message for an unexpected provider response', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchDataError',
+      type: 'bpmn:Task',
+      name: 'Search Data Error Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw { kind: 'data' };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'pneumonia' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LOINC returned invalid terminology data. Check the server compatibility and try again.')).toBeTruthy();
+    });
+  });
+
+  it('shows a proxy-specific message for a redirected Snowstorm search', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchRedirectError',
+      type: 'bpmn:Task',
+      name: 'Search Redirect Error Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw { kind: 'redirect', status: 302 };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'pneumonia' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LOINC redirected the search request. Use a redirect-free endpoint or a same-origin proxy.')).toBeTruthy();
+    });
+  });
+
+  it('allows a new search and coding selection after a provider error', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchRecovery',
+      type: 'bpmn:Task',
+      name: 'Search Recovery Task'
+    });
+
+    const search = vi.fn()
+      .mockRejectedValueOnce({ kind: 'network' })
+      .mockResolvedValue({ items: [SEARCH_RESULTS.loinc[0]] });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+
+    const searchInput = getControlByLabel(view.container, 'Search');
+    fireEvent.input(searchInput, {
+      target: { value: 'failed search' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LOINC could not be reached. Check your network connection and server URL.')).toBeTruthy();
+    });
+
+    fireEvent.input(searchInput, {
+      target: { value: 'Stage group' }
+    });
+
+    const suggestion = await waitFor(() => {
+      const match = view.container.querySelector('.search-suggestion');
+
+      expect(match).toBeTruthy();
+      expect(match.querySelector('.search-suggestion__label').textContent).toBe('Stage group.clinical Cancer');
+      return match;
+    });
+
+    fireEvent.mouseDown(suggestion);
+    await waitFor(() => expect(view.container.querySelectorAll('.selected-coding')).toHaveLength(1));
+    fireEvent.click(screen.getByText('Save annotation'));
+
+    await waitFor(() => expect(screen.getByText('+ Add annotation')).toBeTruthy());
+    expect(context.element.businessObject.extensionElements).toBeTruthy();
+    expect(search).toHaveBeenCalledTimes(2);
+  });
+
+  it('distinguishes an unselected result from an invalid search', async () => {
+    const context = await createTestContext({
+      id: 'Task_UnselectedResult',
+      type: 'bpmn:Task',
+      name: 'Unselected Result Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => ({ items: [SEARCH_RESULTS.loinc[0]] })),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'Stage group' }
+    });
+
+    await waitFor(() => expect(view.container.querySelector('.search-suggestion')).toBeTruthy());
+    fireEvent.click(screen.getByText('Save annotation'));
+
+    expect(screen.getByText('Please select a coding from the search results or provide free text before saving.')).toBeTruthy();
+    expect(screen.queryByText('LOINC could not be reached. Check your network connection and server URL.')).toBeNull();
+  });
+
   it('hides the terminology dropdown when no providers are available', async () => {
     const context = await createTestContext({
       id: 'Task_NoProviders',

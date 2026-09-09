@@ -174,6 +174,17 @@ addAnnotation(businessObject, moddle, {
 });
 ```
 
+Terminology search failures are exposed as `TerminologyRequestError` instances
+with a `kind` of `network`, `authorization`, `server`, `data`, or `redirect`.
+The `data` kind means that the server responded but did not return a valid
+provider response; it is distinct from an empty successful result. `redirect`
+means that Snowstorm redirected the request and should be configured with its
+redirect-free API base URL or accessed through a same-origin proxy.
+
+Search results always contain the displayed concepts. The optional `total`
+field is only present when the provider can supply a reliable total; clients
+must not infer a total from the number of returned concepts.
+
 `createDefaultTerminologyServices()` provides the standard service setup used
 by the demo and by a plain app after installation: SNOMED CT, FHIR
 terminology-server providers, and package-backed terminology providers are all
@@ -187,15 +198,15 @@ available with sensible defaults, so the extension works out of the box after
 | `serverConfig` | Override FHIR, SNOMED, and Snowstorm server base URLs |
 | `enableSnomed` | Enable or disable the default SNOMED provider |
 | `enableFhirDefaults` | Enable or disable built-in FHIR providers |
-| `enablePackageDefaults` | Enable or disable bundled package providers |
+| `enablePackageDefaults` | Enable or disable bundled package providers; explicit `packageDiscovery` providers remain available |
 | `disabledProviderIds` | Disable providers by ID |
 | `snomedConfig` | Override SNOMED provider settings |
 | `fhirProviderOverrides` | Override built-in FHIR providers |
 | `additionalFhirProviders` | Add additional FHIR providers |
 | `additionalPackageProviders` | Add package-backed providers |
 | `packageProviderOptions` | Override a bundled package provider's `componentLabel` or complete `displayName` |
-| `packageDiscovery` | Configure explicit package registration and filtering |
-| `packageAutoDiscovery` | Use packages exposed by a bundler or host application |
+| `packageDiscovery` | Register explicit package data and configure package filtering |
+| `packageAutoDiscovery` | Use packages exposed by a bundler or host application; does not disable explicit `packageDiscovery.packages` |
 | `loaderConfig` | Override or disable provider loading |
 
 Bundled and generated package provider labels use `Package name (version) —
@@ -255,20 +266,27 @@ const terminologyServices = createDefaultTerminologyServices({
 The default SNOMED provider uses the FHIR API at
 `https://r4.ontoserver.csiro.au/fhir`. To use a custom Snowstorm deployment
 or a same-origin proxy, keep the provider ID unchanged and change its
-transport and base URL.
+transport and base URL. `baseUrl` is the Snowstorm API context path, without
+the edition branch or `/concepts`; the provider appends both.
 
 ```js
 const terminologyServices = createDefaultTerminologyServices({
   snomedConfig: {
     transport: 'snowstorm',
-    baseUrl: '/api/snowstorm/snomed-ct'
+    baseUrl: '/api/snowstorm/snomed-ct',
+    branch: 'MAIN',
+    language: 'de',
+    languageStrategy: 'header',
+    defaultEcl: '< 404684003'
   }
 });
 ```
 
 For another FHIR terminology server, keep `transport: 'fhir'` and set
 `serverConfig.snomedBaseUrl` or `snomedConfig.baseUrl`. For a Snowstorm
-instance, use `transport: 'snowstorm'` as shown above.
+instance, use `transport: 'snowstorm'` as shown above. The configured
+`defaultEcl` is sent as the `ecl` query parameter, and `languageStrategy:
+'header'` sends the configured language as `Accept-Language`.
 
 ### CORS, proxies, and custom fetch functions
 
@@ -301,7 +319,13 @@ const terminologyServices = createDefaultTerminologyServices({
 
 This is the supported extension-side hook for CORS-sensitive deployments. The
 browser itself still blocks direct cross-origin requests unless the remote
-server explicitly allows them.
+server explicitly allows them. In particular, the public
+`https://snowstorm.snomedtools.org/snowstorm/snomed-ct` endpoint must not be
+used directly from a browser: it redirects browser requests to a denial page
+and does not provide a usable CORS response. Use a Snowstorm deployment with a
+redirect-free, CORS-enabled API endpoint or a same-origin proxy instead. A
+direct authenticated browser request additionally requires the operator to
+allow its preflight request and the `Authorization` header.
 
 ### Out-of-the-box defaults and external overrides
 
@@ -346,9 +370,22 @@ extension point for downstream projects that want to point to their own servers,
 package sets, or terminology metadata.
 
 The bundled HL7, IHE XDS, and KDL providers do not require the Vite discovery
-plugin. The `packageAutoDiscovery` option is for additional packages exposed by
-the host application; native ESM hosts can provide those packages explicitly
-through `packageDiscovery`.
+plugin. `enablePackageDefaults: false` disables only these bundled providers.
+The `packageAutoDiscovery` option controls additional packages exposed by the
+host application; native ESM hosts can provide packages explicitly through
+`packageDiscovery`, independent of both options:
+
+```js
+createDefaultTerminologyServices({
+  enablePackageDefaults: false,
+  packageAutoDiscovery: false,
+  packageDiscovery: {
+    packages: {
+      'my.terminology': [myCodeSystem]
+    }
+  }
+});
+```
 
 Installed terminology packages are discovered automatically by default when a
 Vite app exposes them through `globalThis.__FDH_TERMINOLOGY_PACKAGES__` or the

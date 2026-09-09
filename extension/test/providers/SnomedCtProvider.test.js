@@ -29,6 +29,20 @@ describe('SnomedCtProvider', () => {
     expect(provider.displayName).toBe('SNOMED CT International');
   });
 
+  it('supports a relative same-origin proxy baseUrl', async () => {
+    const fetchFn = createMockFetch({ items: [], total: 0 });
+    const provider = createProvider({
+      baseUrl: '/api/snowstorm/snomed-ct',
+      fetchFn
+    });
+
+    await provider.search('pneumonia');
+
+    const requestUrl = new URL(fetchFn.mock.calls[0][0]);
+    expect(provider.sourceLabel).toBe('localhost');
+    expect(requestUrl.pathname).toBe('/api/snowstorm/snomed-ct/MAIN/concepts');
+  });
+
   it('should declare full capabilities', () => {
     const provider = createProvider();
     expect(provider.capabilities).toEqual({
@@ -86,6 +100,25 @@ describe('SnomedCtProvider', () => {
       });
     });
 
+    it('preserves an unavailable total from the Snowstorm adapter', async () => {
+      const provider = createProvider({
+        fetchFn: createMockFetch({
+          items: [{
+            conceptId: '233604007',
+            pt: { term: 'Pneumonia' },
+            active: true
+          }]
+        })
+      });
+
+      const result = await provider.search('pneumonia');
+
+      expect(result).toMatchObject({
+        concepts: [{ code: '233604007' }]
+      });
+      expect(result.total).toBeUndefined();
+    });
+
     it('should pass ECL constraint from default config', async () => {
       const fetchFn = createMockFetch({ items: [], total: 0 });
       const provider = createProvider({ defaultEcl: '<71388002', fetchFn });
@@ -102,6 +135,53 @@ describe('SnomedCtProvider', () => {
       await provider.search('test', { ecl: '<404684003' });
       const calledUrl = new URL(fetchFn.mock.calls[0][0]);
       expect(calledUrl.searchParams.get('ecl')).toBe('<404684003');
+    });
+
+    it('forwards configured branch, language, and defaultEcl to Snowstorm', async () => {
+      const fetchFn = createMockFetch({ items: [], total: 0 });
+      const provider = createProvider({
+        baseUrl: 'https://snowstorm.example.com/snowstorm/snomed-ct',
+        branch: 'MAIN/SNOMEDCT-DE',
+        language: 'de-DE',
+        languageStrategy: 'header',
+        defaultEcl: '< 404684003',
+        fetchFn
+      });
+
+      await provider.search('pneumonia');
+
+      const calledUrl = new URL(fetchFn.mock.calls[0][0]);
+      const requestOptions = fetchFn.mock.calls[0][1];
+      expect(calledUrl.pathname).toBe('/snowstorm/snomed-ct/MAIN/SNOMEDCT-DE/concepts');
+      expect(calledUrl.searchParams.get('ecl')).toBe('< 404684003');
+      expect(requestOptions.headers['Accept-Language']).toBe('de');
+    });
+
+    it('should preserve server errors from the Snowstorm adapter', async () => {
+      const provider = createProvider({
+        fetchFn: vi.fn(async () => ({ ok: false, status: 503 }))
+      });
+
+      await expect(provider.search('test'))
+        .rejects.toMatchObject({ kind: 'server', status: 503 });
+    });
+
+    it('should preserve data errors from the Snowstorm adapter', async () => {
+      const provider = createProvider({
+        fetchFn: createMockFetch({ items: [{ pt: { term: 'Missing concept id' } }] })
+      });
+
+      await expect(provider.search('test'))
+        .rejects.toMatchObject({ kind: 'data' });
+    });
+
+    it('preserves redirect errors from the Snowstorm adapter', async () => {
+      const provider = createProvider({
+        fetchFn: vi.fn(async () => ({ ok: false, status: 302 }))
+      });
+
+      await expect(provider.search('test'))
+        .rejects.toMatchObject({ kind: 'redirect', status: 302 });
     });
   });
 

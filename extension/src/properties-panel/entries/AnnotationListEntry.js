@@ -14,6 +14,7 @@ import {
 } from '../../services/AnnotationHelper.js';
 import {
   normalizeConcepts,
+  getSearchResultSummary,
   getConceptLabel,
   getAutocompleteSuffix
 } from './search-utils.js';
@@ -33,6 +34,8 @@ export function AnnotationListEntry(props) {
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [searchResultTotal, setSearchResultTotal] = useState(undefined);
+  const [searchResultOffset, setSearchResultOffset] = useState(0);
   const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(-1);
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [formError, setFormError] = useState('');
@@ -105,6 +108,14 @@ export function AnnotationListEntry(props) {
 
     if (error?.kind === 'server') {
       return `${providerName} is currently unavailable (HTTP ${error.status}). Please try again later.`;
+    }
+
+    if (error?.kind === 'data') {
+      return `${providerName} returned invalid terminology data. Check the server compatibility and try again.`;
+    }
+
+    if (error?.kind === 'redirect') {
+      return `${providerName} redirected the search request. Use a redirect-free endpoint or a same-origin proxy.`;
     }
 
     return `${providerName} could not be reached. Check your network connection and server URL.`;
@@ -199,7 +210,10 @@ export function AnnotationListEntry(props) {
     const requestId = ++searchRequestSequence.current;
 
     setSearchError('');
+    setFormError('');
     setSearchResults([]);
+    setSearchResultTotal(undefined);
+    setSearchResultOffset(0);
     setActiveSearchResultIndex(-1);
 
     if (!normalizedTerm) {
@@ -233,7 +247,8 @@ export function AnnotationListEntry(props) {
         return;
       }
 
-      const result = await terminologyRegistry.search(normalizedTerm, resolvedProviderId, { limit: 15, offset: 0 });
+      const searchOptions = { limit: 15, offset: 0 };
+      const result = await terminologyRegistry.search(normalizedTerm, resolvedProviderId, searchOptions);
 
       if (requestId !== searchRequestSequence.current) {
         return;
@@ -241,6 +256,8 @@ export function AnnotationListEntry(props) {
 
       const concepts = normalizeConcepts(result);
       setSearchResults(concepts);
+      setSearchResultTotal(result?.total);
+      setSearchResultOffset(searchOptions.offset);
       setActiveSearchResultIndex(concepts.length > 0 ? 0 : -1);
     } catch (error) {
       if (requestId !== searchRequestSequence.current) {
@@ -262,6 +279,8 @@ export function AnnotationListEntry(props) {
 
     setSearchTerm('');
     setSearchResults([]);
+    setSearchResultTotal(undefined);
+    setSearchResultOffset(0);
     setActiveSearchResultIndex(-1);
     setSearchError('');
     setSearchBusy(false);
@@ -336,6 +355,15 @@ export function AnnotationListEntry(props) {
     const hasCodings = nextFormData.codings && nextFormData.codings.length > 0;
 
     if (!hasText && !hasCodings) {
+      if (searchError) {
+        return;
+      }
+
+      if (searchTerm.trim()) {
+        setFormError('Please select a coding from the search results or provide free text before saving.');
+        return;
+      }
+
       setFormError('Please provide free text or at least one coding before saving.');
       return;
     }
@@ -383,6 +411,7 @@ export function AnnotationListEntry(props) {
     searchRequestSequence.current += 1;
     setSelectedProviderId(providerId);
     resetSearchState();
+    setFormError('');
   }
 
   function handleSearchInput(e) {
@@ -575,6 +604,15 @@ export function AnnotationListEntry(props) {
   const activeSearchResult = searchResults[activeSearchResultIndex >= 0 ? activeSearchResultIndex : 0] || null;
   const searchCompletion = getAutocompleteSuffix(searchTerm, activeSearchResult);
   const showSearchSuggestions = searchFocused && searchResults.length > 0;
+  const searchResultSummary = getSearchResultSummary({
+    displayedCount: searchResults.length,
+    total: searchResultTotal,
+    offset: searchResultOffset
+  });
+  const showNoSearchResults = Boolean(searchTerm.trim()) &&
+    !searchBusy &&
+    !searchError &&
+    searchResults.length === 0;
   const resolvedId = getResolvedId(formData);
 
   useEffect(() => {
@@ -788,6 +826,12 @@ export function AnnotationListEntry(props) {
                   `}
                 </div>
               </div>
+              ${searchResultSummary && html`
+                <div class="form-hint">${searchResultSummary}</div>
+              `}
+              ${showNoSearchResults && html`
+                <div class="form-hint">No matching terminology concepts found.</div>
+              `}
               <div class="form-row">
                 <div class="form-hint">
                   Press Tab or Enter to add an annotation (multiple entries allowed).

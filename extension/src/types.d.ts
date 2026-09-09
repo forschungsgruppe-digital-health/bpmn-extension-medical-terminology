@@ -24,7 +24,23 @@ export interface SearchOptions {
 
 export interface SearchResult {
   concepts: Concept[];
-  total: number;
+  /** Total matches when the provider can supply a reliable value. */
+  total?: number;
+}
+
+export type TerminologyRequestErrorKind =
+  | 'network'
+  | 'authorization'
+  | 'server'
+  | 'data'
+  | 'redirect';
+
+export interface TerminologyAuth {
+  type: 'Bearer' | 'Basic' | 'ApiKey';
+  token?: string;
+  credentials?: string;
+  apiKey?: string;
+  headerName?: string;
 }
 
 export interface TerminologyProvider {
@@ -77,10 +93,17 @@ export interface PackageProviderConfig extends PackageProviderOptions {
 }
 
 export interface PackageDiscoveryConfig {
+  /**
+   * Request discovery when package data comes from a host or bundler.
+   * Supplying `packages`, `packageNames`, or `modules` also requests discovery.
+   */
   enabled?: boolean;
+  /** Restrict explicitly supplied or discovered packages by package name. */
   include?: string[];
+  /** Exclude package names after applying `include`. */
   exclude?: string[];
   mode?: 'auto' | 'whitelist';
+  /** Explicit package data, registered independently of `enablePackageDefaults`. */
   packages?: Record<string, CodeSystemResource[]>;
   packageNames?: string[];
   modules?: Record<string, CodeSystemResource>;
@@ -114,6 +137,15 @@ export interface SnomedProviderConfig {
   baseUrl?: string;
   displayName?: string;
   fetchFn?: typeof fetch;
+  /** Snowstorm edition branch, without the `/concepts` path. */
+  branch?: string;
+  language?: string;
+  languageStrategy?: 'param' | 'header';
+  maxResults?: number;
+  defaultEcl?: string;
+  version?: string;
+  auth?: TerminologyAuth;
+  headers?: Record<string, string>;
 }
 
 export interface DefaultTerminologyConfig {
@@ -126,6 +158,7 @@ export interface DefaultTerminologyConfig {
   fetchFn?: typeof fetch;
   enableSnomed?: boolean;
   enableFhirDefaults?: boolean;
+  /** Enable bundled package providers; explicit package discovery remains available. */
   enablePackageDefaults?: boolean;
   disabledProviderIds?: string[];
   providers?: TerminologyProvider[];
@@ -135,7 +168,9 @@ export interface DefaultTerminologyConfig {
   additionalPackageProviders?: Array<TerminologyProvider | PackageProviderConfig>;
   fhirProviderOverrides?: Array<Partial<FhirProviderConfig>>;
   packageProviderOptions?: Record<string, PackageProviderOptions>;
+  /** Register explicitly supplied package data and configure package filters. */
   packageDiscovery?: PackageDiscoveryConfig;
+  /** Enable or disable host/bundler package auto-discovery only. */
   packageAutoDiscovery?: boolean | PackageAutoDiscoveryConfig;
   packageMetadata?: Record<string, PackageMetadata>;
   hl7CodeSystems?: CodeSystemResource[];

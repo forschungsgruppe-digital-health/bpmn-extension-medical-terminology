@@ -12,7 +12,11 @@
  */
 
 import { FHIR_MIME_TYPE } from '../core/fhir-version.js';
-import { createRequestError, TerminologyRequestError } from '../core/TerminologyRequestError.js';
+import {
+  createDataError,
+  createRequestError,
+  TerminologyRequestError
+} from '../core/TerminologyRequestError.js';
 import languageConfig from '../config/terminology-language-config.js';
 
 function resolveBaseUrl(baseUrl) {
@@ -77,7 +81,7 @@ export class FhirTerminologyAdapter {
    * {@link Concept} type.
    *
    * @param {{ term: string, limit: number, offset: number }} params
-   * @returns {Promise<{ items: Concept[], total: number }>}
+   * @returns {Promise<{ items: Concept[], total?: number }>}
    */
   async search(params) {
     const url = new URL(`${this._baseUrl}/ValueSet/$expand`);
@@ -110,21 +114,60 @@ export class FhirTerminologyAdapter {
     // Some FHIR Servers need this flag for text return
     url.searchParams.set('includeDesignations', 'true');
 
+    let res;
+
     try {
-      const res = await this._request(url, extraRequestHeaders);
-      if (!res.ok) {
-        throw createRequestError(res, url);
-      }
+      res = await this._request(url, extraRequestHeaders);
+    } catch (error) {
+      throw createRequestError(null, url, { cause: error });
+    }
 
-      /** @type {FhirValueSet} */
-      const data = await res.json();
+    if (!res.ok) {
+      throw createRequestError(res, url);
+    }
 
-      /** @type {FhirValueSetExpansionContains[]} */
-      const contains = data.expansion?.contains || [];
-      const expansionVersion = getExpansionVersion(data.expansion);
+    /** @type {FhirValueSet} */
+    let data;
 
+    try {
+      data = await res.json();
+    } catch (error) {
+      throw createDataError(url, error);
+    }
+
+    const contains = data?.expansion?.contains;
+
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      !data.expansion ||
+      typeof data.expansion !== 'object' ||
+      (contains !== undefined && !Array.isArray(contains))
+    ) {
+      throw createDataError(url);
+    }
+
+    /** @type {FhirValueSetExpansionContains[]} */
+    const expansionContains = contains || [];
+    const total = data.expansion.total;
+
+    if (
+      (total !== undefined && typeof total !== 'number') ||
+      expansionContains.some(entry =>
+        !entry ||
+        typeof entry !== 'object' ||
+        typeof entry.code !== 'string' ||
+        !entry.code.trim()
+      )
+    ) {
+      throw createDataError(url);
+    }
+
+    const expansionVersion = getExpansionVersion(data.expansion);
+
+    try {
       return {
-        items: contains.map(c => {
+        items: expansionContains.map(c => {
           const concept = this._mapExpandContainsToConcept(c, resolvedLanguage);
 
           if (concept.version || !expansionVersion) {
@@ -133,14 +176,10 @@ export class FhirTerminologyAdapter {
 
           return { ...concept, version: expansionVersion };
         }),
-        total: data.expansion?.total ?? contains.length
+        total
       };
     } catch (error) {
-      if (error instanceof TerminologyRequestError) {
-        throw error;
-      }
-
-      throw createRequestError(null, url);
+      throw createDataError(url, error);
     }
   }
 

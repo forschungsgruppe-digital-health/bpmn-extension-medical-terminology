@@ -5,14 +5,17 @@
  * Used by: SnomedCtProvider (and optionally LoincProvider when hosted on Snowstorm)
  */
 import languageConfig from '../config/terminology-language-config.js';
-import { createRequestError } from '../core/TerminologyRequestError.js';
+import {
+  createDataError,
+  createRequestError
+} from '../core/TerminologyRequestError.js';
 
 function normalizeLanguage(lang) {
   if (!lang) return undefined;
   return String(lang).split(',')[0].split(';')[0].split('-')[0];
 }
 
-function resolveBaseUrl(baseUrl) {
+export function resolveSnowstormBaseUrl(baseUrl) {
   const rawBaseUrl = String(baseUrl || '').trim();
 
   if (!rawBaseUrl) {
@@ -38,7 +41,7 @@ export class SnowstormAdapter {
    * @param {Record<string, string>} [config.headers]
    */
   constructor(config) {
-    this._baseUrl = resolveBaseUrl(config.baseUrl);
+    this._baseUrl = resolveSnowstormBaseUrl(config.baseUrl);
     this._branch = config.branch || 'MAIN';
     this._auth = config.auth;
     this._fetch = config.fetchFn || globalThis.fetch.bind(globalThis);
@@ -55,7 +58,7 @@ export class SnowstormAdapter {
    * @param {number} params.offset
    * @param {string} [params.language]
    * @param {Record<string, string>} [params.additionalParams]
-   * @returns {Promise<{ items: import('../core/types').Concept[], total: number }>}
+   * @returns {Promise<{ items: import('../core/types').Concept[], total?: number }>}
    */
   async search(params) {
     const url = new URL(`${this._baseUrl}/${this._branch}/concepts`);
@@ -80,16 +83,49 @@ export class SnowstormAdapter {
       }
     }
 
-    const res = await this._request(url);
-    if (!res.ok) {
+    let res;
+
+    try {
+      res = await this._request(url);
+    } catch (error) {
+      throw createRequestError(null, url, { cause: error });
+    }
+
+    if (res.redirected || res.type === 'opaqueredirect' || !res.ok) {
       throw createRequestError(res, url);
     }
-    const data = await res.json();
 
-    return {
-      items: (data.items || []).map(item => this._mapConcept(item)),
-      total: data.total ?? 0
-    };
+    let data;
+
+    try {
+      data = await res.json();
+    } catch (error) {
+      throw createDataError(url, error);
+    }
+
+    if (
+      !data ||
+      typeof data !== 'object' ||
+      !Array.isArray(data.items) ||
+      (data.total !== undefined && typeof data.total !== 'number') ||
+      data.items.some(item =>
+        !item ||
+        typeof item !== 'object' ||
+        typeof item.conceptId !== 'string' ||
+        !item.conceptId.trim()
+      )
+    ) {
+      throw createDataError(url);
+    }
+
+    try {
+      return {
+        items: data.items.map(item => this._mapConcept(item)),
+        total: data.total
+      };
+    } catch (error) {
+      throw createDataError(url, error);
+    }
   }
 
   /**

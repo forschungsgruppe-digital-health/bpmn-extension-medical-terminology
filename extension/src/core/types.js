@@ -71,7 +71,7 @@
 /**
  * @typedef {Object} SearchResult
  * @property {Concept[]} concepts
- * @property {number} total
+ * @property {number} [total] - Total matches when the provider can supply it
  */
 
 /**
