@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.0](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.2...terminology-v1.0.0) (2026-09-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **terminology:** publish renamed extension package ([#18](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/18))
+* **terminology:** consumers must install and import the renamed terminology package.
+
+### Features
+
+* **terminology:** publish renamed extension package ([0fde219](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/0fde219ae0f24a109ce78042f81538d162aef7dc))
+* **terminology:** publish renamed extension package ([#18](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/18)) ([84f8bae](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/84f8bae461649b0427844a98659591fc9aba5cb4))
+
 ## [0.1.2](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.1...terminology-v0.1.2) (2026-09-01)
 
 
