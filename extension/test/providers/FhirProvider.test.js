@@ -81,6 +81,23 @@ describe('FhirProvider', () => {
       expect(result.concepts[0].version).toBe('2024');
     });
 
+    it('preserves an unavailable total from the FHIR adapter', async () => {
+      const provider = createProvider({
+        fetchFn: createMockFetch({
+          expansion: {
+            contains: [{ code: 'C34.1', display: 'Oberlappen' }]
+          }
+        })
+      });
+
+      const result = await provider.search('Lunge');
+
+      expect(result).toMatchObject({
+        concepts: [{ code: 'C34.1' }]
+      });
+      expect(result.total).toBeUndefined();
+    });
+
     it('should preserve the CodeSystem version reported by the expansion', async () => {
       const fetchFn = createMockFetch({
         expansion: {
@@ -152,6 +169,15 @@ describe('FhirProvider', () => {
       await provider.search('discharge');
       const calledUrl = new URL(fetchFn.mock.calls[0][0]);
       expect(calledUrl.searchParams.get('url')).toBe('http://loinc.org/vs');
+    });
+
+    it('should preserve data errors from the FHIR adapter', async () => {
+      const provider = createProvider({
+        fetchFn: createMockFetch({ expansion: { contains: 'invalid' } })
+      });
+
+      await expect(provider.search('test'))
+        .rejects.toMatchObject({ kind: 'data' });
     });
   });
 

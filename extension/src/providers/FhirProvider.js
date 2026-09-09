@@ -86,7 +86,7 @@ export class FhirProvider extends TerminologyProvider {
     
     return {
       concepts,
-      total: result.total ?? 0
+      total: result.total
     };
   }
 

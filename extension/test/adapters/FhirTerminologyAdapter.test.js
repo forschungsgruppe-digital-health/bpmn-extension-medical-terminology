@@ -136,6 +136,35 @@ describe('FhirTerminologyAdapter', () => {
         });
     });
 
+    it('should reject with a data error for an invalid expansion response', async () => {
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: createMockFetch({ expansion: { contains: 'invalid' } })
+      });
+
+      await expect(adapter.search({ term: 'test', limit: 10, offset: 0 }))
+        .rejects.toMatchObject({
+          kind: 'data',
+          host: 'fhir.bfarm.de'
+        });
+    });
+
+    it('should reject with a data error for an invalid expansion entry', async () => {
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: createMockFetch({
+          expansion: {
+            contains: [{ display: 'Missing code' }]
+          }
+        })
+      });
+
+      await expect(adapter.search({ term: 'test', limit: 10, offset: 0 }))
+        .rejects.toMatchObject({ kind: 'data' });
+    });
+
     it('should use system URI as fallback for concept system', async () => {
       const mockFetch = createMockFetch({
         expansion: {
@@ -151,6 +180,7 @@ describe('FhirTerminologyAdapter', () => {
 
       const result = await adapter.search({ term: 'test', limit: 10, offset: 0 });
       expect(result.items[0].system).toBe(SYSTEM_URI);
+      expect(result.total).toBeUndefined();
     });
 
     it('should use the CodeSystem version from expansion parameters', async () => {

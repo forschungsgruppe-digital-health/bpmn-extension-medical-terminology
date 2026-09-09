@@ -9,15 +9,31 @@ export class TerminologyRequestError extends Error {
   }
 }
 
-export function createRequestError(response, requestUrl) {
+export function createRequestError(response, requestUrl, { cause } = {}) {
   const host = new URL(requestUrl).host;
   const status = response?.status;
-  const kind = !status
+  const isRedirect = response?.redirected
+    || response?.type === 'opaqueredirect'
+    || (status >= 300 && status < 400);
+  const kind = isRedirect
+    ? 'redirect'
+    : !status
     ? 'network'
     : (status === 401 || status === 403 ? 'authorization' : 'server');
-  const message = status
+  const message = isRedirect
+    ? `Terminology server ${host} redirected the request${status ? ` (HTTP ${status})` : ''}. Configure a redirect-free endpoint or a same-origin proxy.`
+    : status
     ? `Terminology server ${host} returned HTTP ${status}.`
     : `Terminology server ${host} could not be reached.`;
 
-  return new TerminologyRequestError(message, { kind, host, status });
+  return new TerminologyRequestError(message, { kind, host, status, cause });
+}
+
+export function createDataError(requestUrl, cause) {
+  const host = new URL(requestUrl).host;
+
+  return new TerminologyRequestError(
+    `Terminology server ${host} returned invalid terminology data.`,
+    { kind: 'data', host, cause }
+  );
 }

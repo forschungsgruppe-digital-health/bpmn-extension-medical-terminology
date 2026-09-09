@@ -88,6 +88,31 @@ describe('SnowstormAdapter', () => {
       expect(calledUrl).toContain('MAIN/SNOMEDCT-DE/concepts');
     });
 
+    it('forwards base URL, branch, language header, and ECL to Snowstorm', async () => {
+      const mockFetch = createMockFetch({ items: [], total: 0 });
+      const adapter = new SnowstormAdapter({
+        baseUrl: 'https://snowstorm.example.com/snowstorm/snomed-ct',
+        branch: 'MAIN',
+        language: 'de-DE',
+        languageStrategy: 'header',
+        fetchFn: mockFetch
+      });
+
+      await adapter.search({
+        term: 'pneumonia',
+        limit: 5,
+        offset: 10,
+        additionalParams: { ecl: '< 404684003' }
+      });
+
+      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+      const requestOptions = mockFetch.mock.calls[0][1];
+      expect(calledUrl.origin).toBe('https://snowstorm.example.com');
+      expect(calledUrl.pathname).toBe('/snowstorm/snomed-ct/MAIN/concepts');
+      expect(calledUrl.searchParams.get('ecl')).toBe('< 404684003');
+      expect(requestOptions.headers['Accept-Language']).toBe('de');
+    });
+
     it('should resolve relative base URLs against the current origin', async () => {
       const mockFetch = createMockFetch({ items: [], total: 0 });
       const adapter = new SnowstormAdapter({ baseUrl: '/snowstorm-api', fetchFn: mockFetch });
@@ -99,10 +124,75 @@ describe('SnowstormAdapter', () => {
     });
 
     it('should handle empty items', async () => {
-      const adapter = new SnowstormAdapter({ baseUrl: BASE_URL, fetchFn: createMockFetch({}) });
+      const adapter = new SnowstormAdapter({ baseUrl: BASE_URL, fetchFn: createMockFetch({ items: [] }) });
       const result = await adapter.search({ term: 'xyz', limit: 5, offset: 0 });
       expect(result.items).toEqual([]);
-      expect(result.total).toBe(0);
+      expect(result.total).toBeUndefined();
+    });
+
+    it('classifies a browser CORS or network failure as a network error', async () => {
+      const adapter = new SnowstormAdapter({
+        baseUrl: BASE_URL,
+        fetchFn: vi.fn(async () => { throw new TypeError('Failed to fetch'); })
+      });
+
+      await expect(adapter.search({ term: 'test', limit: 5, offset: 0 }))
+        .rejects.toMatchObject({
+          kind: 'network',
+          host: 'snowstorm.example.com'
+        });
+    });
+
+    it('classifies an HTTP redirect as a redirect error', async () => {
+      const adapter = new SnowstormAdapter({
+        baseUrl: BASE_URL,
+        fetchFn: vi.fn(async () => ({ ok: false, status: 302 }))
+      });
+
+      await expect(adapter.search({ term: 'test', limit: 5, offset: 0 }))
+        .rejects.toMatchObject({
+          kind: 'redirect',
+          status: 302,
+          host: 'snowstorm.example.com'
+        });
+    });
+
+    it('rejects a followed Snowstorm redirect instead of parsing its target response', async () => {
+      const adapter = new SnowstormAdapter({
+        baseUrl: BASE_URL,
+        fetchFn: vi.fn(async () => ({
+          ok: true,
+          status: 200,
+          redirected: true,
+          url: 'https://static-web.example.com/html/denied.html'
+        }))
+      });
+
+      await expect(adapter.search({ term: 'test', limit: 5, offset: 0 }))
+        .rejects.toMatchObject({ kind: 'redirect', status: 200 });
+    });
+
+    it('should reject with a server error on an HTTP failure', async () => {
+      const adapter = new SnowstormAdapter({
+        baseUrl: BASE_URL,
+        fetchFn: vi.fn(async () => ({ ok: false, status: 503 }))
+      });
+
+      await expect(adapter.search({ term: 'test', limit: 5, offset: 0 }))
+        .rejects.toMatchObject({
+          kind: 'server',
+          status: 503
+        });
+    });
+
+    it('should reject with a data error for an invalid response', async () => {
+      const adapter = new SnowstormAdapter({
+        baseUrl: BASE_URL,
+        fetchFn: createMockFetch({ items: [{ pt: { term: 'Missing concept id' } }] })
+      });
+
+      await expect(adapter.search({ term: 'test', limit: 5, offset: 0 }))
+        .rejects.toMatchObject({ kind: 'data' });
     });
   });
 

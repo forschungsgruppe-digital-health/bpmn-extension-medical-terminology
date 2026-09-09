@@ -1,5 +1,8 @@
 import { TerminologyProvider } from '../core/TerminologyProvider.js';
-import { SnowstormAdapter } from '../adapters/SnowstormAdapter.js';
+import {
+  SnowstormAdapter,
+  resolveSnowstormBaseUrl
+} from '../adapters/SnowstormAdapter.js';
 
 function applyProviderVersion(concept, version) {
   if (!concept || concept.version || !version) {
@@ -28,7 +31,7 @@ export class SnomedCtProvider extends TerminologyProvider {
     this._id = 'snomed-ct';
     this._displayName = config.displayName || 'SNOMED CT';
     this._sourceType = 'api';
-    this._sourceLabel = new URL(config.baseUrl).host;
+    this._sourceLabel = new URL(resolveSnowstormBaseUrl(config.baseUrl)).host;
     this._branch = config.branch || 'MAIN';
     this._version = config.version;
     this._maxResults = config.maxResults || 15;
@@ -80,7 +83,7 @@ export class SnomedCtProvider extends TerminologyProvider {
       concepts: (result.items || []).map(concept =>
         applyProviderVersion(concept, this._version)
       ),
-      total: result.total ?? 0
+      total: result.total
     };
   }
 

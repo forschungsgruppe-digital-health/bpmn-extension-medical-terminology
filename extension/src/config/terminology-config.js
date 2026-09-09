@@ -182,6 +182,7 @@ export function createDefaultPackageProviders(config = {}) {
     'packageAutoDiscovery'
   ) && config.packageAutoDiscovery !== false;
   const {
+    enablePackageDefaults = true,
     packageProviderOptions = {},
     additionalPackageProviders = [],
     packageDiscovery = {},
@@ -250,15 +251,17 @@ export function createDefaultPackageProviders(config = {}) {
   const discoveryMode = packageDiscovery?.mode || (packageDiscovery?.packageNames?.length ? 'whitelist' : 'auto');
   const resolvedHl7CodeSystems = hl7CodeSystems || packageCodeSystems['hl7.terminology.r4'];
 
-  const presetProviders = DEFAULT_PACKAGE_PROVIDER_IDS.map(providerId => createPackagePresetProvider(providerId, {
-    ...(packageProviderOptions[providerId] || {}),
-    packageMetadata: packageProviderOptions[providerId]?.packageMetadata || packageMetadata,
-    ...(providerId === 'hl7-terminology-r4-package' && resolvedHl7CodeSystems
-      ? { codeSystems: resolvedHl7CodeSystems }
-      : {})
-  })).filter(Boolean);
+  const presetProviders = enablePackageDefaults
+    ? DEFAULT_PACKAGE_PROVIDER_IDS.map(providerId => createPackagePresetProvider(providerId, {
+      ...(packageProviderOptions[providerId] || {}),
+      packageMetadata: packageProviderOptions[providerId]?.packageMetadata || packageMetadata,
+      ...(providerId === 'hl7-terminology-r4-package' && resolvedHl7CodeSystems
+        ? { codeSystems: resolvedHl7CodeSystems }
+        : {})
+    })).filter(Boolean)
+    : [];
 
-  const discoveredPackageProviders = (packageDiscovery?.enabled || Boolean(autoDiscoveryOptions))
+  const discoveredPackageProviders = (packageDiscoveryRequested || Boolean(autoDiscoveryOptions))
     ? discoverPackageProviders(packageCodeSystems, {
       ...packageDiscovery,
       ...(discoveryInclude ? { include: discoveryInclude } : {}),
@@ -301,12 +304,11 @@ export function createDefaultTerminologyConfig(config = {}) {
       : []),
   ];
 
-  const defaultPackageProviders = enablePackageDefaults
-    ? createDefaultPackageProviders({
-      ...config,
-      disabledProviderIds
-    })
-    : [];
+  const defaultPackageProviders = createDefaultPackageProviders({
+    ...config,
+    enablePackageDefaults,
+    disabledProviderIds
+  });
 
   return {
     providers: filterDisabled([...defaultProviders, ...providers], disabledProviderIdSet),
