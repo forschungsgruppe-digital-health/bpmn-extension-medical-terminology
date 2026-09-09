@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.5](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.4...terminology-v0.1.5) (2026-09-09)
+
+
+### Bug Fixes
+
+* **terminology:** configure Vite Snowstorm proxy ([6f63690](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/6f6369048fd00164dca4cdb7e2dee997360fdac8))
+* **terminology:** configure Vite Snowstorm proxy ([7dd1d66](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/7dd1d666265f79cb4083ba3efae6a66e219ca54e))
+
 ## [0.1.4](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.3...terminology-v0.1.4) (2026-09-09)
 
 
