@@ -491,6 +491,33 @@ export default defineConfig({
 });
 ```
 
+The same plugin can add a Snowstorm proxy for `vite serve`. The proxy is
+development-only; it is not present in static builds and does not replace a
+production backend or reverse proxy:
+
+```js
+terminologyVitePlugin({
+  autoDiscover: false,
+  exposeGlobal: false,
+  snowstormProxy: {
+    target: 'https://snowstorm.example.test/snowstorm/snomed-ct'
+  }
+});
+```
+
+Configure the browser-side SNOMED provider separately with the corresponding
+local route:
+
+```js
+createDefaultTerminologyServices({
+  snomedConfig: {
+    transport: 'snowstorm',
+    baseUrl: '/snowstorm-api',
+    branch: 'MAIN'
+  }
+});
+```
+
 Each package entry supports the documented resource filters:
 
 ```js
@@ -566,10 +593,44 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-The demo uses the extension's bundled package providers and default
-Ontoserver/FHIR configuration without terminology-specific Vite setup. The
-public service configuration supports switching to a custom Snowstorm instance,
-a same-origin proxy, or another FHIR terminology server.
+The package itself is independent of the host application's deployment
+architecture: an integrator can use a direct CORS-enabled terminology service,
+its own backend proxy, or only local package-backed providers. It does not
+ship a proxy or require one.
+
+### Demo Snowstorm configuration
+
+To enable Snowstorm with `npm run dev`, set a redirect-free Snowstorm base URL
+in `demo/.env.local`. The demo then configures the Snowstorm transport with
+`/snowstorm-api`, and the Vite development server forwards that route to
+`VITE_SNOWSTORM_PROXY_TARGET`. There is deliberately no default external target:
+the known public Snowstorm URLs may reject or redirect requests and must not be
+presented as a working demo default.
+
+```dotenv
+VITE_SNOWSTORM_PROXY_TARGET=https://snowstorm.example.test/snowstorm/snomed-ct
+VITE_SNOWSTORM_BRANCH=MAIN
+VITE_SNOWSTORM_LANGUAGE=de
+VITE_SNOWSTORM_LANGUAGE_STRATEGY=header
+VITE_SNOWSTORM_DEFAULT_ECL=< 404684003
+VITE_SNOWSTORM_MAX_RESULTS=15
+```
+
+`VITE_SNOWSTORM_BASE_URL` overrides `/snowstorm-api` with a direct external
+base URL. It is appropriate only if that endpoint permits the demo's browser
+origin through CORS:
+
+```dotenv
+VITE_SNOWSTORM_BASE_URL=https://snowstorm.example.test/snowstorm/snomed-ct
+```
+
+GitHub Pages and other static deployments have no Vite development proxy.
+Without `VITE_SNOWSTORM_BASE_URL`, the built demo therefore keeps the package's
+default FHIR SNOMED configuration. A static deployment can enable Snowstorm
+only with a CORS-capable external endpoint. A production host application with
+a backend or reverse proxy can instead configure `baseUrl` as its same-origin
+proxy path, for example `/api/snowstorm`; the package supports relative base
+URLs but does not prescribe how that proxy is deployed.
 
 ## Documentation
 
