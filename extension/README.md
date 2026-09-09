@@ -1,4 +1,4 @@
-# @forschungsgruppe-digital-health/terminology
+# @forschungsgruppe-digital-health/bpmn-extension-medical-terminology
 
 Medical terminology for bpmn-js.
 
@@ -17,7 +17,7 @@ the repository README for the CLI, Vite filtering, and manual-import examples.
 Install the package with npm:
 
 ```bash
-npm install @forschungsgruppe-digital-health/terminology
+npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology
 ```
 
 The package resolves its FHIR terminology dependencies directly from Simplifier;

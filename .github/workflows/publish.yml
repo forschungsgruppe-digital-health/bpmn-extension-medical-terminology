@@ -40,7 +40,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           for pkg in extension; do
-            echo "::group::publish @forschungsgruppe-digital-health/terminology"
+            echo "::group::publish @forschungsgruppe-digital-health/bpmn-extension-medical-terminology"
             if npm publish --workspace="$pkg" 2>publish-err.log; then
               echo "published $pkg"
             elif grep -qiE "cannot publish over|already exists|EPUBLISHCONFLICT|409|conflict" publish-err.log; then

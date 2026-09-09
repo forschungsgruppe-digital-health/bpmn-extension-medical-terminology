@@ -80,6 +80,9 @@ export class TerminologyRegistry {
       displayName: p.displayName,
       systemUri: p.systemUri,
       version: p.version,
+      sourceType: p.sourceType,
+      sourceLabel: p.sourceLabel,
+      sourceName: p.sourceName,
       capabilities: p.capabilities
     }));
   }

@@ -27,6 +27,8 @@ export class SnomedCtProvider extends TerminologyProvider {
     super();
     this._id = 'snomed-ct';
     this._displayName = config.displayName || 'SNOMED CT';
+    this._sourceType = 'api';
+    this._sourceLabel = new URL(config.baseUrl).host;
     this._branch = config.branch || 'MAIN';
     this._version = config.version;
     this._maxResults = config.maxResults || 15;
@@ -46,6 +48,9 @@ export class SnomedCtProvider extends TerminologyProvider {
   get displayName() { return this._displayName; }
   get systemUri() { return 'http://snomed.info/sct'; }
   get version() { return this._version; }
+  get sourceType() { return this._sourceType; }
+  get sourceLabel() { return this._sourceLabel; }
+  get sourceName() { return this._displayName; }
   get capabilities() {
     return { search: true, lookup: true, hierarchy: true, validate: true };
   }
@@ -58,12 +63,18 @@ export class SnomedCtProvider extends TerminologyProvider {
     if (options.semanticTag) {
       additionalParams.semanticTag = options.semanticTag;
     }
-    const result = await this._adapter.search({
-      term,
-      limit: options.limit ?? this._maxResults,
-      offset: options.offset ?? 0,
-      additionalParams
-    });
+    let result;
+    try {
+      result = await this._adapter.search({
+        term,
+        limit: options.limit ?? this._maxResults,
+        offset: options.offset ?? 0,
+        additionalParams
+      });
+    } catch (error) {
+      console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);
+      throw error;
+    }
 
     return {
       concepts: (result.items || []).map(concept =>

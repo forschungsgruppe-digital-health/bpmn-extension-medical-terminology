@@ -57,6 +57,7 @@ export function createPackageTerminologyProvider(config) {
  *   packageName?: string,
  *   packageMetadata?: { packageName?: string, title?: string, version?: string },
  *   componentLabel?: string,
+ *   sourceName?: string,
  *   includeCodeSystemName?: boolean,
  *   codeSystems: import('@types/fhir').fhir4.CodeSystem[],
  *   systemUri?: string
@@ -93,8 +94,21 @@ export function createPackageCollectionProvider(config) {
     .filter(Boolean);
 
   provider.getCodeSystemUris = () => [...codeSystemUris];
+  provider.sourceType = 'package';
+  provider.sourceLabel = formatPackageSourceLabel(config.packageName, config.packageMetadata);
+  provider.sourceName = config.sourceName
+    || config.componentLabel
+    || (config.includeCodeSystemName && codeSystems.length === 1
+      ? codeSystems[0]?.title || codeSystems[0]?.name || codeSystems[0]?.id
+      : config.displayName || config.packageName || config.id);
 
   return provider;
+}
+
+function formatPackageSourceLabel(packageName, metadata = {}) {
+  const version = metadata?.version?.trim();
+
+  return version && packageName ? `${packageName}@${version}` : packageName;
 }
 
 /**

@@ -20,7 +20,7 @@ ESM, so it cannot be part of the default runtime path.
 ## Decision
 
 We declare the default FHIR terminology packages as runtime dependencies of
-`@forschungsgruppe-digital-health/terminology` and create their preset providers
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` and create their preset providers
 from the default service configuration without requiring `packageProviderOptions`
 or a discovery result. The HL7 CodeSystems are exposed through the generated
 `extension/src/providers/presets/hl7-code-systems.json` resource, which is

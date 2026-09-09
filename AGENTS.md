@@ -1,7 +1,7 @@
 # AGENTS.md — BPMN Extension Medical Terminology
 
 This repository publishes one raw-ESM bpmn-js extension:
-`@forschungsgruppe-digital-health/terminology`. Its source and tests live in
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`. Its source and tests live in
 `extension/`; the private integration demo lives in `demo/`.
 
 ## Quality gate
@@ -23,7 +23,7 @@ Install dependencies with `npm install --legacy-peer-deps`.
 - Renaming or removing a terminology moddle type or property is a breaking
   change and requires human sign-off.
 - Keep the package ESM-only and preserve the
-  `@forschungsgruppe-digital-health/terminology` package name.
+  `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` package name.
 
 ## Repository layout
 

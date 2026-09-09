@@ -8,7 +8,7 @@ import {
   createTerminologyModule,
   TerminologyModdleDescriptor,
   createTerminologyPropertiesPanelModule
-} from '@forschungsgruppe-digital-health/terminology';
+} from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 import { DEMO_FEATURES } from './demo-config.js';
 import {
@@ -19,7 +19,7 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
-import '@forschungsgruppe-digital-health/terminology/properties-panel.css';
+import '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/properties-panel.css';
 import './styles.css';
 
 import annotatedBpmn from '../../examples/valid/lung-cancer-staging-annotated.bpmn?raw';

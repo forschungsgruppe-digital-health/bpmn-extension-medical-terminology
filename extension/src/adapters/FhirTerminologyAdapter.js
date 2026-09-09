@@ -12,6 +12,7 @@
  */
 
 import { FHIR_MIME_TYPE } from '../core/fhir-version.js';
+import { createRequestError, TerminologyRequestError } from '../core/TerminologyRequestError.js';
 import languageConfig from '../config/terminology-language-config.js';
 
 function resolveBaseUrl(baseUrl) {
@@ -106,16 +107,13 @@ export class FhirTerminologyAdapter {
       }
     });
     
-    // Manche FHIR-Server (wie Snowstorm) benötigen dieses Flag für die Text-Rückgabe
+    // Some FHIR Servers need this flag for text return
     url.searchParams.set('includeDesignations', 'true');
 
     try {
       const res = await this._request(url, extraRequestHeaders);
       if (!res.ok) {
-        return {
-          items: [],
-          total: 0
-        };
+        throw createRequestError(res, url);
       }
 
       /** @type {FhirValueSet} */
@@ -137,11 +135,12 @@ export class FhirTerminologyAdapter {
         }),
         total: data.expansion?.total ?? contains.length
       };
-    } catch (e) {
-      return {
-        items: [],
-        total: 0
-      };
+    } catch (error) {
+      if (error instanceof TerminologyRequestError) {
+        throw error;
+      }
+
+      throw createRequestError(null, url);
     }
   }
 
@@ -190,7 +189,11 @@ export class FhirTerminologyAdapter {
         version,
         active: true
       };
-    } catch {
+    } catch (error) {
+      if (error instanceof TerminologyRequestError) {
+        throw error;
+      }
+
       return null;
     }
   }

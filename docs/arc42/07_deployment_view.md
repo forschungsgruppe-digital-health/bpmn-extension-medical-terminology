@@ -25,7 +25,7 @@ graph TD
 
 | Artifact | Location/name | Distribution |
 |---|---|---|
-| Terminology library | `extension/`, `@forschungsgruppe-digital-health/terminology` | Published as raw ESM to GitHub Packages |
+| Terminology library | `extension/`, `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` | Published as raw ESM to GitHub Packages |
 | Terminology lint plugin | `extension/lint/bpmnlint-plugin-terminology` | Workspace support for repository linting |
 | Demo application | `demo/`, `clinical-bpmn-demo` | Private workspace; built to `demo/dist` and deployed to GitHub Pages |
 | BPMN fixtures | `examples/valid/`, `examples/invalid/` | Repository test/conformance inputs |

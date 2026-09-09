@@ -71,6 +71,45 @@ export function AnnotationListEntry(props) {
       });
   }
 
+  function getProviderOptionLabel(provider) {
+    if (provider.sourceType === 'package') {
+      return `${provider.sourceName || provider.displayName} (${provider.sourceLabel})`;
+    }
+
+    if (provider.sourceType === 'api') {
+      return `${provider.sourceName || provider.displayName} (${provider.systemUri}, ${provider.sourceLabel})`;
+    }
+
+    return provider.displayName;
+  }
+
+  function getProviderGroups(providers) {
+    const groups = {
+      api: [],
+      package: []
+    };
+
+    for (const provider of providers) {
+      groups[provider.sourceType === 'package' ? 'package' : 'api'].push(provider);
+    }
+
+    return groups;
+  }
+
+  function getSearchErrorMessage(error, provider) {
+    const providerName = provider?.displayName || 'The selected terminology';
+
+    if (error?.kind === 'authorization') {
+      return `${providerName} denied access. Check the server credentials and permissions.`;
+    }
+
+    if (error?.kind === 'server') {
+      return `${providerName} is currently unavailable (HTTP ${error.status}). Please try again later.`;
+    }
+
+    return `${providerName} could not be reached. Check your network connection and server URL.`;
+  }
+
   function getSelectedProvider() {
     return getSearchableProviders().find(provider => provider.id === selectedProviderId) || null;
   }
@@ -203,12 +242,11 @@ export function AnnotationListEntry(props) {
       const concepts = normalizeConcepts(result);
       setSearchResults(concepts);
       setActiveSearchResultIndex(concepts.length > 0 ? 0 : -1);
-    } catch (e) {
+    } catch (error) {
       if (requestId !== searchRequestSequence.current) {
         return;
       }
-
-      setSearchError('Search failed. Please check the terminology system or search term.');
+      setSearchError(getSearchErrorMessage(error, getSelectedProvider()));
     } finally {
       if (requestId === searchRequestSequence.current) {
         setSearchBusy(false);
@@ -532,6 +570,7 @@ export function AnnotationListEntry(props) {
 
   const [searchFocused, setSearchFocused] = useState(false);
   const searchableProviders = getSearchableProviders();
+  const providerGroups = getProviderGroups(searchableProviders);
   const hasSearchableProviders = searchableProviders.length > 0;
   const activeSearchResult = searchResults[activeSearchResultIndex >= 0 ? activeSearchResultIndex : 0] || null;
   const searchCompletion = getAutocompleteSuffix(searchTerm, activeSearchResult);
@@ -661,9 +700,20 @@ export function AnnotationListEntry(props) {
                  onKeyDownCapture=${!selectedProviderId ? handleSubmitOnTab : undefined}
                >
                  <option value="">– select –</option>
-                 ${searchableProviders.map(p =>
-                   html`<option value=${p.id}>${p.displayName}</option>`
-                 )}
+                 ${providerGroups.api.length > 0 && html`
+                   <optgroup label="Terminology servers (API)">
+                     ${providerGroups.api.map(provider =>
+                       html`<option value=${provider.id}>${getProviderOptionLabel(provider)}</option>`
+                     )}
+                   </optgroup>
+                 `}
+                 ${providerGroups.package.length > 0 && html`
+                   <optgroup label="Installed terminology packages">
+                     ${providerGroups.package.map(provider =>
+                       html`<option value=${provider.id}>${getProviderOptionLabel(provider)}</option>`
+                     )}
+                   </optgroup>
+                 `}
                </select>
              </div>
             `}

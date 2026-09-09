@@ -107,28 +107,33 @@ describe('FhirTerminologyAdapter', () => {
       expect(result.items[0].active).toBe(false);
     });
 
-    it('should return empty result on non-OK response', async () => {
+    it('should reject with an authorization error on a forbidden response', async () => {
       const adapter = new FhirTerminologyAdapter({
         baseUrl: BASE_URL,
         systemUri: SYSTEM_URI,
-        fetchFn: createMockFetch({}, false)
+        fetchFn: vi.fn(async () => ({ ok: false, status: 403 }))
       });
 
-      const result = await adapter.search({ term: 'test', limit: 10, offset: 0 });
-      expect(result.items).toEqual([]);
-      expect(result.total).toBe(0);
+      await expect(adapter.search({ term: 'test', limit: 10, offset: 0 }))
+        .rejects.toMatchObject({
+          kind: 'authorization',
+          host: 'fhir.bfarm.de',
+          status: 403
+        });
     });
 
-    it('should return empty result on fetch error', async () => {
+    it('should reject with a network error on fetch failure', async () => {
       const adapter = new FhirTerminologyAdapter({
         baseUrl: BASE_URL,
         systemUri: SYSTEM_URI,
         fetchFn: vi.fn(async () => { throw new Error('network error'); })
       });
 
-      const result = await adapter.search({ term: 'test', limit: 10, offset: 0 });
-      expect(result.items).toEqual([]);
-      expect(result.total).toBe(0);
+      await expect(adapter.search({ term: 'test', limit: 10, offset: 0 }))
+        .rejects.toMatchObject({
+          kind: 'network',
+          host: 'fhir.bfarm.de'
+        });
     });
 
     it('should use system URI as fallback for concept system', async () => {

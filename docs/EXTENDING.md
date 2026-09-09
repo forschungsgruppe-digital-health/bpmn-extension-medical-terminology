@@ -34,7 +34,7 @@ clinical data belongs only in `term:` elements under BPMN
 ## 1. Introduction
 
 **Who this is for.** You write web frontends or tooling and have been asked to
-work on `@forschungsgruppe-digital-health/terminology`. You may know JavaScript
+work on `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`. You may know JavaScript
 but not yet know how BPMN semantics, BPMN XML, bpmn-moddle, and bpmn-js fit
 together.
 
@@ -316,7 +316,7 @@ Register it under its prefix:
 ```js
 import BpmnModeler from 'bpmn-js/lib/Modeler';
 import { TerminologyModdleDescriptor }
-  from '@forschungsgruppe-digital-health/terminology';
+  from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 const modeler = new BpmnModeler({
   moddleExtensions: { term: TerminologyModdleDescriptor }
@@ -370,8 +370,8 @@ import {
   BpmnPropertiesProviderModule
 } from 'bpmn-js-properties-panel';
 import TerminologyPropertiesPanelModule
-  from '@forschungsgruppe-digital-health/terminology/properties-panel';
-import '@forschungsgruppe-digital-health/terminology/properties-panel.css';
+  from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/properties-panel';
+import '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/properties-panel.css';
 
 const modeler = new BpmnModeler({
   container: '#canvas',
@@ -470,7 +470,7 @@ JavaScript with JSDoc and is tested with Vitest.
 
 | Concern | Current artifact |
 |---|---|
-| Published package | [`extension/`](../extension/) — `@forschungsgruppe-digital-health/terminology` |
+| Published package | [`extension/`](../extension/) — `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` |
 | Private integration demo | [`demo/`](../demo/) |
 | Terminology lint plugin | [`extension/lint/bpmnlint-plugin-terminology/`](../extension/lint/bpmnlint-plugin-terminology/) |
 | Synthetic valid fixtures | [`examples/valid/`](../examples/valid/) |

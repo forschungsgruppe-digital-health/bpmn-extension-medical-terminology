@@ -8,7 +8,7 @@ outside the extension._
 ```mermaid
 graph TB
     subgraph Repo["Current repository"]
-        EXT["@forschungsgruppe-digital-health/terminology<br/>extension/"]
+        EXT["@forschungsgruppe-digital-health/bpmn-extension-medical-terminology<br/>extension/"]
         DEMO["Private bpmn-js demo<br/>demo/"]
         FIX["Synthetic BPMN fixtures<br/>examples/valid/ and examples/invalid/"]
         TOOLS["Conformance and package tools<br/>tools/"]

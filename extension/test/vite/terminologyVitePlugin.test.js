@@ -69,11 +69,11 @@ describe('terminologyVitePlugin', () => {
     writeJson(join(root, 'package.json'), {
       name: 'consumer-app',
       dependencies: {
-        '@forschungsgruppe-digital-health/terminology': '0.1.0'
+        '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology': '0.1.0'
       }
     });
 
-    createPackage(root, '@forschungsgruppe-digital-health/terminology', {
+    createPackage(root, '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology', {
       exports: './src/index.js',
       dependencies: {
         'hl7.terminology.r4': '7.1.0',
@@ -116,11 +116,11 @@ describe('terminologyVitePlugin', () => {
     writeJson(join(root, 'package.json'), {
       name: 'consumer-app',
       dependencies: {
-        '@forschungsgruppe-digital-health/terminology': '0.1.0'
+        '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology': '0.1.0'
       }
     });
 
-    createPackage(root, '@forschungsgruppe-digital-health/terminology', {
+    createPackage(root, '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology', {
       exports: './src/index.js',
       dependencies: {
         'hl7.terminology.r4': '7.1.0'
@@ -271,11 +271,11 @@ describe('terminologyVitePlugin', () => {
     writeJson(join(root, 'package.json'), {
       name: 'consumer-app',
       dependencies: {
-        '@forschungsgruppe-digital-health/terminology': '0.1.0'
+        '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology': '0.1.0'
       }
     });
 
-    const terminologyPackageDir = createPackage(root, '@forschungsgruppe-digital-health/terminology', {
+    const terminologyPackageDir = createPackage(root, '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology', {
       exports: './src/index.js',
       dependencies: {
         'hl7.terminology.r4': '7.1.0'
