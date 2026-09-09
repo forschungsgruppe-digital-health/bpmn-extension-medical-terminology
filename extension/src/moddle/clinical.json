@@ -2,7 +2,7 @@
   "name": "ClinicalTerminology",
   "uri": "https://clinical-bpmn.org/terminology/v1",
   "prefix": "term",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "xml": {
     "tagAlias": "lowerCase"
   },

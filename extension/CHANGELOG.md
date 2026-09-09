@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.3...terminology-v0.1.4) (2026-09-09)
+
+
+### Bug Fixes
+
+* **terminology:** harden provider configuration ([4e51653](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/4e516535ce939f8f787b1e58f6ab1370bc8e5e43))
+* **terminology:** harden provider configuration ([cc3739b](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/cc3739befad511313d5401f4f6f025f4a732a1d1))
+
 ## [0.1.3](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.2...terminology-v0.1.3) (2026-09-09)
 
 
