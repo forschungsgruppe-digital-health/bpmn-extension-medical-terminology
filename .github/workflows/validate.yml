@@ -62,7 +62,20 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Ensure xmllint is available (for XSD core validation)
-        run: xmllint --version || (sudo apt-get update && sudo apt-get install -y libxml2-utils)
+        run: |
+          if command -v xmllint >/dev/null 2>&1; then
+            xmllint --version
+            exit 0
+          fi
+
+          # GitHub-hosted images can contain third-party APT repositories with
+          # stale indexes. Refresh only Ubuntu sources so an unrelated mirror
+          # cannot prevent installing the XSD validator.
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=/dev/null \
+            -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends libxml2-utils
 
       # Blocking gate: structural BPMN lint + lossless/stable moddle roundtrip +
       # informational XSD core validation. (XSD is informational by design — the
