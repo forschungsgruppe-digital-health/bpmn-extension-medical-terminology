@@ -5,6 +5,7 @@
  * Used by: SnomedCtProvider (and optionally LoincProvider when hosted on Snowstorm)
  */
 import languageConfig from '../config/terminology-language-config.js';
+import { createRequestError } from '../core/TerminologyRequestError.js';
 
 function normalizeLanguage(lang) {
   if (!lang) return undefined;
@@ -80,6 +81,9 @@ export class SnowstormAdapter {
     }
 
     const res = await this._request(url);
+    if (!res.ok) {
+      throw createRequestError(res, url);
+    }
     const data = await res.json();
 
     return {
@@ -142,7 +146,6 @@ export class SnowstormAdapter {
     const effectiveTime = item.releasedEffectiveTime ?? item.effectiveTime ?? item.version;
     const moduleId = item.moduleId;
 
-    // Wenn beides da ist: Baue die offizielle FHIR Canonical URI. Ansonsten Fallback auf effectiveTime.
     const versionUri = (moduleId && effectiveTime)
       ? `http://snomed.info/sct/${moduleId}/version/${effectiveTime}`
       : (effectiveTime !== undefined && effectiveTime !== null ? String(effectiveTime) : undefined);

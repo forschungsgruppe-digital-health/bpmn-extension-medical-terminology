@@ -31,6 +31,9 @@ export interface TerminologyProvider {
   readonly id: string;
   readonly displayName: string;
   readonly systemUri: string;
+  readonly sourceType?: 'api' | 'package';
+  readonly sourceLabel?: string;
+  readonly sourceName?: string;
   search(term: string, options?: SearchOptions): Promise<SearchResult>;
   lookup(code: string): Promise<Concept | null>;
   validate(code: string): Promise<{ valid: boolean; message?: string }>;

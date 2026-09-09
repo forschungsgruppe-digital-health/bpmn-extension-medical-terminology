@@ -23,7 +23,7 @@ Use only current repository evidence:
 - `schema/`, `examples/valid/`, and `examples/invalid/`
 
 This repository has one published package,
-`@forschungsgruppe-digital-health/terminology`, a private `demo/` workspace,
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`, a private `demo/` workspace,
 and the terminology lint plugin workspace under
 `extension/lint/bpmnlint-plugin-terminology`. It has one `term:` namespace:
 `https://clinical-bpmn.org/terminology/v1`.

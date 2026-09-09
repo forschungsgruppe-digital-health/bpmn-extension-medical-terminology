@@ -5,7 +5,7 @@ expectations that shape the architecture._
 
 This document describes the design, component architecture, data model, and
 project structure of
-`@forschungsgruppe-digital-health/terminology`. It is intended for contributors
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`. It is intended for contributors
 and integrators embedding the extension in a bpmn-js application.
 
 For usage instructions, see the [README](../../README.md). For contributor

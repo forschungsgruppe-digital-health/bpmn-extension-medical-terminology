@@ -4,7 +4,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A524-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-`@forschungsgruppe-digital-health/terminology` adds machine-readable medical
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` adds machine-readable medical
 terminology to BPMN process models. It provides a `term:`
 moddle extension for XML serialization, a bpmn-js properties-panel provider,
 terminology services, and a Vite plugin for discovering terminology packages.
@@ -85,13 +85,13 @@ namespace under BPMN `extensionElements`.
 
 | Package | Location | Description |
 |---|---|---|
-| `@forschungsgruppe-digital-health/terminology` | [`extension/`](extension/) | Terminology annotations, providers, moddle extension, properties panel, and Vite discovery |
+| `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` | [`extension/`](extension/) | Terminology annotations, providers, moddle extension, properties panel, and Vite discovery |
 | Demo | [`demo/`](demo/) | Private bpmn-js integration example |
 
 Install the published package from GitHub Packages:
 
 ```bash
-npm install @forschungsgruppe-digital-health/terminology
+npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology
 ```
 
 Configure the `@forschungsgruppe-digital-health` scope to use
@@ -113,8 +113,8 @@ import {
   TerminologyModdleDescriptor,
   TerminologyPropertiesPanelModule,
   createDefaultTerminologyModule
-} from '@forschungsgruppe-digital-health/terminology';
-import '@forschungsgruppe-digital-health/terminology/properties-panel.css';
+} from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
+import '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/properties-panel.css';
 
 const modeler = new BpmnModeler({
   container: '#canvas',
@@ -141,7 +141,7 @@ import {
   createTerminologyModule,
   createTerminologyServices,
   addAnnotation
-} from '@forschungsgruppe-digital-health/terminology';
+} from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 const terminologyServices = createTerminologyServices({
   providers: [
@@ -225,14 +225,14 @@ component by package name and canonical CodeSystem URL. Invalid provider IDs,
 package names, or CodeSystem URLs fail fast with a descriptive error.
 
 TypeScript consumers can import the public configuration types from
-`@forschungsgruppe-digital-health/terminology/types`.
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/types`.
 
 Example:
 
 ```js
 import {
   createDefaultTerminologyServices
-} from '@forschungsgruppe-digital-health/terminology';
+} from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 const terminologyServices = createDefaultTerminologyServices({
   serverConfig: {
@@ -433,7 +433,7 @@ Configure the discovered packages and their CodeSystem filters in `vite.config.j
 ```js
 import { defineConfig } from 'vite';
 import { terminologyVitePlugin } from
-  '@forschungsgruppe-digital-health/terminology/vite';
+  '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/vite';
 
 const discoveryPackages = {
   'de.ihe-d.terminology': { include: ['*'] },

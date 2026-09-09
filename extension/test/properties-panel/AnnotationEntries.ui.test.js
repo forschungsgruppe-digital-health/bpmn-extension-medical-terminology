@@ -245,7 +245,7 @@ describe('terminology properties panel UI', () => {
     });
   });
 
-  it('sorts terminology providers by their displayed name', async () => {
+  it('groups terminology providers by source and sorts them by displayed name', async () => {
     const context = await createTestContext({
       id: 'Task_SortedProviders',
       type: 'bpmn:Task',
@@ -276,6 +276,74 @@ describe('terminology properties panel UI', () => {
       'OPS',
       'SNOMED CT'
     ]);
+    expect(Array.from(terminologySelect.querySelectorAll('optgroup')).map(group => group.label))
+      .toEqual(['Terminology servers (API)']);
+  });
+
+  it('labels API and package providers with their source metadata', async () => {
+    const context = await createTestContext({
+      id: 'Task_ProviderSources',
+      type: 'bpmn:Task',
+      name: 'Provider Sources Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [
+          { id: 'atc', displayName: 'ATC', sourceType: 'api', sourceName: 'ATC', sourceLabel: 'r4.ontoserver.csiro.au', systemUri: 'http://www.whocc.no/atc' },
+          { id: 'ihe-xds-class', displayName: 'IHE XDS Document Class', sourceType: 'package', sourceName: 'IHE XDS Document Class', sourceLabel: 'de.ihe-d.terminology@3.0.1', systemUri: 'http://ihe-d.de/CodeSystems/IHEXDSclassCode' }
+        ],
+        search: vi.fn(),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+
+    const terminologySelect = getControlByLabel(view.container, 'Terminology');
+    expect(Array.from(terminologySelect.querySelectorAll('optgroup')).map(group => group.label))
+      .toEqual(['Terminology servers (API)', 'Installed terminology packages']);
+    expect(Array.from(terminologySelect.options).map(option => option.textContent)).toEqual([
+      '– select –',
+      'ATC (http://www.whocc.no/atc, r4.ontoserver.csiro.au)',
+      'IHE XDS Document Class (de.ihe-d.terminology@3.0.1)'
+    ]);
+  });
+
+  it('shows a specific message when a terminology server denies access', async () => {
+    const context = await createTestContext({
+      id: 'Task_ProviderAuthorizationError',
+      type: 'bpmn:Task',
+      name: 'Provider Authorization Error Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[0]],
+        search: vi.fn(async () => {
+          throw { kind: 'authorization' };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'snomed-ct' }
+    });
+
+    const searchInput = getControlByLabel(view.container, 'Search');
+    fireEvent.input(searchInput, {
+      target: { value: 'pneumonia' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('SNOMED CT denied access. Check the server credentials and permissions.')).toBeTruthy();
+    });
   });
 
   it('hides the terminology dropdown when no providers are available', async () => {

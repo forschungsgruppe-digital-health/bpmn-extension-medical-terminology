@@ -2,7 +2,7 @@
   "name": "clinical-bpmn-demo",
   "version": "0.1.0",
   "private": true,
-  "description": "Demo app for @forschungsgruppe-digital-health/terminology",
+  "description": "Demo app for @forschungsgruppe-digital-health/bpmn-extension-medical-terminology",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@bpmn-io/properties-panel": "^3.40.5",
-    "@forschungsgruppe-digital-health/terminology": "file:../extension",
+    "@forschungsgruppe-digital-health/bpmn-extension-medical-terminology": "file:../extension",
     "bpmn-js": "^18.14.0",
     "bpmn-js-properties-panel": "^5.53.0"
   },

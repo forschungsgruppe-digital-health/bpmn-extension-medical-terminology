@@ -26,6 +26,8 @@ export class FhirProvider extends TerminologyProvider {
     this._id = config.id;
     this._displayName = config.displayName;
     this._systemUri = config.systemUri;
+    this._sourceType = 'api';
+    this._sourceLabel = new URL(config.baseUrl).host;
     this._version = config.version
       || config.lookupParameters?.version
       || config.expandParameters?.valueSetVersion
@@ -52,16 +54,25 @@ export class FhirProvider extends TerminologyProvider {
   get displayName() { return this._displayName; }
   get systemUri() { return this._systemUri; }
   get version() { return this._version; }
+  get sourceType() { return this._sourceType; }
+  get sourceLabel() { return this._sourceLabel; }
+  get sourceName() { return this._displayName; }
   get capabilities() {
     return { search: true, lookup: true, hierarchy: false, validate: true };
   }
 
   async search(term, options = {}) {
-    const result = await this._adapter.search({
-      term,
-      limit: options.limit ?? this._maxResults,
-      offset: options.offset ?? 0
-    });
+    let result;
+    try {
+      result = await this._adapter.search({
+        term,
+        limit: options.limit ?? this._maxResults,
+        offset: options.offset ?? 0
+      });
+    } catch (error) {
+      console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);
+      throw error;
+    }
     
     const concepts = result.items || [];
 

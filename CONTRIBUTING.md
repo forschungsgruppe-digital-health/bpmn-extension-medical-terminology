@@ -14,7 +14,7 @@ Use Node.js 24 or later.
 
 | Path | Purpose |
 |---|---|
-| `extension/` | Published `@forschungsgruppe-digital-health/terminology` package |
+| `extension/` | Published `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` package |
 | `demo/` | Private bpmn-js integration demo |
 | `examples/valid/` | Synthetic BPMN fixtures |
 | `examples/invalid/` | Negative BPMN fixtures |
@@ -50,7 +50,7 @@ human approval.
 
 ## Publishing
 
-The published package is `@forschungsgruppe-digital-health/terminology` and
+The published package is `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` and
 uses GitHub Packages (`https://npm.pkg.github.com`). Check the prospective
 archive before release:
 

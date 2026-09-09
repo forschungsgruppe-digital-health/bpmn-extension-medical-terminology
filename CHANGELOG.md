@@ -39,6 +39,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   files remain at the repository root (`README.md`, `LICENSE`, `CONTRIBUTING.md`,
   `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `AGENTS.md`, `CLAUDE.md`).
 - The bpmn-js integration is now the private, unpublished `demo` workspace. The
-  publishable package is `@forschungsgruppe-digital-health/terminology`.
+  publishable package is `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`.
 
 [Unreleased]: https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.0...HEAD

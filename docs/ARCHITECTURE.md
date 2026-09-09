@@ -1,7 +1,7 @@
 # Architecture
 
 This document is the index to the complete arc42 architecture documentation for
-`@forschungsgruppe-digital-health/terminology`. It describes the package,
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`. It describes the package,
 moddle data model, providers, bpmn-js integration, distribution, quality gates,
 and design decisions.
 

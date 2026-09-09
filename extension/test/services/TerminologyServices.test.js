@@ -178,6 +178,7 @@ describe('TerminologyServices', () => {
       packageAutoDiscovery: false,
       loaderConfig: false
     });
+
     const providerIds = services.terminologyRegistry.listProviders().map(provider => provider.id);
 
     expect(providerIds).toEqual(expect.arrayContaining([
@@ -191,6 +192,25 @@ describe('TerminologyServices', () => {
     ).resolves.toMatchObject({
       code: 'AD010101',
       system: 'http://dvmd.de/fhir/CodeSystem/kdl'
+    });
+  });
+
+  it('should describe bundled providers as installed terminology packages', () => {
+    const providers = createDefaultPackageProviders({
+      packageAutoDiscovery: false
+    });
+    const iheClassProvider = providers.find(provider => provider.id === 'ihe-xds-class');
+    const hl7Provider = providers.find(provider => provider.id === 'hl7-terminology-r4-package');
+
+    expect(iheClassProvider).toMatchObject({
+      sourceType: 'package',
+      sourceName: 'IHE XDS Document Class',
+      sourceLabel: 'de.ihe-d.terminology@3.0.1'
+    });
+    expect(hl7Provider).toMatchObject({
+      sourceType: 'package',
+      sourceName: 'HL7 Terminology R4',
+      sourceLabel: 'hl7.terminology.r4@7.1.0'
     });
   });
 

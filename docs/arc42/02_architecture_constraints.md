@@ -43,7 +43,7 @@ descriptor, CSS, and Vite plugin.
 
 | Constraint | Evidence |
 |---|---|
-| The package name is `@forschungsgruppe-digital-health/terminology` | `extension/package.json`; enforced by `tools/check-package-conventions.mjs` |
+| The package name is `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` | `extension/package.json`; enforced by `tools/check-package-conventions.mjs` |
 | Publication targets GitHub Packages at `https://npm.pkg.github.com` | `extension/package.json` `publishConfig`; `.github/workflows/publish.yml` |
 | Release Please tracks the `extension` workspace and updates the extension, lint plugin, descriptor version, and XSD | `release-please-config.json`; `.release-please-manifest.json` |
 | Publishing is decoupled from release creation and is triggered by a published GitHub Release | `.github/workflows/publish.yml`; `.github/workflows/release-please.yml` |

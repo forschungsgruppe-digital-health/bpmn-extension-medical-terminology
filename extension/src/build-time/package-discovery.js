@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 export const DEFAULT_RESOURCE_TYPES = Object.freeze(['CodeSystem']);
 
 export const DEFAULT_TRANSITIVE_ROOT_PACKAGES = Object.freeze([
-  '@forschungsgruppe-digital-health/terminology'
+  '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology'
 ]);
 
 function readFhirIndex(packageDir) {

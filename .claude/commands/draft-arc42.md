@@ -15,7 +15,7 @@ Generate or refresh the one-file-per-section arc42 documentation under
    `extension/src/moddle/clinical.json`, `schema/`, `examples/`, manifests,
    hooks, and workflows.
 3. Reflect the current architecture: one published package
-   `@forschungsgruppe-digital-health/terminology`, private `demo/`, `term:`
+   `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`, private `demo/`, `term:`
    namespace `https://clinical-bpmn.org/terminology/v1`, terminology providers
    and FHIR CodeSystem package discovery.
 4. Do not introduce removed legacy package, namespace, UI, or example concepts.

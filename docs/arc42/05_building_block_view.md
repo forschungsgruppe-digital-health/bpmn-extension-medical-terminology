@@ -7,7 +7,7 @@ components._
 
 ```mermaid
 graph TB
-    EXT["@forschungsgruppe-digital-health/terminology<br/>extension/<br/>published raw ESM"]
+    EXT["@forschungsgruppe-digital-health/bpmn-extension-medical-terminology<br/>extension/<br/>published raw ESM"]
     DEMO["clinical-bpmn-demo<br/>demo/<br/>private bpmn-js integration"]
     LINT["bpmnlint-plugin-terminology<br/>extension/lint/<br/>workspace plugin"]
     FIX["examples/valid<br/>examples/invalid"]

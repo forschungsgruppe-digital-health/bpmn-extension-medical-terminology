@@ -9,7 +9,7 @@ extension and its evolution._
 terminology implementation in `extension/`, with the bpmn-js demo and the
 terminology lint plugin as private/supporting workspaces. This keeps the
 consumer-facing API focused on one package:
-`@forschungsgruppe-digital-health/terminology`.
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`.
 
 **A stable, dedicated XML namespace.** The descriptor uses the `term:` prefix
 and URI `https://clinical-bpmn.org/terminology/v1`. The namespace is a format
