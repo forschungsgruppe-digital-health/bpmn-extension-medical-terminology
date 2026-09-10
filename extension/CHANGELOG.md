@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.7](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.6...terminology-v0.1.7) (2026-09-10)
+
+
+### Bug Fixes
+
+* **terminology:** flag unavailable coding versions ([74f7459](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/74f7459047b3b25ece04833c125d45ba47b7ac90))
+* **terminology:** remove bundled Vite proxy ([3419b33](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/3419b33c76815c58a091225e197f75581bd4099a))
+
 ## [0.1.6](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.5...terminology-v0.1.6) (2026-09-10)
 
 
