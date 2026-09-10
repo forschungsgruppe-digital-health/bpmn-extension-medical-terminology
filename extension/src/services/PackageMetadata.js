@@ -73,7 +73,7 @@ export function formatPackageDisplayName(packageName, metadata = {}, fallbackNam
   return version ? `${title} (${version})` : title;
 }
 
-function getCodeSystemDisplayName(codeSystem) {
+export function getCodeSystemDisplayName(codeSystem) {
   return codeSystem?.title?.trim()
     || codeSystem?.name?.trim()
     || codeSystem?.id?.trim()

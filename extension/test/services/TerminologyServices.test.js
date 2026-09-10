@@ -201,16 +201,22 @@ describe('TerminologyServices', () => {
     });
     const iheClassProvider = providers.find(provider => provider.id === 'ihe-xds-class');
     const hl7Provider = providers.find(provider => provider.id === 'hl7-terminology-r4-package');
+    const kdlProvider = providers.find(provider => provider.id === 'kdl');
 
     expect(iheClassProvider).toMatchObject({
       sourceType: 'package',
-      sourceName: 'IHE XDS Document Class',
+      sourceName: 'IHEXDSclassCode',
       sourceLabel: 'de.ihe-d.terminology@3.0.1'
     });
     expect(hl7Provider).toMatchObject({
       sourceType: 'package',
-      sourceName: 'HL7 Terminology R4',
+      sourceName: 'hl7.terminology.r4',
       sourceLabel: 'hl7.terminology.r4@7.1.0'
+    });
+    expect(kdlProvider).toMatchObject({
+      sourceType: 'package',
+      sourceName: 'CodeSystem Klinische Dokumentenklassen-Liste (Version 2025)',
+      sourceLabel: 'dvmd.kdl.r4@2025.0.1'
     });
   });
 
@@ -252,9 +258,9 @@ describe('TerminologyServices', () => {
     expect(providers.find(provider => provider.id === 'hl7-terminology-r4-package').displayName)
       .toBe('hl7.terminology.r4 (7.1.0)');
     expect(providers.find(provider => provider.id === 'ihe-xds-class').displayName)
-      .toBe('de.ihe-d.terminology (3.0.1) — IHE XDS Document Class');
+      .toBe('de.ihe-d.terminology (3.0.1) — IHEXDSclassCode');
     expect(providers.find(provider => provider.id === 'ihe-xds-type').displayName)
-      .toBe('de.ihe-d.terminology (3.0.1) — IHE XDS Document Type');
+      .toBe('de.ihe-d.terminology (3.0.1) — IHEXDStypeCode');
     expect(providers.find(provider => provider.id === 'kdl').displayName)
       .toBe('dvmd.kdl.r4 (2025.0.1) — CodeSystem Klinische Dokumentenklassen-Liste (Version 2025)');
   });
@@ -789,7 +795,7 @@ describe('TerminologyServices', () => {
     expect(searchResult.total).toBe(1);
   });
 
-  it('should auto-discover package providers by default when packages are exposed', async () => {
+  it('should not auto-discover unrequested non-default packages', async () => {
     const globalKey = '__FDH_TERMINOLOGY_PACKAGES__';
     const previousValue = globalThis[globalKey];
     globalThis[globalKey] = {
@@ -810,14 +816,8 @@ describe('TerminologyServices', () => {
         loaderConfig: false
       });
 
-      const provider = services.terminologyRegistry.getProvider(
-        'pkg-acme-custom'
-      );
-      expect(provider).toBeDefined();
-
-      await expect(
-        services.terminologyRegistry.search('acme', 'pkg-acme-custom')
-      ).resolves.toMatchObject({ total: 1 });
+      expect(services.terminologyRegistry.listProviders().map(provider => provider.id))
+        .not.toContain('pkg-acme-custom');
     } finally {
       if (previousValue === undefined) {
         delete globalThis[globalKey];
@@ -827,7 +827,73 @@ describe('TerminologyServices', () => {
     }
   });
 
-  it('should support packageAutoDiscovery shortcut via global discovered packages', async () => {
+  it('should filter technical dependencies from automatic package discovery', () => {
+    const globalKey = '__FDH_TERMINOLOGY_PACKAGES__';
+    const previousValue = globalThis[globalKey];
+    globalThis[globalKey] = {
+      'hl7.terminology.r4': [{
+        resourceType: 'CodeSystem',
+        url: 'https://example.org/CodeSystem/hl7',
+        concept: [{ code: 'HL7-1', display: 'HL7 concept' }]
+      }],
+      'de.ihe-d.terminology': [
+        {
+          resourceType: 'CodeSystem',
+          url: 'http://ihe-d.de/CodeSystems/IHEXDSclassCode',
+          concept: [{ code: 'CLASS', display: 'Class' }]
+        },
+        {
+          resourceType: 'CodeSystem',
+          url: 'http://ihe-d.de/CodeSystems/IHEXDStypeCode',
+          concept: [{ code: 'TYPE', display: 'Type' }]
+        },
+        {
+          resourceType: 'CodeSystem',
+          url: 'https://example.org/CodeSystem/unrequested-ihe',
+          concept: [{ code: 'EXTRA', display: 'Extra' }]
+        }
+      ],
+      'dvmd.kdl.r4': [{
+        resourceType: 'CodeSystem',
+        url: 'http://dvmd.de/fhir/CodeSystem/kdl',
+        concept: [{ code: 'KDL-1', display: 'KDL concept' }]
+      }],
+      'hl7.fhir.r4.core': [{
+        resourceType: 'CodeSystem',
+        url: 'https://example.org/CodeSystem/core',
+        concept: [{ code: 'CORE', display: 'Core concept' }]
+      }],
+      'hl7.fhir.uv.extensions.r4': [{
+        resourceType: 'CodeSystem',
+        url: 'https://example.org/CodeSystem/extensions',
+        concept: [{ code: 'EXT', display: 'Extension concept' }]
+      }]
+    };
+
+    try {
+      const providers = createDefaultPackageProviders({
+        enablePackageDefaults: false
+      });
+
+      expect(providers.map(provider => provider.id)).toEqual([
+        'pkg-hl7-terminology-r4',
+        'pkg-de-ihe-d-terminology',
+        'pkg-dvmd-kdl-r4'
+      ]);
+      expect(providers[1].getAll().map(concept => concept.code)).toEqual([
+        'CLASS',
+        'TYPE'
+      ]);
+    } finally {
+      if (previousValue === undefined) {
+        delete globalThis[globalKey];
+      } else {
+        globalThis[globalKey] = previousValue;
+      }
+    }
+  });
+
+  it('should support explicit package discovery without automatic side effects', async () => {
     const globalKey = '__FDH_TERMINOLOGY_PACKAGES__';
     const previousValue = globalThis[globalKey];
     globalThis[globalKey] = {
@@ -840,19 +906,30 @@ describe('TerminologyServices', () => {
             { code: 'A1', display: 'Acme One' }
           ]
         }
-      ]
+      ],
+      'hl7.fhir.r4.core': [{
+        resourceType: 'CodeSystem',
+        url: 'https://example.org/CodeSystem/core',
+        concept: [{ code: 'CORE', display: 'Core concept' }]
+      }]
     };
 
     try {
       const services = createDefaultTerminologyServices({
         loaderConfig: false,
-        packageAutoDiscovery: true
+        packageDiscovery: {
+          packages: {
+            'acme.custom': globalThis[globalKey]['acme.custom']
+          }
+        }
       });
 
       const provider = services.terminologyRegistry.getProvider(
         'pkg-acme-custom'
       );
       expect(provider).toBeDefined();
+      expect(services.terminologyRegistry.listProviders().map(item => item.id))
+        .not.toContain('pkg-hl7-fhir-r4-core');
 
       await expect(
         services.terminologyRegistry.search('acme', 'pkg-acme-custom')

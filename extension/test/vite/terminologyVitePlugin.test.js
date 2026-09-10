@@ -63,7 +63,7 @@ describe('terminologyVitePlugin', () => {
     tmpRoots.length = 0;
   });
 
-  it('discovers terminology packages from transitive dependencies by default', () => {
+  it('discovers only default preset resources from transitive dependencies', () => {
     const root = createTestRoot();
     tmpRoots.push(root);
 
@@ -78,7 +78,7 @@ describe('terminologyVitePlugin', () => {
       exports: './src/index.js',
       dependencies: {
         'hl7.terminology.r4': '7.1.0',
-        'hl7.fhir.r4.core': '4.0.1'
+        'de.ihe-d.terminology': '3.0.1'
       }
     }, {
       'src/index.js': 'export const terminology = true;\n'
@@ -87,6 +87,9 @@ describe('terminologyVitePlugin', () => {
     createPackage(root, 'hl7.terminology.r4', {
       exports: {
         '.': './dist/index.js'
+      },
+      dependencies: {
+        'hl7.fhir.r4.core': '4.0.1'
       }
     }, {
       'dist/index.js': 'export default {};\n',
@@ -102,12 +105,29 @@ describe('terminologyVitePlugin', () => {
       'CodeSystem-should-not-load.json': '{"resourceType":"CodeSystem","url":"http://example.org/infra"}\n'
     });
 
+    createNestedPackage(
+      join(root, 'node_modules', '@forschungsgruppe-digital-health', 'bpmn-extension-medical-terminology'),
+      'de.ihe-d.terminology',
+      {
+        version: '3.0.1'
+      },
+      {
+        'CodeSystem-IHEXDSclassCode.json': '{"resourceType":"CodeSystem","url":"http://ihe-d.de/CodeSystems/IHEXDSclassCode"}\n',
+        'CodeSystem-IHEXDStypeCode.json': '{"resourceType":"CodeSystem","url":"http://ihe-d.de/CodeSystems/IHEXDStypeCode"}\n',
+        'CodeSystem-should-not-load.json': '{"resourceType":"CodeSystem","url":"http://example.org/extra"}\n'
+      }
+    );
+
     const code = runPlugin(root);
 
     expect(code).toContain('"hl7.terminology.r4": [');
     expect(code).toContain('CodeSystem-v3-ActCode.json');
-    expect(code).toContain('"hl7.fhir.r4.core": [');
-    expect(code).toContain('CodeSystem-should-not-load.json');
+    expect(code).toContain('"de.ihe-d.terminology": [');
+    expect(code).toContain('CodeSystem-IHEXDSclassCode.json');
+    expect(code).toContain('CodeSystem-IHEXDStypeCode.json');
+    expect(code).not.toContain('"hl7.fhir.r4.core": [');
+    expect(code).not.toContain('CodeSystem-should-not-load.json');
+    expect(code).not.toContain('http://example.org/extra');
   });
 
   it('supports disabling transitive discovery roots', () => {
@@ -343,14 +363,14 @@ describe('terminologyVitePlugin', () => {
       exports: './dist/index.js'
     }, {
       'dist/index.js': 'export default {};\n',
-      'CodeSystem-kdl-legacy.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/kdl","version":"2024"}\n'
+      'codesystem-kdl.xml.json': '{"resourceType":"CodeSystem","url":"http://dvmd.de/fhir/CodeSystem/kdl","version":"2024"}\n'
     });
     createNestedPackage(terminologyPackageDir, 'dvmd.kdl.r4', {
       version: '2025.0.1',
       exports: './dist/index.js'
     }, {
       'dist/index.js': 'export default {};\n',
-      'CodeSystem-kdl-current.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/kdl","version":"2025"}\n'
+      'codesystem-kdl.xml.json': '{"resourceType":"CodeSystem","url":"http://dvmd.de/fhir/CodeSystem/kdl","version":"2025"}\n'
     });
 
     const code = runPlugin(root);
@@ -365,8 +385,7 @@ describe('terminologyVitePlugin', () => {
     expect(code).toContain('"version": "2025.0.1"');
     expect(code).toContain('CodeSystem-legacy.json');
     expect(code).toContain('CodeSystem-current.json');
-    expect(code).toContain('CodeSystem-kdl-legacy.json');
-    expect(code).toContain('CodeSystem-kdl-current.json');
+    expect(code).toContain('codesystem-kdl.xml.json');
   });
 
   it('marks an identically versioned direct and transitive package as deduplicated', () => {
