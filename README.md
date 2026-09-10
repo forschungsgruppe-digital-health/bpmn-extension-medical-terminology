@@ -206,15 +206,29 @@ available with sensible defaults, so the extension works out of the box after
 | `additionalPackageProviders` | Add package-backed providers |
 | `packageProviderOptions` | Override a bundled package provider's `componentLabel` or complete `displayName` |
 | `packageDiscovery` | Register explicit package data and configure package filtering |
-| `packageAutoDiscovery` | Use packages exposed by a bundler or host application; does not disable explicit `packageDiscovery.packages` |
+| `packageAutoDiscovery` | Use the bundled HL7, IHE XDS, and KDL package resources exposed by a bundler; does not disable explicit `packageDiscovery.packages` |
 | `loaderConfig` | Override or disable provider loading |
 
-Bundled and generated package provider labels use `Package name (version) —
-component`. For example, the bundled IHE XDS providers are labelled by their
-package and their distinct document class or document type component. Generated
-registries use the canonical package name even when the package manifest also
-contains a longer title. Override only the component label while preserving the
-package metadata:
+Package-provider dropdown labels use the same dynamic format for bundled
+presets and discovered package versions:
+
+```text
+Name (package@version)
+```
+
+For a package part containing one CodeSystem, `Name` comes from that resource's
+FHIR `title`, `name`, `id`, or canonical URL. For a package containing several
+CodeSystems, it falls back to the package name. This means a bundled preset and
+an additional installed version use the same naming rule; neither relies on a
+hard-coded preset label. `sourceName` and `componentLabel` configuration values
+remain explicit overrides. For example, a KDL resource is displayed as
+`CodeSystem Klinische Dokumentenklassen-Liste (Version 2025)
+(dvmd.kdl.r4@2025.0.1)`.
+
+The provider's internal `displayName` still contains the package identity and
+component for API consumers. Generated registries use the canonical package
+name even when the package manifest also contains a longer title. Override only
+the component label while preserving the package metadata:
 
 ```js
 createDefaultTerminologyServices({
@@ -413,9 +427,9 @@ package sets, or terminology metadata.
 
 The bundled HL7, IHE XDS, and KDL providers do not require the Vite discovery
 plugin. `enablePackageDefaults: false` disables only these bundled providers.
-The `packageAutoDiscovery` option controls additional packages exposed by the
-host application; native ESM hosts can provide packages explicitly through
-`packageDiscovery`, independent of both options:
+The `packageAutoDiscovery` option controls the bundled package resources
+exposed by the host application; native ESM hosts can provide other packages
+explicitly through `packageDiscovery`, independent of both options:
 
 ```js
 createDefaultTerminologyServices({
@@ -439,8 +453,16 @@ When package discovery is explicitly enabled but no packages are exposed by the
 bundler, the extension writes an actionable warning to the browser console.
 The built-in package providers remain available; configure
 `packageDiscovery.packages`, provide `packageAutoDiscovery.globFn`, or expose
-`globalThis.__FDH_TERMINOLOGY_PACKAGES__` for additional package-backed
-providers.
+`globalThis.__FDH_TERMINOLOGY_PACKAGES__` for the bundled package resources.
+
+Automatic discovery is deliberately limited to the package resources used by
+the four bundled presets: `hl7.terminology.r4`, the two selected IHE XDS
+CodeSystems from `de.ihe-d.terminology`, and the KDL CodeSystem from
+`dvmd.kdl.r4`. FHIR core and implementation-guide extension packages are
+dependencies of those packages, but are not imported, parsed, bundled, or
+registered as providers. Use `packageDiscovery.packages` for any other
+terminology package; explicit package discovery is not subject to this
+default allowlist.
 
 ### Cross-bundler discovery
 
@@ -474,8 +496,10 @@ The generated file contains ordinary ESM data and does not require a JSON
 loader or Vite-specific API. Use `--include <package>=<CodeSystem.url>` to keep
 only selected CodeSystems in the generated registry. Supplying `--include` or
 `--package` selects an explicit package set; it does not mean automatic
-discovery of every installed package. Use `--exclude-package` when automatic
-discovery should remain enabled while omitting complete packages.
+discovery of every installed package. Without an explicit package selection,
+automatic discovery is limited to the default HL7, IHE XDS, and KDL resources.
+Use `--exclude-package` when automatic discovery should remain enabled while
+omitting complete packages.
 
 The CLI is optional. The runtime API is bundler-neutral and can receive an
 already imported package collection directly:
@@ -514,14 +538,29 @@ import { defineConfig } from 'vite';
 import { terminologyVitePlugin } from
   '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/vite';
 
+export default defineConfig({
+  plugins: [
+    terminologyVitePlugin()
+  ]
+});
+```
+
+The default plugin imports only the CodeSystems required by the bundled
+providers. It does not follow technical FHIR dependencies into the virtual
+module. In particular, it does not import `hl7.fhir.r4.core`,
+`hl7.fhir.uv.extensions.r4`, or unrelated resources from
+`de.ihe-d.terminology`.
+
+Applications that intentionally need another package can opt into it
+explicitly. Each explicit package entry supports the documented resource
+filters:
+
+```js
 const discoveryPackages = {
-  'de.ihe-d.terminology': { include: ['*'] },
-  'dvmd.kdl.r4': { include: ['*'] },
-  'hl7.terminology.r4': { include: ['*'] },
-  'hl7.fhir.r4.core': {
-    include: ['http://hl7.org/fhir/abstract-types']
-  },
-  'hl7.fhir.uv.extensions.r4': { include: ['*'] }
+  'my.terminology': {
+    include: ['https://example.org/CodeSystem/custom'],
+    exclude: []
+  }
 };
 
 export default defineConfig({
@@ -531,17 +570,6 @@ export default defineConfig({
     })
   ]
 });
-```
-
-Each package entry supports the documented resource filters:
-
-```js
-const discoveryPackages = {
-  'hl7.fhir.r4.core': {
-    include: ['http://hl7.org/fhir/abstract-types'],
-    exclude: []
-  }
-};
 ```
 
 Enable discovery in the terminology services:

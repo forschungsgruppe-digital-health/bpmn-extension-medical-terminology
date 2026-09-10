@@ -5,7 +5,10 @@ import { StaticProvider } from '../providers/StaticProvider.js';
 import {
   createStaticProviderFromCodeSystem
 } from './CodeSystemProviderFactory.js';
-import { formatPackageProviderDisplayName } from './PackageMetadata.js';
+import {
+  getCodeSystemDisplayName,
+  formatPackageProviderDisplayName
+} from './PackageMetadata.js';
 import { createFhirTerminologyProviderLoader } from './TerminologyProviderLoader.js';
 
 function createPackageProviderId(id) {
@@ -120,8 +123,8 @@ export function createPackageCollectionProvider(config) {
   provider.sourceLabel = formatPackageSourceLabel(config.packageName, config.packageMetadata);
   provider.sourceName = config.sourceName
     || config.componentLabel
-    || (config.includeCodeSystemName && codeSystems.length === 1
-      ? codeSystems[0]?.title || codeSystems[0]?.name || codeSystems[0]?.id
+    || (config.includeCodeSystemName !== false && codeSystems.length === 1
+      ? getCodeSystemDisplayName(codeSystems[0])
       : config.displayName || config.packageName || config.id);
 
   return provider;

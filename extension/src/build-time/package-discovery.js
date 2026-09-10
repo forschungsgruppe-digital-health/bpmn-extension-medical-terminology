@@ -5,6 +5,10 @@ import {
   createPackageKey,
   parsePackageKey
 } from '../services/PackageMetadata.js';
+import {
+  DEFAULT_TERMINOLOGY_PACKAGE_NAMES,
+  getDefaultPackageResourceFilter
+} from '../services/PackageDiscoveryDefaults.js';
 
 export const DEFAULT_RESOURCE_TYPES = Object.freeze(['CodeSystem']);
 
@@ -87,6 +91,21 @@ export function readPackageMetadata(packageDir, packageName) {
 }
 
 function filterResourceFiles(packageDir, packageName, resourceFiles, resourceFilter) {
+  const includeFiles = resourceFilter?.files;
+
+  if (includeFiles) {
+    const availableFiles = new Set(resourceFiles);
+    const missingFile = includeFiles.find(filename => !availableFiles.has(filename));
+
+    if (missingFile) {
+      throw new Error(
+        `[fdh-terminology] Resource file "${missingFile}" not found in package "${packageName}".`
+      );
+    }
+
+    return resourceFiles.filter(filename => includeFiles.includes(filename));
+  }
+
   const resources = resourceFiles.map(filename => ({
     filename,
     selector: getResourceSelector(packageDir, filename)
@@ -248,12 +267,16 @@ export function discoverPackages(
   root,
   excludeSet = new Set(),
   transitiveRoots = [],
-  packageDirs = new Map()
+  packageDirs = new Map(),
+  allowedPackageNames = null
 ) {
   const discovered = new Map();
   const occurrences = new Map();
   const visited = new Set();
   const pending = [];
+  const allowedPackages = allowedPackageNames
+    ? new Set(allowedPackageNames)
+    : null;
 
   const enqueueDependencies = (packageDir, dependencies, traverseDependencies) => {
     for (const depName of dependencies) {
@@ -277,6 +300,10 @@ export function discoverPackages(
       continue;
     }
 
+    if (allowedPackages && !allowedPackages.has(depName)) {
+      continue;
+    }
+
     const packageDir = resolvePackageDir(depName, baseDir);
     if (!packageDir) {
       continue;
@@ -284,6 +311,11 @@ export function discoverPackages(
 
     const metadata = readPackageMetadata(packageDir, depName);
     const packageName = metadata?.packageName || depName;
+
+    if (allowedPackages && !allowedPackages.has(packageName)) {
+      continue;
+    }
+
     const packageKey = createPackageKey(packageName, metadata?.version);
     const occurrence = occurrences.get(packageKey) || {
       directDependency: false,
@@ -368,7 +400,8 @@ function resolveDiscoveredPackageDir(packageName, root, transitiveRoots = []) {
  *   autoDiscover?: boolean,
  *   includeTransitiveFrom?: string[],
  *   exclude?: string[],
- *   resourceTypes?: string[]
+ *   resourceTypes?: string[],
+ *   allowedPackageNames?: string[]
  * }} options
  * @returns {Array<{ packageKey: string, packageName: string, packageDir: string, resourceFiles: string[], metadata: { packageName?: string, title?: string, version?: string, directDependency?: boolean, transitiveDependency?: boolean, deduplicated?: boolean } | null }>}
  */
@@ -379,7 +412,8 @@ export function discoverTerminologyPackageFiles(options) {
     autoDiscover = true,
     includeTransitiveFrom = DEFAULT_TRANSITIVE_ROOT_PACKAGES,
     exclude: userExclude = [],
-    resourceTypes = DEFAULT_RESOURCE_TYPES
+    resourceTypes = DEFAULT_RESOURCE_TYPES,
+    allowedPackageNames = DEFAULT_TERMINOLOGY_PACKAGE_NAMES
   } = options;
 
   const excludeSet = new Set(userExclude);
@@ -396,7 +430,13 @@ export function discoverTerminologyPackageFiles(options) {
       };
     })
     : (autoDiscover
-      ? discoverPackages(root, excludeSet, includeTransitiveFrom)
+      ? discoverPackages(
+        root,
+        excludeSet,
+        includeTransitiveFrom,
+        new Map(),
+        allowedPackageNames
+      )
       : []);
   const discoveredCounts = new Map();
 
@@ -427,6 +467,9 @@ export function discoverTerminologyPackageFiles(options) {
       findResourceFiles(packageDir, resourceTypes),
       packageSelection.resourceFilters[packageKey]
         || packageSelection.resourceFilters[packageName]
+        || (!explicitPackages
+          ? getDefaultPackageResourceFilter(packageName)
+          : undefined)
     );
 
     if (resourceFiles.length === 0) {

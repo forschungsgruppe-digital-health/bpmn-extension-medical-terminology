@@ -18,6 +18,23 @@ describe('terminologyVitePlugin (vanilla integration)', () => {
     expect(code).toContain('"hl7.terminology.r4": [');
   });
 
+  it('does not import technical FHIR dependencies during default discovery', () => {
+    const vanillaRoot = resolve(process.cwd(), '../demo');
+    const plugin = terminologyVitePlugin();
+
+    plugin.configResolved({
+      root: vanillaRoot
+    });
+
+    const resolvedId = plugin.resolveId('virtual:fdh-terminology-packages');
+    const code = plugin.load(resolvedId);
+
+    expect(code).not.toContain('hl7.fhir.r4.core');
+    expect(code).not.toContain('hl7.fhir.uv.extensions.r4');
+    expect(code.match(/CodeSystem-IHEXDS(class|type)Code\.json/g)).toHaveLength(2);
+    expect(code).toContain('codesystem-kdl.xml.json');
+  });
+
   it('loads another real terminology package via explicit plugin packages', () => {
     const vanillaRoot = resolve(process.cwd(), '../demo');
     const plugin = terminologyVitePlugin({

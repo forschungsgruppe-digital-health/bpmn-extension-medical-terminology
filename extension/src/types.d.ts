@@ -60,7 +60,9 @@ export interface TerminologyProvider {
   readonly packageVersion?: string;
   readonly packageMetadata?: PackageMetadata;
   readonly sourceType?: 'api' | 'package';
+  /** Package source label, usually `packageName@packageVersion`. */
   readonly sourceLabel?: string;
+  /** Dynamic resource or package name; explicit sourceName overrides it. */
   readonly sourceName?: string;
   search(term: string, options?: SearchOptions): Promise<SearchResult>;
   lookup(code: string): Promise<Concept | null>;
@@ -136,7 +138,10 @@ export interface PackageDiscoveryConfig {
 }
 
 export interface PackageAutoDiscoveryConfig {
-  /** Bundler-exposed package collections may use version-qualified package keys. */
+  /**
+   * Bundler-exposed default terminology package collections may use
+   * version-qualified package keys. Use packageDiscovery for other packages.
+   */
   packages?: Record<string, CodeSystemResource[]>;
   metadata?: Record<string, PackageMetadata>;
   globalKey?: string;

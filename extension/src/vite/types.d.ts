@@ -1,8 +1,13 @@
 export interface TerminologyVitePluginOptions {
+  /**
+   * Explicit package selection. Explicit packages may be outside the default
+   * automatic-discovery allowlist.
+   */
   packages?: string[] | Record<string, {
     include?: string[];
     exclude?: string[];
   }>;
+  /** Automatic discovery is limited to the bundled HL7, IHE, and KDL data. */
   autoDiscover?: boolean;
   includeTransitiveFrom?: string[];
   exclude?: string[];

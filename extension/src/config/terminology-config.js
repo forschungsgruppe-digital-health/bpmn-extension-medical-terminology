@@ -13,6 +13,9 @@ import {
   DEFAULT_PACKAGE_METADATA_GLOBAL_KEY,
   resolvePackageMetadata
 } from '../services/PackageMetadata.js';
+import {
+  filterDefaultPackageRegistry
+} from '../services/PackageDiscoveryDefaults.js';
 import { createTerminologyModule, createTerminologyServices } from '../services/TerminologyServices.js';
 
 const DEFAULT_SERVER_CONFIG = Object.freeze({
@@ -260,6 +263,14 @@ export function createDefaultPackageProviders(config = {}) {
   const packageMetadata = packageDiscovery?.metadata
     || autoDiscoveryMetadata
     || configuredPackageMetadata;
+  const resolvedAutoDiscoveryPackages = autoDiscoveryOptions?.packages
+    ? autoDiscoveryPackages
+    : filterDefaultPackageRegistry(
+      autoDiscoveryPackages || {},
+      packageDiscovery?.metadata
+        || autoDiscoveryMetadata
+        || configuredPackageMetadata
+    );
 
   const packageCodeSystems = packageDiscovery?.packages
     || (
@@ -269,7 +280,7 @@ export function createDefaultPackageProviders(config = {}) {
           packageDiscovery?.packageNames || [],
           packageMetadata
         )
-        : (autoDiscoveryPackages || {})
+        : (resolvedAutoDiscoveryPackages || {})
     );
   const packageDiscoveryRequested = Boolean(
     packageDiscovery?.enabled

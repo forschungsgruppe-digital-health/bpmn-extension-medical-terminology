@@ -91,7 +91,6 @@ const PACKAGE_PROVIDER_PRESETS = Object.freeze({
   'hl7-terminology-r4-package': Object.freeze({
     id: 'hl7-terminology-r4-package',
     packageName: 'hl7.terminology.r4',
-    sourceName: 'HL7 Terminology R4',
     normalizeDefaultTitle: true,
     resolveCodeSystems: config => config.codeSystems || loadHl7TerminologyR4CodeSystems(),
     returnNullIfEmpty: true
@@ -99,21 +98,16 @@ const PACKAGE_PROVIDER_PRESETS = Object.freeze({
   'ihe-xds-class': Object.freeze({
     id: 'ihe-xds-class',
     packageName: 'de.ihe-d.terminology',
-    componentLabel: 'IHE XDS Document Class',
-    sourceName: 'IHE XDS Document Class',
     resolveCodeSystems: config => config.codeSystems || [iheXdsClassCodeSystem]
   }),
   'ihe-xds-type': Object.freeze({
     id: 'ihe-xds-type',
     packageName: 'de.ihe-d.terminology',
-    componentLabel: 'IHE XDS Document Type',
-    sourceName: 'IHE XDS Document Type',
     resolveCodeSystems: config => config.codeSystems || [iheXdsTypeCodeSystem]
   }),
   kdl: Object.freeze({
     id: 'kdl',
     packageName: 'dvmd.kdl.r4',
-    sourceName: 'KDL',
     resolveCodeSystems: config => config.codeSystems || [kdlCodeSystem]
   })
 });
@@ -141,8 +135,8 @@ export function createPackagePresetProvider(presetId, config = {}) {
       || createPackageKey(preset.packageName, packageMetadata.version),
     packageName: preset.packageName,
     packageMetadata,
-    componentLabel: config.componentLabel || preset.componentLabel,
-    sourceName: config.sourceName || preset.sourceName,
+    componentLabel: config.componentLabel,
+    sourceName: config.sourceName,
     codeSystems
   });
 }
