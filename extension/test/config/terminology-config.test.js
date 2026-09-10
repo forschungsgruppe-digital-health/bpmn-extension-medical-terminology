@@ -126,6 +126,15 @@ describe('default terminology configuration matrix', () => {
     expect(requestUrl.pathname).toBe('/r4/ValueSet/$expand');
   });
 
+  it('uses FHIR for the default SNOMED provider', () => {
+    const config = createDefaultTerminologyConfig({
+      enablePackageDefaults: false,
+      loaderConfig: false
+    });
+
+    expect(config.providers[0]).toBeInstanceOf(FhirProvider);
+  });
+
   it('fhirProviderOverrides applies an override to the matching provider ID', async () => {
     const fetchFn = createSuccessfulFhirFetch();
     const services = createDefaultTerminologyServices({
@@ -198,6 +207,20 @@ describe('default terminology configuration matrix', () => {
 
     expect(fetchFn.mock.calls[0][0]).toContain(
       'https://snowstorm.example.test/snomed-ct/MAIN/concepts'
+    );
+  });
+
+  it('requires an explicit base URL for the optional Snowstorm transport', () => {
+    expect(() => createDefaultTerminologyConfig({
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      loaderConfig: false,
+      snomedConfig: {
+        transport: 'snowstorm'
+      }
+    })).toThrow(
+      'SNOMED Snowstorm transport requires snomedConfig.baseUrl, ' +
+      'serverConfig.snomedBaseUrl, or serverConfig.snowstormBaseUrl.'
     );
   });
 

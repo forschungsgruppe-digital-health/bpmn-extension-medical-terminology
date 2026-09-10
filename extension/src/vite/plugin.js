@@ -132,8 +132,8 @@ export function terminologyVitePlugin(options = {}) {
       let importCounter = 0;
       const packageMetadata = {};
 
-      for (const { packageName, packageDir, resourceFiles, metadata } of packageEntries) {
-        const variablePrefix = packageName
+      for (const { packageKey, packageDir, resourceFiles, metadata } of packageEntries) {
+        const variablePrefix = packageKey
           .replace(/[^a-zA-Z0-9]/g, '_')
           .replace(/_+/g, '_')
           .replace(/^_|_$/g, '');
@@ -146,9 +146,9 @@ export function terminologyVitePlugin(options = {}) {
           variableNames.push(variableName);
         }
 
-        exportEntries.push(`  ${JSON.stringify(packageName)}: [${variableNames.join(', ')}]`);
+        exportEntries.push(`  ${JSON.stringify(packageKey)}: [${variableNames.join(', ')}]`);
         if (metadata) {
-          packageMetadata[packageName] = metadata;
+          packageMetadata[packageKey] = metadata;
         }
       }
 

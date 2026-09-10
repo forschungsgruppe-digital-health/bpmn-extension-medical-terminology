@@ -1,6 +1,10 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { createRequire } from 'node:module';
+import {
+  createPackageKey,
+  parsePackageKey
+} from '../services/PackageMetadata.js';
 
 export const DEFAULT_RESOURCE_TYPES = Object.freeze(['CodeSystem']);
 
@@ -246,7 +250,8 @@ export function discoverPackages(
   transitiveRoots = [],
   packageDirs = new Map()
 ) {
-  const discovered = new Set();
+  const discovered = new Map();
+  const occurrences = new Map();
   const visited = new Set();
   const pending = [];
 
@@ -273,15 +278,40 @@ export function discoverPackages(
     }
 
     const packageDir = resolvePackageDir(depName, baseDir);
-    if (!packageDir || visited.has(packageDir)) {
+    if (!packageDir) {
+      continue;
+    }
+
+    const metadata = readPackageMetadata(packageDir, depName);
+    const packageName = metadata?.packageName || depName;
+    const packageKey = createPackageKey(packageName, metadata?.version);
+    const occurrence = occurrences.get(packageKey) || {
+      directDependency: false,
+      transitiveDependency: false
+    };
+
+    if (traverseDependencies) {
+      occurrence.transitiveDependency = true;
+    } else {
+      occurrence.directDependency = true;
+    }
+
+    occurrences.set(packageKey, occurrence);
+
+    if (visited.has(packageDir)) {
       continue;
     }
 
     visited.add(packageDir);
     const isFhirPackage = isFhirTerminologyPackage(packageDir);
-    if (isFhirPackage) {
-      discovered.add(depName);
-      packageDirs.set(depName, packageDir);
+    if (isFhirPackage && !discovered.has(packageKey)) {
+      discovered.set(packageKey, {
+        packageKey,
+        packageName,
+        packageDir,
+        metadata
+      });
+      packageDirs.set(packageKey, packageDir);
     }
 
     if (traverseDependencies || isFhirPackage) {
@@ -289,7 +319,23 @@ export function discoverPackages(
     }
   }
 
-  return [...discovered];
+  for (const [packageKey, occurrence] of occurrences) {
+    if (
+      occurrence.directDependency
+      && occurrence.transitiveDependency
+      && discovered.has(packageKey)
+    ) {
+      const entry = discovered.get(packageKey);
+      entry.metadata = {
+        ...(entry.metadata || {}),
+        directDependency: true,
+        transitiveDependency: true,
+        deduplicated: true
+      };
+    }
+  }
+
+  return [...discovered.values()];
 }
 
 function resolveDiscoveredPackageDir(packageName, root, transitiveRoots = []) {
@@ -324,7 +370,7 @@ function resolveDiscoveredPackageDir(packageName, root, transitiveRoots = []) {
  *   exclude?: string[],
  *   resourceTypes?: string[]
  * }} options
- * @returns {Array<{ packageName: string, packageDir: string, resourceFiles: string[], metadata: { packageName?: string, title?: string, version?: string } | null }>}
+ * @returns {Array<{ packageKey: string, packageName: string, packageDir: string, resourceFiles: string[], metadata: { packageName?: string, title?: string, version?: string, directDependency?: boolean, transitiveDependency?: boolean, deduplicated?: boolean } | null }>}
  */
 export function discoverTerminologyPackageFiles(options) {
   const {
@@ -338,42 +384,67 @@ export function discoverTerminologyPackageFiles(options) {
 
   const excludeSet = new Set(userExclude);
   const packageSelection = normalizePackageSelection(explicitPackages);
-  const discoveredPackageDirs = new Map();
-  const packageNames = explicitPackages
-    ? packageSelection.packageNames
-    : (autoDiscover
-      ? discoverPackages(root, excludeSet, includeTransitiveFrom, discoveredPackageDirs)
-      : []);
+  const discoveredPackageEntries = explicitPackages
+    ? packageSelection.packageNames.map(packageKey => {
+      const { packageName } = parsePackageKey(packageKey);
 
-  return packageNames.flatMap(packageName => {
+      return {
+        packageKey,
+        packageName,
+        packageDir: null,
+        metadata: null
+      };
+    })
+    : (autoDiscover
+      ? discoverPackages(root, excludeSet, includeTransitiveFrom)
+      : []);
+  const discoveredCounts = new Map();
+
+  for (const entry of discoveredPackageEntries) {
+    discoveredCounts.set(
+      entry.packageName,
+      (discoveredCounts.get(entry.packageName) || 0) + 1
+    );
+  }
+
+  return discoveredPackageEntries.flatMap(entry => {
+    const { packageKey, packageName } = entry;
+
     if (excludeSet.has(packageName) && !explicitPackages) {
       return [];
     }
 
-    const packageDir = discoveredPackageDirs.get(packageName)
+    const packageDir = entry.packageDir
       || resolveDiscoveredPackageDir(packageName, root, includeTransitiveFrom);
     if (!packageDir) {
-      console.warn(`[fdh-terminology] Could not resolve package "${packageName}" - skipping.`);
+      console.warn(`[fdh-terminology] Could not resolve package "${packageKey}" - skipping.`);
       return [];
     }
 
     const resourceFiles = filterResourceFiles(
       packageDir,
-      packageName,
+      packageKey,
       findResourceFiles(packageDir, resourceTypes),
-      packageSelection.resourceFilters[packageName]
+      packageSelection.resourceFilters[packageKey]
+        || packageSelection.resourceFilters[packageName]
     );
 
     if (resourceFiles.length === 0) {
-      console.warn(`[fdh-terminology] No CodeSystem resources found in "${packageName}" - skipping.`);
+      console.warn(`[fdh-terminology] No CodeSystem resources found in "${packageKey}" - skipping.`);
       return [];
     }
 
+    const metadata = entry.metadata || readPackageMetadata(packageDir, packageName);
+    const normalizedPackageKey = explicitPackages || discoveredCounts.get(packageName) > 1
+      ? packageKey
+      : packageName;
+
     return [{
+      packageKey: normalizedPackageKey,
       packageName,
       packageDir,
       resourceFiles,
-      metadata: readPackageMetadata(packageDir, packageName)
+      metadata
     }];
   });
 }
@@ -382,19 +453,19 @@ export function discoverTerminologyPackageFiles(options) {
  * Load selected CodeSystem resources into the bundler-neutral registry shape.
  *
  * @param {Parameters<typeof discoverTerminologyPackageFiles>[0]} options
- * @returns {{ packages: Record<string, object[]>, metadata: Record<string, { packageName?: string, title?: string, version?: string }> }}
+ * @returns {{ packages: Record<string, object[]>, metadata: Record<string, { packageName?: string, title?: string, version?: string, directDependency?: boolean, transitiveDependency?: boolean, deduplicated?: boolean }> }}
  */
 export function loadTerminologyPackageRegistry(options) {
   const packages = {};
   const metadata = {};
 
   for (const entry of discoverTerminologyPackageFiles(options)) {
-    packages[entry.packageName] = entry.resourceFiles.map(filename =>
+    packages[entry.packageKey] = entry.resourceFiles.map(filename =>
       readPackageResource(entry.packageDir, filename)
     );
 
     if (entry.metadata) {
-      metadata[entry.packageName] = entry.metadata;
+      metadata[entry.packageKey] = entry.metadata;
     }
   }
 

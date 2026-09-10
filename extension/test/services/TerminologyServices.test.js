@@ -463,6 +463,38 @@ describe('TerminologyServices', () => {
     expect(providerIds).toContain('pkg-acme-terminology');
   });
 
+  it('should resolve version-qualified package keys from modules independently', () => {
+    const providers = createDefaultPackageProviders({
+      enablePackageDefaults: false,
+      packageAutoDiscovery: false,
+      packageDiscovery: {
+        enabled: true,
+        packageNames: ['acme.terminology@6.0.2', 'acme.terminology@7.1.0'],
+        modules: {
+          '/node_modules/acme.terminology@6.0.2/CodeSystem-legacy.json': {
+            resourceType: 'CodeSystem',
+            url: 'https://example.org/CodeSystem/legacy',
+            version: '2024.1',
+            concept: [{ code: 'OLD', display: 'Legacy concept' }]
+          },
+          '/node_modules/acme.terminology@7.1.0/CodeSystem-current.json': {
+            resourceType: 'CodeSystem',
+            url: 'https://example.org/CodeSystem/current',
+            version: '2025.1',
+            concept: [{ code: 'NEW', display: 'Current concept' }]
+          }
+        }
+      }
+    });
+
+    expect(providers.map(provider => provider.id)).toEqual([
+      'pkg-acme-terminology-6-0-2',
+      'pkg-acme-terminology-7-1-0'
+    ]);
+    expect(providers[0].getAll().map(concept => concept.code)).toEqual(['OLD']);
+    expect(providers[1].getAll().map(concept => concept.code)).toEqual(['NEW']);
+  });
+
   it('should combine package metadata with a single discovered CodeSystem name', () => {
     const providers = createDefaultPackageProviders({
       packageDiscovery: {
@@ -832,5 +864,237 @@ describe('TerminologyServices', () => {
         globalThis[globalKey] = previousValue;
       }
     }
+  });
+
+  it('should expose different installed package versions as separate providers', async () => {
+    const codeSystems = {
+      'acme.terminology@6.0.2': [{
+        resourceType: 'CodeSystem',
+        id: 'legacy',
+        url: 'https://example.org/CodeSystem/acme',
+        version: '2024.1',
+        concept: [{ code: 'OLD', display: 'Legacy concept' }]
+      }],
+      'acme.terminology@7.1.0': [{
+        resourceType: 'CodeSystem',
+        id: 'current',
+        url: 'https://example.org/CodeSystem/acme',
+        version: '2025.1',
+        concept: [{ code: 'NEW', display: 'Current concept' }]
+      }]
+    };
+    const metadata = {
+      'acme.terminology@6.0.2': {
+        packageName: 'acme.terminology',
+        title: 'ACME Terminology',
+        version: '6.0.2'
+      },
+      'acme.terminology@7.1.0': {
+        packageName: 'acme.terminology',
+        title: 'ACME Terminology',
+        version: '7.1.0'
+      }
+    };
+    const providers = createDefaultPackageProviders({
+      enablePackageDefaults: false,
+      packageAutoDiscovery: { packages: codeSystems, metadata }
+    });
+
+    expect(providers.map(provider => provider.id)).toEqual([
+      'pkg-acme-terminology-6-0-2',
+      'pkg-acme-terminology-7-1-0'
+    ]);
+    expect(providers[0].displayName).toContain('6.0.2');
+    expect(providers[1].displayName).toContain('7.1.0');
+    expect(providers[0].packageVersion).toBe('6.0.2');
+    expect(providers[1].packageVersion).toBe('7.1.0');
+
+    await expect(providers[0].search('legacy')).resolves.toMatchObject({
+      total: 1,
+      concepts: [{
+        code: 'OLD',
+        version: '2024.1'
+      }]
+    });
+    await expect(providers[0].search('current')).resolves.toMatchObject({
+      total: 0
+    });
+    await expect(providers[1].search('current')).resolves.toMatchObject({
+      total: 1,
+      concepts: [{
+        code: 'NEW',
+        version: '2025.1'
+      }]
+    });
+    await expect(providers[1].search('legacy')).resolves.toMatchObject({
+      total: 0
+    });
+  });
+
+  it('should reuse the bundled provider for the matching discovered package version', () => {
+    const currentCodeSystem = {
+      resourceType: 'CodeSystem',
+      url: 'https://example.org/CodeSystem/hl7',
+      version: '2025.1',
+      concept: [{ code: 'NEW', display: 'Current concept' }]
+    };
+    const legacyCodeSystem = {
+      ...currentCodeSystem,
+      version: '2024.1',
+      concept: [{ code: 'OLD', display: 'Legacy concept' }]
+    };
+    const providers = createDefaultPackageProviders({
+      hl7CodeSystems: [currentCodeSystem],
+      packageAutoDiscovery: {
+        packages: {
+          'hl7.terminology.r4@6.0.2': [legacyCodeSystem],
+          'hl7.terminology.r4@7.1.0': [currentCodeSystem]
+        },
+        metadata: {
+          'hl7.terminology.r4@6.0.2': {
+            packageName: 'hl7.terminology.r4',
+            version: '6.0.2'
+          },
+          'hl7.terminology.r4@7.1.0': {
+            packageName: 'hl7.terminology.r4',
+            version: '7.1.0'
+          }
+        }
+      }
+    });
+
+    expect(providers.some(provider => provider.id === 'hl7-terminology-r4-package')).toBe(true);
+    expect(providers.some(provider => provider.id === 'pkg-hl7-terminology-r4-6-0-2')).toBe(true);
+    expect(providers.some(provider => provider.id === 'pkg-hl7-terminology-r4-7-1-0')).toBe(false);
+  });
+
+  it('should warn once when direct and transitive requirements were deduplicated', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const codeSystem = {
+      resourceType: 'CodeSystem',
+      id: 'deduplicated',
+      url: 'https://example.org/CodeSystem/deduplicated',
+      concept: [{ code: 'D1', display: 'Deduplicated concept' }]
+    };
+
+    try {
+      const providers = createDefaultPackageProviders({
+        enablePackageDefaults: false,
+        packageAutoDiscovery: {
+          packages: {
+            'acme.terminology': [codeSystem],
+            'acme.terminology@7.1.0': [{ ...codeSystem, id: 'duplicate-resource' }]
+          },
+          metadata: {
+            'acme.terminology': {
+              packageName: 'acme.terminology',
+              version: '7.1.0',
+              directDependency: true,
+              transitiveDependency: true,
+              deduplicated: true
+            },
+            'acme.terminology@7.1.0': {
+              packageName: 'acme.terminology',
+              version: '7.1.0'
+            }
+          }
+        }
+      });
+
+      expect(providers).toHaveLength(1);
+      expect(providers[0].getAll()).toHaveLength(1);
+      expect(warn).toHaveBeenCalledWith(
+        '[terminology] Package "acme.terminology" version "7.1.0" ' +
+        'is installed directly and transitively. The package was deduplicated; ' +
+        'one terminology provider will be used.'
+      );
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('should keep providers separate when different packages share a CodeSystem URL', async () => {
+    const sharedUrl = 'https://example.org/CodeSystem/shared';
+    const providers = createDefaultPackageProviders({
+      enablePackageDefaults: false,
+      packageAutoDiscovery: {
+        packages: {
+          'acme.first': [{
+            resourceType: 'CodeSystem',
+            url: sharedUrl,
+            concept: [{ code: 'FIRST', display: 'First package concept' }]
+          }],
+          'acme.second': [{
+            resourceType: 'CodeSystem',
+            url: sharedUrl,
+            concept: [{ code: 'SECOND', display: 'Second package concept' }]
+          }]
+        }
+      }
+    });
+
+    expect(providers.map(provider => provider.id)).toEqual([
+      'pkg-acme-first',
+      'pkg-acme-second'
+    ]);
+    expect(providers[0].getAll().map(concept => concept.code)).toEqual(['FIRST']);
+    expect(providers[1].getAll().map(concept => concept.code)).toEqual(['SECOND']);
+    await expect(providers[0].search('second')).resolves.toMatchObject({ total: 0 });
+    await expect(providers[1].search('first')).resolves.toMatchObject({ total: 0 });
+  });
+
+  it('should disable only the selected versioned package provider', () => {
+    const packageAutoDiscovery = {
+      packages: {
+        'acme.terminology@6.0.2': [{
+          resourceType: 'CodeSystem',
+          url: 'https://example.org/CodeSystem/legacy',
+          version: '2024.1',
+          concept: [{ code: 'OLD', display: 'Legacy concept' }]
+        }],
+        'acme.terminology@7.1.0': [{
+          resourceType: 'CodeSystem',
+          url: 'https://example.org/CodeSystem/current',
+          version: '2025.1',
+          concept: [{ code: 'NEW', display: 'Current concept' }]
+        }]
+      }
+    };
+
+    const providers = createDefaultPackageProviders({
+      enablePackageDefaults: false,
+      packageAutoDiscovery,
+      disabledProviderIds: ['pkg-acme-terminology-6-0-2']
+    });
+
+    expect(providers.map(provider => provider.id)).toEqual([
+      'pkg-acme-terminology-7-1-0'
+    ]);
+  });
+
+  it('does not use the package version as the CodeSystem version', async () => {
+    const provider = createPackageCollectionProvider({
+      id: 'pkg-acme-terminology-6-0-2',
+      packageKey: 'acme.terminology@6.0.2',
+      packageName: 'acme.terminology',
+      packageMetadata: {
+        packageName: 'acme.terminology',
+        version: '6.0.2'
+      },
+      codeSystems: [{
+        resourceType: 'CodeSystem',
+        url: 'https://example.org/CodeSystem/acme',
+        version: '2025.1',
+        concept: [{ code: 'A1', display: 'CodeSystem concept' }]
+      }]
+    });
+
+    expect(provider.packageVersion).toBe('6.0.2');
+    expect(provider.version).toBeUndefined();
+    await expect(provider.lookup('A1')).resolves.toMatchObject({
+      code: 'A1',
+      version: '2025.1'
+    });
   });
 });

@@ -9,12 +9,14 @@ import {
   collectPackageCodeSystemsFromModules,
   discoverPackageProviders
 } from '../services/PackageProviderDiscovery.js';
-import { DEFAULT_PACKAGE_METADATA_GLOBAL_KEY } from '../services/PackageMetadata.js';
+import {
+  DEFAULT_PACKAGE_METADATA_GLOBAL_KEY,
+  resolvePackageMetadata
+} from '../services/PackageMetadata.js';
 import { createTerminologyModule, createTerminologyServices } from '../services/TerminologyServices.js';
 
 const DEFAULT_SERVER_CONFIG = Object.freeze({
-  fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-  snowstormBaseUrl: 'https://snowstorm.snomedtools.org/snowstorm/snomed-ct'
+  fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
 });
 
 const DEFAULT_SNOMED_CONFIG = Object.freeze({
@@ -112,11 +114,20 @@ function createDefaultSnomedProvider(snomedConfig, serverConfig, fetchFn) {
   }
 
   if (transport === 'snowstorm') {
+    const baseUrl = resolvedConfig.baseUrl
+      || serverConfig.snomedBaseUrl
+      || serverConfig.snowstormBaseUrl;
+
+    if (!baseUrl) {
+      throw new Error(
+        'SNOMED Snowstorm transport requires snomedConfig.baseUrl, ' +
+        'serverConfig.snomedBaseUrl, or serverConfig.snowstormBaseUrl.'
+      );
+    }
+
     return new SnomedCtProvider({
       ...resolvedConfig,
-      baseUrl: resolvedConfig.baseUrl
-        || serverConfig.snomedBaseUrl
-        || serverConfig.snowstormBaseUrl,
+      baseUrl,
       fetchFn: requestFetchFn
     });
   }
@@ -166,14 +177,43 @@ function validatePackageProviderOptions(packageProviderOptions) {
   }
 }
 
-function getCoveredSystemUris(providers) {
-  return new Set(providers.flatMap(provider =>
-    typeof provider.getCodeSystemUris === 'function'
-      ? provider.getCodeSystemUris()
-      : typeof provider.getAll === 'function'
-      ? provider.getAll().map(concept => concept.system)
-      : []
-  ));
+function getCoveredPackageCodeSystems(providers) {
+  return providers.flatMap(provider => {
+    if (
+      !provider.packageName
+      || typeof provider.getCodeSystemUris !== 'function'
+    ) {
+      return [];
+    }
+
+    return provider.getCodeSystemUris().map(systemUri => ({
+      packageName: provider.packageName,
+      version: provider.packageVersion,
+      systemUri
+    }));
+  });
+}
+
+function findPackageCodeSystemsForPreset(
+  packageCodeSystems,
+  packageMetadata,
+  packageName,
+  packageVersion
+) {
+  const matchingEntries = Object.entries(packageCodeSystems || {})
+    .map(([packageKey, codeSystems]) => ({
+      packageKey,
+      codeSystems,
+      ...resolvePackageMetadata(packageKey, packageMetadata)
+    }))
+    .filter(entry =>
+      entry.packageName === packageName
+      && (!entry.version || !packageVersion || entry.version === packageVersion)
+    );
+
+  const exactVersionEntry = matchingEntries.find(entry => entry.version === packageVersion);
+
+  return (exactVersionEntry || matchingEntries[0])?.codeSystems;
 }
 
 export function createDefaultPackageProviders(config = {}) {
@@ -197,13 +237,6 @@ export function createDefaultPackageProviders(config = {}) {
   const autoDiscoveryOptions = packageAutoDiscovery === false
     ? null
     : (packageAutoDiscovery || {});
-  const autoDiscoveryPackages = autoDiscoveryOptions
-    ? (
-      autoDiscoveryOptions.packages
-      || globalThis?.[autoDiscoveryOptions.globalKey || '__FDH_TERMINOLOGY_PACKAGES__']
-      || collectPackageCodeSystemsFromGlob(autoDiscoveryOptions.globFn)
-    )
-    : null;
   const autoDiscoveryMetadata = autoDiscoveryOptions
     ? (
       autoDiscoveryOptions.metadata
@@ -213,13 +246,28 @@ export function createDefaultPackageProviders(config = {}) {
       || null
     )
     : null;
+  const autoDiscoveryPackages = autoDiscoveryOptions
+    ? (
+      autoDiscoveryOptions.packages
+      || globalThis?.[autoDiscoveryOptions.globalKey || '__FDH_TERMINOLOGY_PACKAGES__']
+      || collectPackageCodeSystemsFromGlob(autoDiscoveryOptions.globFn, {
+        metadata: packageDiscovery?.metadata
+          || autoDiscoveryMetadata
+          || configuredPackageMetadata
+      })
+    )
+    : null;
+  const packageMetadata = packageDiscovery?.metadata
+    || autoDiscoveryMetadata
+    || configuredPackageMetadata;
 
   const packageCodeSystems = packageDiscovery?.packages
     || (
       packageDiscovery?.packageNames?.length || Object.keys(packageDiscovery?.modules || {}).length
         ? collectPackageCodeSystemsFromModules(
           packageDiscovery?.modules || {},
-          packageDiscovery?.packageNames || []
+          packageDiscovery?.packageNames || [],
+          packageMetadata
         )
         : (autoDiscoveryPackages || {})
     );
@@ -242,14 +290,23 @@ export function createDefaultPackageProviders(config = {}) {
     );
   }
 
-  const packageMetadata = packageDiscovery?.metadata
-    || autoDiscoveryMetadata
-    || configuredPackageMetadata;
   const discoveryInclude = packageDiscovery?.include
     || packageDiscovery?.packageNames
     || (autoDiscoveryOptions ? ['*'] : undefined);
   const discoveryMode = packageDiscovery?.mode || (packageDiscovery?.packageNames?.length ? 'whitelist' : 'auto');
-  const resolvedHl7CodeSystems = hl7CodeSystems || packageCodeSystems['hl7.terminology.r4'];
+  const hl7Preset = enablePackageDefaults
+    ? createPackagePresetProvider('hl7-terminology-r4-package', {
+      ...(packageProviderOptions['hl7-terminology-r4-package'] || {}),
+      packageMetadata: packageProviderOptions['hl7-terminology-r4-package']?.packageMetadata
+        || packageMetadata
+    })
+    : null;
+  const resolvedHl7CodeSystems = hl7CodeSystems || findPackageCodeSystemsForPreset(
+    packageCodeSystems,
+    packageMetadata,
+    'hl7.terminology.r4',
+    hl7Preset?.packageVersion
+  );
 
   const presetProviders = enablePackageDefaults
     ? DEFAULT_PACKAGE_PROVIDER_IDS.map(providerId => createPackagePresetProvider(providerId, {
@@ -267,7 +324,7 @@ export function createDefaultPackageProviders(config = {}) {
       ...(discoveryInclude ? { include: discoveryInclude } : {}),
       metadata: packageMetadata,
       mode: discoveryMode,
-      excludeSystemUris: getCoveredSystemUris(presetProviders)
+      excludePackageCodeSystems: getCoveredPackageCodeSystems(presetProviders)
     })
     : [];
 
