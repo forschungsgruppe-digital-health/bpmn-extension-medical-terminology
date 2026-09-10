@@ -464,6 +464,19 @@ registered as providers. Use `packageDiscovery.packages` for any other
 terminology package; explicit package discovery is not subject to this
 default allowlist.
 
+The published package keeps URL-pinned FHIR core and extension dependencies as
+installation-time resolution anchors because the upstream Simplifier package
+manifests refer to those packages by bare version. These technical packages
+remain excluded from automatic terminology discovery and are never registered
+as providers.
+
+The default IHE and KDL filters select resources by their canonical
+`CodeSystem.url`, not by a single package filename. This supports compatible
+package layouts such as `codesystem-kdl.xml.json` and
+`codesystem-kdl.json`. If a default package contains no matching resource, the
+Vite plugin emits a warning and skips that package instead of failing with an
+unresolved filename.
+
 ### Cross-bundler discovery
 
 For Webpack, Rollup, esbuild, SSR, or other non-Vite builds, generate a plain
