@@ -14,6 +14,11 @@ export interface TerminologyVitePluginOptions {
   includeTransitiveFrom?: string[];
   exclude?: string[];
   resourceTypes?: string[];
+  /**
+   * Expose discovered collections through the configured globals. The plugin
+   * resolves its internal virtual module during Vite's HTML transformation;
+   * consumers must not load that URI as a browser URL.
+   */
   exposeGlobal?: boolean;
   globalKey?: string;
   metadataGlobalKey?: string;

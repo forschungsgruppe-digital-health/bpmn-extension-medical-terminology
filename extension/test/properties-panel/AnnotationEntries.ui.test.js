@@ -750,6 +750,97 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
   });
 
+  it('marks saved Codings yellow when their CodeSystem version is unavailable', async () => {
+    const context = await createTestContext({
+      id: 'Task_OutdatedCoding',
+      type: 'bpmn:Task',
+      name: 'Outdated Coding Task'
+    });
+    const isCodeSystemVersionOutdated = vi.fn((system, version) =>
+      system === 'http://snomed.info/sct' && version === '2024-09'
+    );
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => PROVIDERS,
+        search: vi.fn(async () => ({
+          items: [{
+            code: '254292007',
+            display: 'Tumor staging (tumor staging)',
+            system: 'http://snomed.info/sct',
+            version: '2024-09'
+          }]
+        })),
+        isCodeSystemVersionOutdated,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const annotationView = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(annotationView.container, {
+      text: 'Legacy coding',
+      codings: [{
+        providerId: 'snomed-ct',
+        searchTerm: 'Tumor staging',
+        resultLabel: 'Tumor staging (tumor staging)'
+      }]
+    });
+
+    const outdatedCoding = annotationView.container.querySelector(
+      '.annotation-item__coding--outdated'
+    );
+    const warning = outdatedCoding.querySelector('.coding-version-warning');
+
+    expect(outdatedCoding).toBeTruthy();
+    expect(warning).toBeTruthy();
+    expect(warning.getAttribute('aria-label'))
+      .toBe('Saved CodeSystem version is not available locally');
+    expect(isCodeSystemVersionOutdated).toHaveBeenCalledWith(
+      'http://snomed.info/sct',
+      '2024-09'
+    );
+  });
+
+  it('keeps saved Codings normal when their CodeSystem version remains available', async () => {
+    const context = await createTestContext({
+      id: 'Task_CurrentCoding',
+      type: 'bpmn:Task',
+      name: 'Current Coding Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => PROVIDERS,
+        search: vi.fn(async () => ({
+          items: [{
+            code: '254292007',
+            display: 'Tumor staging (tumor staging)',
+            system: 'http://snomed.info/sct',
+            version: '2024-09'
+          }]
+        })),
+        isCodeSystemVersionOutdated: () => false,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const annotationView = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(annotationView.container, {
+      text: 'Available coding',
+      codings: [{
+        providerId: 'snomed-ct',
+        searchTerm: 'Tumor staging',
+        resultLabel: 'Tumor staging (tumor staging)'
+      }]
+    });
+
+    expect(annotationView.container.querySelector(
+      '.annotation-item__coding--outdated'
+    )).toBeNull();
+  });
+
   it('keeps CodeSystem versions distinct when selecting parallel package providers', async () => {
     const context = await createTestContext({
       id: 'Task_ParallelPackageVersions',

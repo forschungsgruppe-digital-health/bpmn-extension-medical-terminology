@@ -261,6 +261,14 @@ CodeSystem's own `version`, and only that value is written to the existing
 available as provider/package metadata and is never substituted into the
 Coding.
 
+When a diagram is loaded, a saved Coding with a CodeSystem version is shown
+with a yellow system/code marker only when the same CodeSystem URI is available
+locally but that exact saved version is not. This identifies a Coding that may
+need review after replacing a terminology package. If the old and new package
+versions are installed in parallel, the saved Coding remains normally marked
+because its CodeSystem version is still available. Versionless Codings and
+systems for which no local version is known remain unchanged.
+
 TypeScript consumers can import the public configuration types from
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/types`.
 
@@ -576,6 +584,14 @@ warning described above. Each provider searches only the CodeSystems from its
 own package version, so parallel versions remain independently searchable and
 selectable while the selected coding still keeps its concrete CodeSystem URL
 and version.
+
+The plugin resolves its internal `virtual:fdh-terminology-packages` module
+through Vite's `resolveId` and `load` hooks while Vite transforms the HTML
+entry. The resulting development module is a Vite-managed module-graph entry,
+and the production build bundles it normally. Do not add that virtual module
+URI as an application script URL, pass it to `fetch()`, or import it from
+runtime-generated strings; applications only configure `terminologyVitePlugin`
+and use `packageAutoDiscovery`.
 
 The package names are explicit keys in `packages`; when parallel versions are
 provided manually, use version-qualified keys and matching metadata:

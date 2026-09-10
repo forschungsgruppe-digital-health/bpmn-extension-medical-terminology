@@ -11,6 +11,32 @@ const RESOLVED_VIRTUAL_MODULE_ID = '\0' + VIRTUAL_MODULE_ID;
 const DEFAULT_GLOBAL_PACKAGES_KEY = '__FDH_TERMINOLOGY_PACKAGES__';
 export const DEFAULT_SNOWSTORM_PROXY_PATH = '/snowstorm-api';
 
+function createPackageRegistryScript(globalKey, metadataGlobalKey) {
+  return [
+    '<script type="module">',
+    `import discoveredPackages, { packageMetadata } from '${VIRTUAL_MODULE_ID}';`,
+    `globalThis[${JSON.stringify(globalKey)}] = discoveredPackages;`,
+    `globalThis[${JSON.stringify(metadataGlobalKey)}] = packageMetadata;`,
+    '</script>'
+  ].join('');
+}
+
+function injectPackageRegistryScript(html, script) {
+  if (html.includes(VIRTUAL_MODULE_ID)) {
+    return html;
+  }
+
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${script}</head>`);
+  }
+
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${script}</body>`);
+  }
+
+  return `${html}${script}`;
+}
+
 /**
  * Create Vite development-server proxy entries for a Snowstorm API base URL.
  *
@@ -163,24 +189,20 @@ export function terminologyVitePlugin(options = {}) {
       ].join('\n');
     },
 
-    transformIndexHtml(html) {
-      if (!exposeGlobal) {
-        return html;
-      }
+    transformIndexHtml: {
+      // The core HTML transform subsequently runs import analysis on this
+      // script, which resolves the virtual module before the browser sees it.
+      order: 'pre',
+      handler(html) {
+        if (!exposeGlobal) {
+          return html;
+        }
 
-      return {
-        html,
-        tags: [
-          {
-            tag: 'script',
-            attrs: {
-              type: 'module'
-            },
-            children: `import discoveredPackages, { packageMetadata } from '${VIRTUAL_MODULE_ID}'; globalThis[${JSON.stringify(globalKey)}] = discoveredPackages; globalThis[${JSON.stringify(metadataGlobalKey)}] = packageMetadata;`,
-            injectTo: 'head-prepend'
-          }
-        ]
-      };
+        return injectPackageRegistryScript(
+          html,
+          createPackageRegistryScript(globalKey, metadataGlobalKey)
+        );
+      }
     }
   };
 }

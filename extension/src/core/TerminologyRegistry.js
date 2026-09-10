@@ -71,6 +71,62 @@ export class TerminologyRegistry {
   }
 
   /**
+   * List locally known versions for a CodeSystem URI.
+   *
+   * Providers may expose several CodeSystems, so a package collection can
+   * report versions independently of its aggregate provider URI.
+   *
+   * @param {string} systemUri
+   * @returns {string[]}
+   */
+  getCodeSystemVersions(systemUri) {
+    if (!systemUri) {
+      return [];
+    }
+
+    const versions = new Set();
+
+    for (const provider of this._providers.values()) {
+      if (typeof provider.getCodeSystemVersions === 'function') {
+        for (const version of provider.getCodeSystemVersions(systemUri)) {
+          if (typeof version === 'string' && version.trim()) {
+            versions.add(version);
+          }
+        }
+        continue;
+      }
+
+      if (
+        provider.systemUri === systemUri
+        && typeof provider.version === 'string'
+        && provider.version.trim()
+      ) {
+        versions.add(provider.version);
+      }
+    }
+
+    return [...versions];
+  }
+
+  /**
+   * Determine whether a persisted CodeSystem version is no longer available
+   * from any locally registered provider for the same system URI.
+   *
+   * @param {string} systemUri
+   * @param {string} version
+   * @returns {boolean}
+   */
+  isCodeSystemVersionOutdated(systemUri, version) {
+    if (!systemUri || !version) {
+      return false;
+    }
+
+    const availableVersions = this.getCodeSystemVersions(systemUri);
+
+    return availableVersions.length > 0 && !availableVersions.includes(version);
+  }
+
+  /**
    * List all registered providers with metadata.
    * @returns {Array<{ id: string, displayName: string, systemUri: string, version?: string, packageKey?: string, packageName?: string, packageVersion?: string, capabilities: object }>}
    */

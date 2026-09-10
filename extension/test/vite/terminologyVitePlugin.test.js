@@ -1,7 +1,8 @@
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
+import { build, createServer as createViteServer } from 'vite';
 import { terminologyVitePlugin } from '../../src/vite/plugin.js';
 
 function writeJson(path, value) {
@@ -307,14 +308,16 @@ describe('terminologyVitePlugin', () => {
       name: 'consumer-app',
       dependencies: {
         '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology': '0.1.0',
-        'hl7.terminology.r4': '6.0.2'
+        'hl7.terminology.r4': '6.0.2',
+        'dvmd.kdl.r4': '2024.0.0'
       }
     });
 
     const terminologyPackageDir = createPackage(root, '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology', {
       exports: './src/index.js',
       dependencies: {
-        'hl7.terminology.r4': '7.1.0'
+        'hl7.terminology.r4': '7.1.0',
+        'dvmd.kdl.r4': '2025.0.1'
       }
     }, {
       'src/index.js': 'export const terminology = true;\n'
@@ -335,15 +338,35 @@ describe('terminologyVitePlugin', () => {
       'dist/index.js': 'export default {};\n',
       'CodeSystem-current.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/acme","version":"2025.1"}\n'
     });
+    createPackage(root, 'dvmd.kdl.r4', {
+      version: '2024.0.0',
+      exports: './dist/index.js'
+    }, {
+      'dist/index.js': 'export default {};\n',
+      'CodeSystem-kdl-legacy.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/kdl","version":"2024"}\n'
+    });
+    createNestedPackage(terminologyPackageDir, 'dvmd.kdl.r4', {
+      version: '2025.0.1',
+      exports: './dist/index.js'
+    }, {
+      'dist/index.js': 'export default {};\n',
+      'CodeSystem-kdl-current.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/kdl","version":"2025"}\n'
+    });
 
     const code = runPlugin(root);
 
     expect(code).toContain('"hl7.terminology.r4@6.0.2": [');
     expect(code).toContain('"hl7.terminology.r4@7.1.0": [');
+    expect(code).toContain('"dvmd.kdl.r4@2024.0.0": [');
+    expect(code).toContain('"dvmd.kdl.r4@2025.0.1": [');
     expect(code).toContain('"version": "6.0.2"');
     expect(code).toContain('"version": "7.1.0"');
+    expect(code).toContain('"version": "2024.0.0"');
+    expect(code).toContain('"version": "2025.0.1"');
     expect(code).toContain('CodeSystem-legacy.json');
     expect(code).toContain('CodeSystem-current.json');
+    expect(code).toContain('CodeSystem-kdl-legacy.json');
+    expect(code).toContain('CodeSystem-kdl-current.json');
   });
 
   it('marks an identically versioned direct and transitive package as deduplicated', () => {
@@ -423,11 +446,107 @@ describe('terminologyVitePlugin', () => {
     const plugin = terminologyVitePlugin();
     plugin.configResolved({ root });
 
-    const transformed = plugin.transformIndexHtml('<html><head></head><body></body></html>');
-    const injectedScript = transformed.tags.find(tag => tag.tag === 'script');
+    const transformed = plugin.transformIndexHtml.handler(
+      '<html><head></head><body></body></html>'
+    );
 
-    expect(injectedScript.children).toContain("virtual:fdh-terminology-packages");
-    expect(injectedScript.children).toContain('__FDH_TERMINOLOGY_PACKAGES__');
-    expect(injectedScript.children).toContain('__FDH_TERMINOLOGY_PACKAGE_METADATA__');
+    expect(plugin.transformIndexHtml.order).toBe('pre');
+    expect(transformed).toContain("virtual:fdh-terminology-packages");
+    expect(transformed).toContain('__FDH_TERMINOLOGY_PACKAGES__');
+    expect(transformed).toContain('__FDH_TERMINOLOGY_PACKAGE_METADATA__');
+  });
+
+  it('resolves the injected package registry through Vite in development and production', async () => {
+    const root = createTestRoot();
+    tmpRoots.push(root);
+
+    writeJson(join(root, 'package.json'), {
+      name: 'consumer-app',
+      type: 'module'
+    });
+    writeFileSync(
+      join(root, 'index.html'),
+      '<!doctype html><html><head></head><body><script type="module" src="/src/app.js"></script></body></html>',
+      'utf-8'
+    );
+    mkdirSync(join(root, 'src'), { recursive: true });
+    writeFileSync(join(root, 'src', 'app.js'), 'document.body.dataset.ready = "true";\n', 'utf-8');
+    createPackage(root, 'acme.terminology', {
+      version: '1.0.0'
+    }, {
+      'CodeSystem-custom.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/custom"}\n'
+    });
+
+    const plugin = terminologyVitePlugin({
+      packages: ['acme.terminology']
+    });
+    const viteServer = await createViteServer({
+      root,
+      plugins: [plugin],
+      configFile: false,
+      logLevel: 'error',
+      optimizeDeps: {
+        noDiscovery: true
+      },
+      server: {
+        host: '127.0.0.1',
+        port: 0
+      }
+    });
+
+    try {
+      await viteServer.listen();
+      const address = viteServer.httpServer.address();
+      if (!address || typeof address === 'string') {
+        throw new Error('Expected a TCP address for the Vite test server.');
+      }
+
+      const registry = await viteServer.ssrLoadModule(
+        'virtual:fdh-terminology-packages'
+      );
+      const response = await fetch(`http://127.0.0.1:${address.port}/`);
+      const html = await response.text();
+      const htmlProxyPath = html.match(/src="([^"]*html-proxy[^"]*)"/)?.[1];
+
+      expect(registry.default['acme.terminology']).toHaveLength(1);
+      expect(registry.packageMetadata['acme.terminology']).toMatchObject({
+        version: '1.0.0'
+      });
+      expect(response.ok).toBe(true);
+      expect(html).not.toContain('virtual:fdh-terminology-packages');
+      expect(htmlProxyPath, html).toBeTruthy();
+
+      const proxyModuleResponse = await fetch(
+        `http://127.0.0.1:${address.port}${htmlProxyPath}`
+      );
+      const proxyModule = await proxyModuleResponse.text();
+      const virtualModulePath = proxyModule.match(/from "([^"]*@id[^"]*)"/)?.[1];
+
+      expect(proxyModuleResponse.ok).toBe(true);
+      expect(proxyModule).not.toContain("from 'virtual:fdh-terminology-packages'");
+      expect(virtualModulePath, proxyModule).toBeTruthy();
+
+      const virtualModuleResponse = await fetch(
+        `http://127.0.0.1:${address.port}${virtualModulePath}`
+      );
+
+      expect(virtualModuleResponse.ok).toBe(true);
+      await expect(virtualModuleResponse.text()).resolves.toContain('CodeSystem-custom.json');
+    } finally {
+      await viteServer.close();
+    }
+
+    await build({
+      root,
+      plugins: [terminologyVitePlugin({
+        packages: ['acme.terminology']
+      })],
+      configFile: false,
+      logLevel: 'error'
+    });
+
+    const builtHtml = readFileSync(join(root, 'dist', 'index.html'), 'utf-8');
+
+    expect(builtHtml).not.toContain('virtual:fdh-terminology-packages');
   });
 });

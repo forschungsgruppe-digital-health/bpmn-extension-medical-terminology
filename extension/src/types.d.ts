@@ -65,6 +65,8 @@ export interface TerminologyProvider {
   search(term: string, options?: SearchOptions): Promise<SearchResult>;
   lookup(code: string): Promise<Concept | null>;
   validate(code: string): Promise<{ valid: boolean; message?: string }>;
+  /** Locally known versions for the requested CodeSystem URI, when available. */
+  getCodeSystemVersions?(systemUri: string): string[];
 }
 
 export interface CodeSystemResource {

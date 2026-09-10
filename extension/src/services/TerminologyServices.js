@@ -93,8 +93,25 @@ export function createPackageCollectionProvider(config) {
   const codeSystemUris = codeSystems
     .map(codeSystem => codeSystem?.url)
     .filter(Boolean);
+  const codeSystemVersions = new Map();
+
+  for (const codeSystem of codeSystems) {
+    const systemUri = codeSystem?.url;
+    const version = codeSystem?.version;
+
+    if (!systemUri || typeof version !== 'string' || !version.trim()) {
+      continue;
+    }
+
+    const versions = codeSystemVersions.get(systemUri) || new Set();
+    versions.add(version);
+    codeSystemVersions.set(systemUri, versions);
+  }
 
   provider.getCodeSystemUris = () => [...codeSystemUris];
+  provider.getCodeSystemVersions = systemUri => [
+    ...(codeSystemVersions.get(systemUri) || [])
+  ];
   provider.sourceType = 'package';
   provider.packageKey = config.packageKey;
   provider.packageName = config.packageName;

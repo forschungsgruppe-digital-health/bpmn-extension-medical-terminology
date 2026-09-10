@@ -55,6 +55,15 @@ export function AnnotationListEntry(props) {
     };
   }
 
+  function isCodingVersionOutdated(coding) {
+    return Boolean(
+      coding?.system
+      && coding?.version
+      && typeof terminologyRegistry?.isCodeSystemVersionOutdated === 'function'
+      && terminologyRegistry.isCodeSystemVersionOutdated(coding.system, coding.version)
+    );
+  }
+
   function getRegisteredProviders() {
     return terminologyRegistry ? terminologyRegistry.listProviders() : [];
   }
@@ -673,10 +682,18 @@ export function AnnotationListEntry(props) {
                 <div class="annotation-item__text">${ann.text}</div>
               `}
               ${(ann.codings || []).map(c => html`
-                <div class="annotation-item__coding">
+                <div class="annotation-item__coding ${isCodingVersionOutdated(c) ? 'annotation-item__coding--outdated' : ''}">
                   <span class="coding-system">${getSystemShortName(c.system, terminologyRegistry)}</span>
                   <code class="coding-code">${c.code}</code>
                   ${c.display && html`<span class="coding-display">${c.display}</span>`}
+                  ${isCodingVersionOutdated(c) && html`
+                    <span
+                      class="coding-version-warning"
+                      role="img"
+                      aria-label="Saved CodeSystem version is not available locally"
+                      title="Saved CodeSystem version is not available locally"
+                    >!</span>
+                  `}
                 </div>
               `)}
             </div>

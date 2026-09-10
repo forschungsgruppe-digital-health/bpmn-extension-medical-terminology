@@ -931,6 +931,58 @@ describe('TerminologyServices', () => {
     });
   });
 
+  it('should expose parallel KDL package versions as separate providers', async () => {
+    const providers = createDefaultPackageProviders({
+      enablePackageDefaults: false,
+      packageAutoDiscovery: {
+        packages: {
+          'dvmd.kdl.r4@2024.0.0': [{
+            resourceType: 'CodeSystem',
+            url: 'https://example.org/CodeSystem/kdl',
+            version: '2024',
+            concept: [{ code: 'KDL-2024', display: 'KDL legacy concept' }]
+          }],
+          'dvmd.kdl.r4@2025.0.1': [{
+            resourceType: 'CodeSystem',
+            url: 'https://example.org/CodeSystem/kdl',
+            version: '2025',
+            concept: [{ code: 'KDL-2025', display: 'KDL current concept' }]
+          }]
+        },
+        metadata: {
+          'dvmd.kdl.r4@2024.0.0': {
+            packageName: 'dvmd.kdl.r4',
+            title: 'KDL',
+            version: '2024.0.0'
+          },
+          'dvmd.kdl.r4@2025.0.1': {
+            packageName: 'dvmd.kdl.r4',
+            title: 'KDL',
+            version: '2025.0.1'
+          }
+        }
+      }
+    });
+
+    expect(providers.map(provider => provider.id)).toEqual([
+      'pkg-dvmd-kdl-r4-2024-0-0',
+      'pkg-dvmd-kdl-r4-2025-0-1'
+    ]);
+    expect(providers[0].displayName).toContain('2024.0.0');
+    expect(providers[1].displayName).toContain('2025.0.1');
+    await expect(providers[0].search('legacy')).resolves.toMatchObject({
+      total: 1,
+      concepts: [{ code: 'KDL-2024', version: '2024' }]
+    });
+    await expect(providers[1].search('legacy')).resolves.toMatchObject({
+      total: 0
+    });
+    await expect(providers[1].search('current')).resolves.toMatchObject({
+      total: 1,
+      concepts: [{ code: 'KDL-2025', version: '2025' }]
+    });
+  });
+
   it('should reuse the bundled provider for the matching discovered package version', () => {
     const currentCodeSystem = {
       resourceType: 'CodeSystem',

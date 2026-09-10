@@ -73,4 +73,17 @@ export class StaticProvider extends TerminologyProvider {
         : { ...concept, version: this._version }
     ));
   }
+
+  /**
+   * Report the static CodeSystem version when this provider represents the
+   * requested system.
+   *
+   * @param {string} systemUri
+   * @returns {string[]}
+   */
+  getCodeSystemVersions(systemUri) {
+    return systemUri === this._systemUri && this._version
+        ? [this._version]
+        : [];
+  }
 }
