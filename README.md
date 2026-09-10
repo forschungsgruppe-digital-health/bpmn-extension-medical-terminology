@@ -179,7 +179,7 @@ with a `kind` of `network`, `authorization`, `server`, `data`, or `redirect`.
 The `data` kind means that the server responded but did not return a valid
 provider response; it is distinct from an empty successful result. `redirect`
 means that Snowstorm redirected the request and should be configured with its
-redirect-free API base URL or accessed through a same-origin proxy.
+redirect-free API base URL.
 
 Search results always contain the displayed concepts. The optional `total`
 field is only present when the provider can supply a reliable total; clients
@@ -261,6 +261,14 @@ CodeSystem's own `version`, and only that value is written to the existing
 available as provider/package metadata and is never substituted into the
 Coding.
 
+When a diagram is loaded, a saved Coding with a CodeSystem version is shown
+with a yellow system/code marker only when the same CodeSystem URI is available
+locally but that exact saved version is not. This identifies a Coding that may
+need review after replacing a terminology package. If the old and new package
+versions are installed in parallel, the saved Coding remains normally marked
+because its CodeSystem version is still available. Versionless Codings and
+systems for which no local version is known remain unchanged.
+
 TypeScript consumers can import the public configuration types from
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/types`.
 
@@ -291,9 +299,9 @@ const terminologyServices = createDefaultTerminologyServices({
 
 The default SNOMED provider uses the FHIR API at
 `https://r4.ontoserver.csiro.au/fhir`. To use a custom Snowstorm deployment
-or a same-origin proxy, keep the provider ID unchanged and change its
-transport and base URL. `baseUrl` is the Snowstorm API context path, without
-the edition branch or `/concepts`; the provider appends both.
+or an application-owned same-origin endpoint, keep the provider ID unchanged
+and change its transport and base URL. `baseUrl` is the Snowstorm API context
+path, without the edition branch or `/concepts`; the provider appends both.
 
 ```js
 const terminologyServices = createDefaultTerminologyServices({
@@ -315,19 +323,23 @@ instance, use `transport: 'snowstorm'` as shown above. The configured
 'header'` sends the configured language as `Accept-Language`.
 
 There is no built-in public Snowstorm REST endpoint. Snowstorm transport is
-therefore opt-in and requires an explicit `baseUrl` or a same-origin proxy;
-the default SNOMED provider uses the FHIR endpoint above.
+therefore opt-in and requires an explicit `baseUrl`. The extension does not
+provide or configure a Vite proxy, reverse proxy, or other CORS bypass; any
+same-origin route must be operated and configured by the host application.
 
-### CORS, proxies, and custom fetch functions
+### CORS and host-owned request routing
 
 Browsers enforce CORS at the network boundary. The extension cannot make a
 browser trust a third-party SNOMED/FHIR origin that does not include the
-necessary CORS headers. In practice, this means a browser app must either:
+necessary CORS headers. A browser app must use an endpoint that explicitly
+permits its origin through CORS. The extension does not ship or configure a
+Vite proxy.
 
-- call a same-origin proxy, or
-- use a backend endpoint that proxies the target terminology server, or
-- pass a custom `fetchFn` so the app can route the request through a trusted
-  server-side path.
+If the terminology server cannot provide the required CORS headers, the host
+application or its deployment environment must provide the backend or reverse
+proxy and expose that route as the configured `baseUrl`. The extension only
+uses the URL or `fetchFn` supplied by the application; it does not implement
+the routing service.
 
 The public config API supports this directly:
 
@@ -353,8 +365,8 @@ server explicitly allows them. In particular, the public
 `https://snowstorm.snomedtools.org/snowstorm/snomed-ct` endpoint must not be
 used directly from a browser: it redirects browser requests to a denial page
 and does not provide a usable CORS response. Use a Snowstorm deployment with a
-redirect-free, CORS-enabled API endpoint or a same-origin proxy instead. A
-direct authenticated browser request additionally requires the operator to
+redirect-free, CORS-enabled API endpoint or an application-owned backend route.
+A direct authenticated browser request additionally requires the operator to
 allow its preflight request and the `Authorization` header.
 
 ### Out-of-the-box defaults and external overrides
@@ -521,33 +533,6 @@ export default defineConfig({
 });
 ```
 
-The same plugin can add a Snowstorm proxy for `vite serve`. The proxy is
-development-only; it is not present in static builds and does not replace a
-production backend or reverse proxy:
-
-```js
-terminologyVitePlugin({
-  autoDiscover: false,
-  exposeGlobal: false,
-  snowstormProxy: {
-    target: 'https://snowstorm.example.test/snowstorm/snomed-ct'
-  }
-});
-```
-
-Configure the browser-side SNOMED provider separately with the corresponding
-local route:
-
-```js
-createDefaultTerminologyServices({
-  snomedConfig: {
-    transport: 'snowstorm',
-    baseUrl: '/snowstorm-api',
-    branch: 'MAIN'
-  }
-});
-```
-
 Each package entry supports the documented resource filters:
 
 ```js
@@ -576,6 +561,15 @@ warning described above. Each provider searches only the CodeSystems from its
 own package version, so parallel versions remain independently searchable and
 selectable while the selected coding still keeps its concrete CodeSystem URL
 and version.
+
+The plugin resolves its internal `virtual:fdh-terminology-packages` module
+through Vite's `resolveId` and `load` hooks while Vite transforms the HTML
+entry. The resulting development module is a Vite-managed module-graph entry,
+and the production build bundles it normally. Do not add that virtual module
+URI as an application script URL, pass it to `fetch()`, or import it from
+runtime-generated strings. It is an internal bundler module, not an HTTP
+resource, and package discovery does not create a CORS request. Applications
+only configure `terminologyVitePlugin` and use `packageAutoDiscovery`.
 
 The package names are explicit keys in `packages`; when parallel versions are
 provided manually, use version-qualified keys and matching metadata:
@@ -657,14 +651,11 @@ ship a proxy or require one.
 ### Demo Snowstorm configuration
 
 To enable Snowstorm with `npm run dev`, set a redirect-free Snowstorm base URL
-in `demo/.env.local`. The demo then configures the Snowstorm transport with
-`/snowstorm-api`, and the Vite development server forwards that route to
-`VITE_SNOWSTORM_PROXY_TARGET`. There is deliberately no default external target:
-the known public Snowstorm URLs may reject or redirect requests and must not be
-presented as a working demo default.
+in `demo/.env.local`. The configured endpoint must allow the demo's browser
+origin through CORS. The demo does not configure or provide a Vite proxy.
 
 ```dotenv
-VITE_SNOWSTORM_PROXY_TARGET=https://snowstorm.example.test/snowstorm/snomed-ct
+VITE_SNOWSTORM_BASE_URL=https://snowstorm.example.test/snowstorm/snomed-ct
 VITE_SNOWSTORM_BRANCH=MAIN
 VITE_SNOWSTORM_LANGUAGE=de
 VITE_SNOWSTORM_LANGUAGE_STRATEGY=header
@@ -672,21 +663,12 @@ VITE_SNOWSTORM_DEFAULT_ECL=< 404684003
 VITE_SNOWSTORM_MAX_RESULTS=15
 ```
 
-`VITE_SNOWSTORM_BASE_URL` overrides `/snowstorm-api` with a direct external
-base URL. It is appropriate only if that endpoint permits the demo's browser
-origin through CORS:
-
-```dotenv
-VITE_SNOWSTORM_BASE_URL=https://snowstorm.example.test/snowstorm/snomed-ct
-```
-
-GitHub Pages and other static deployments have no Vite development proxy.
-Without `VITE_SNOWSTORM_BASE_URL`, the built demo therefore keeps the package's
-default FHIR SNOMED configuration. A static deployment can enable Snowstorm
-only with a CORS-capable external endpoint. A production host application with
-a backend or reverse proxy can instead configure `baseUrl` as its same-origin
-proxy path, for example `/api/snowstorm`; the package supports relative base
-URLs but does not prescribe how that proxy is deployed.
+Without `VITE_SNOWSTORM_BASE_URL`, the demo keeps the package's default FHIR
+SNOMED configuration. GitHub Pages and other static deployments can enable
+Snowstorm only with a CORS-capable external endpoint. If an organization uses
+its own backend or reverse proxy, configure the resulting same-origin route in
+the host application's `baseUrl`; that infrastructure is outside this
+package.
 
 ## Documentation
 

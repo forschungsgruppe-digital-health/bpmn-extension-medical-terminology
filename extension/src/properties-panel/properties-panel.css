@@ -8,6 +8,8 @@
   --term-panel-focus-surface: var(--input-focus-background-color, transparent);
   --term-panel-accent: var(--link-color, currentColor);
   --term-panel-focus-border: var(--input-focus-border-color, var(--link-color, currentColor));
+  --term-panel-warning: #8a6500;
+  --term-panel-warning-surface: #fff3cd;
 
   color: var(--term-panel-text);
   line-height: 1.4;
@@ -120,6 +122,21 @@
   color: var(--term-panel-muted);
   font-size: 0.85em;
   line-height: 1.3;
+}
+
+.medical-terminology .annotation-item__coding--outdated .coding-system {
+  background: var(--term-panel-warning-surface);
+  color: var(--term-panel-warning);
+}
+
+.medical-terminology .annotation-item__coding--outdated .coding-code {
+  color: var(--term-panel-warning);
+}
+
+.medical-terminology .coding-version-warning {
+  color: var(--term-panel-warning);
+  font-size: 0.85em;
+  font-weight: 700;
 }
 
 .medical-terminology .selected-codings {

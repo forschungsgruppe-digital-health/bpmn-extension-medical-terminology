@@ -1,10 +1,3 @@
-export interface SnowstormViteProxyOptions {
-  /** Redirect-free Snowstorm API base URL, without the branch or `/concepts`. */
-  target: string;
-  /** Local Vite development-server route. Defaults to `/snowstorm-api`. */
-  path?: string;
-}
-
 export interface TerminologyVitePluginOptions {
   packages?: string[] | Record<string, {
     include?: string[];
@@ -14,25 +7,15 @@ export interface TerminologyVitePluginOptions {
   includeTransitiveFrom?: string[];
   exclude?: string[];
   resourceTypes?: string[];
+  /**
+   * Expose discovered collections through the configured globals. The plugin
+   * resolves its internal virtual module during Vite's HTML transformation;
+   * consumers must not load that URI as a browser URL.
+   */
   exposeGlobal?: boolean;
   globalKey?: string;
   metadataGlobalKey?: string;
-  /**
-   * Optional development-only Snowstorm proxy. It is not included in static
-   * builds and does not provide a production proxy.
-   */
-  snowstormProxy?: SnowstormViteProxyOptions;
 }
-
-export const DEFAULT_SNOWSTORM_PROXY_PATH: '/snowstorm-api';
-
-export function createSnowstormProxyConfig(
-  options: SnowstormViteProxyOptions
-): Record<string, {
-  target: string;
-  changeOrigin: boolean;
-  rewrite(path: string): string;
-}>;
 
 export function terminologyVitePlugin(
   options?: TerminologyVitePluginOptions

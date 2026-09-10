@@ -1,5 +1,3 @@
-export const DEMO_SNOWSTORM_PROXY_PATH = '/snowstorm-api';
-
 function getOptionalEnvValue(env, key) {
   const value = env[key]?.trim();
 
@@ -33,10 +31,7 @@ function getMaxResults(env) {
 }
 
 export function createDemoTerminologyConfig(env = import.meta.env) {
-  const baseUrl = getOptionalEnvValue(env, 'VITE_SNOWSTORM_BASE_URL')
-    || (env.DEV && getOptionalEnvValue(env, 'VITE_SNOWSTORM_PROXY_TARGET')
-      ? DEMO_SNOWSTORM_PROXY_PATH
-      : undefined);
+  const baseUrl = getOptionalEnvValue(env, 'VITE_SNOWSTORM_BASE_URL');
 
   if (!baseUrl) {
     return {};

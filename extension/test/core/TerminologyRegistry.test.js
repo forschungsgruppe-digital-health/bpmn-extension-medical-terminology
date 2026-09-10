@@ -9,11 +9,13 @@ function createMockProvider(overrides = {}) {
     id: overrides.id ?? 'mock-provider',
     displayName: overrides.displayName ?? 'Mock Provider',
     systemUri: overrides.systemUri ?? 'http://example.com/mock',
+    version: overrides.version,
     capabilities: overrides.capabilities ?? { search: true, lookup: true, hierarchy: false, validate: true },
     search: overrides.search ?? vi.fn(async () => ({ concepts: [], total: 0 })),
     lookup: overrides.lookup ?? vi.fn(async () => null),
     validate: overrides.validate ?? vi.fn(async () => ({ valid: false })),
-    getHierarchy: overrides.getHierarchy ?? vi.fn(async () => ({ parents: [], children: [] }))
+    getHierarchy: overrides.getHierarchy ?? vi.fn(async () => ({ parents: [], children: [] })),
+    getCodeSystemVersions: overrides.getCodeSystemVersions
   };
 }
 
@@ -100,6 +102,42 @@ describe('TerminologyRegistry', () => {
       registry.register(createMockProvider());
 
       expect(registry.findProviderBySystem('http://example.com/unknown')).toBeNull();
+    });
+  });
+
+  describe('CodeSystem version availability', () => {
+    it('reports versions from a multi-CodeSystem package provider', () => {
+      registry.register(createMockProvider({
+        getCodeSystemVersions: systemUri => systemUri === 'https://example.org/CodeSystem/acme'
+          ? ['2024.1', '2025.1']
+          : []
+      }));
+
+      expect(registry.getCodeSystemVersions('https://example.org/CodeSystem/acme'))
+        .toEqual(['2024.1', '2025.1']);
+      expect(registry.isCodeSystemVersionOutdated(
+        'https://example.org/CodeSystem/acme',
+        '2024.1'
+      )).toBe(false);
+      expect(registry.isCodeSystemVersionOutdated(
+        'https://example.org/CodeSystem/acme',
+        '2023.1'
+      )).toBe(true);
+    });
+
+    it('does not mark a Coding as outdated when no local version is known', () => {
+      registry.register(createMockProvider({
+        systemUri: 'https://example.org/CodeSystem/acme'
+      }));
+
+      expect(registry.isCodeSystemVersionOutdated(
+        'https://example.org/CodeSystem/acme',
+        '2023.1'
+      )).toBe(false);
+      expect(registry.isCodeSystemVersionOutdated(
+        'https://example.org/CodeSystem/acme',
+        ''
+      )).toBe(false);
     });
   });
 

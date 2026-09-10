@@ -55,6 +55,15 @@ export function AnnotationListEntry(props) {
     };
   }
 
+  function isCodingVersionOutdated(coding) {
+    return Boolean(
+      coding?.system
+      && coding?.version
+      && typeof terminologyRegistry?.isCodeSystemVersionOutdated === 'function'
+      && terminologyRegistry.isCodeSystemVersionOutdated(coding.system, coding.version)
+    );
+  }
+
   function getRegisteredProviders() {
     return terminologyRegistry ? terminologyRegistry.listProviders() : [];
   }
@@ -63,27 +72,38 @@ export function AnnotationListEntry(props) {
     return getRegisteredProviders()
       .filter(provider => provider.capabilities?.search !== false)
       .sort((first, second) => {
-        const firstLabel = first.displayName || first.id || '';
-        const secondLabel = second.displayName || second.id || '';
+        const firstLabel = getProviderOptionLabel(first) || first.id || '';
+        const secondLabel = getProviderOptionLabel(second) || second.id || '';
         const labelOrder = firstLabel.localeCompare(secondLabel, undefined, {
           numeric: true,
           sensitivity: 'base'
         });
 
-        return labelOrder || first.id.localeCompare(second.id);
+        return labelOrder || (first.id || '').localeCompare(second.id || '', undefined, {
+          numeric: true,
+          sensitivity: 'base'
+        });
       });
   }
 
   function getProviderOptionLabel(provider) {
     if (provider.sourceType === 'package') {
-      return `${provider.sourceName || provider.displayName} (${provider.sourceLabel})`;
+      const label = provider.sourceName || provider.displayName || provider.id;
+
+      return provider.sourceLabel
+        ? `${label} (${provider.sourceLabel})`
+        : label;
     }
 
     if (provider.sourceType === 'api') {
-      return `${provider.sourceName || provider.displayName} (${provider.systemUri}, ${provider.sourceLabel})`;
+      const label = provider.sourceName || provider.displayName || provider.id;
+
+      return provider.sourceLabel
+        ? `${label} (${provider.systemUri}, ${provider.sourceLabel})`
+        : `${label} (${provider.systemUri})`;
     }
 
-    return provider.displayName;
+    return provider.displayName || provider.id;
   }
 
   function getProviderGroups(providers) {
@@ -115,7 +135,7 @@ export function AnnotationListEntry(props) {
     }
 
     if (error?.kind === 'redirect') {
-      return `${providerName} redirected the search request. Use a redirect-free endpoint or a same-origin proxy.`;
+      return `${providerName} redirected the search request. Use a redirect-free endpoint or a host-owned same-origin endpoint.`;
     }
 
     return `${providerName} could not be reached. Check your network connection and server URL.`;
@@ -673,10 +693,18 @@ export function AnnotationListEntry(props) {
                 <div class="annotation-item__text">${ann.text}</div>
               `}
               ${(ann.codings || []).map(c => html`
-                <div class="annotation-item__coding">
+                <div class="annotation-item__coding ${isCodingVersionOutdated(c) ? 'annotation-item__coding--outdated' : ''}">
                   <span class="coding-system">${getSystemShortName(c.system, terminologyRegistry)}</span>
                   <code class="coding-code">${c.code}</code>
                   ${c.display && html`<span class="coding-display">${c.display}</span>`}
+                  ${isCodingVersionOutdated(c) && html`
+                    <span
+                      class="coding-version-warning"
+                      role="img"
+                      aria-label="Saved CodeSystem version is not available locally"
+                      title="Saved CodeSystem version is not available locally"
+                    >!</span>
+                  `}
                 </div>
               `)}
             </div>

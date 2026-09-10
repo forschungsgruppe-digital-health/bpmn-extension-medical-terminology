@@ -9,46 +9,31 @@ import { resolve } from 'node:path';
 const VIRTUAL_MODULE_ID = 'virtual:fdh-terminology-packages';
 const RESOLVED_VIRTUAL_MODULE_ID = '\0' + VIRTUAL_MODULE_ID;
 const DEFAULT_GLOBAL_PACKAGES_KEY = '__FDH_TERMINOLOGY_PACKAGES__';
-export const DEFAULT_SNOWSTORM_PROXY_PATH = '/snowstorm-api';
 
-/**
- * Create Vite development-server proxy entries for a Snowstorm API base URL.
- *
- * @param {{ target: string, path?: string }} options
- * @returns {Record<string, { target: string, changeOrigin: boolean, rewrite: (path: string) => string }>}
- */
-export function createSnowstormProxyConfig({ target, path = DEFAULT_SNOWSTORM_PROXY_PATH }) {
-  if (typeof target !== 'string' || !target.trim()) {
-    throw new Error('Snowstorm Vite proxy requires a target base URL.');
+function createPackageRegistryScript(globalKey, metadataGlobalKey) {
+  return [
+    '<script type="module">',
+    `import discoveredPackages, { packageMetadata } from '${VIRTUAL_MODULE_ID}';`,
+    `globalThis[${JSON.stringify(globalKey)}] = discoveredPackages;`,
+    `globalThis[${JSON.stringify(metadataGlobalKey)}] = packageMetadata;`,
+    '</script>'
+  ].join('');
+}
+
+function injectPackageRegistryScript(html, script) {
+  if (html.includes(VIRTUAL_MODULE_ID)) {
+    return html;
   }
 
-  if (typeof path !== 'string' || !path.startsWith('/')) {
-    throw new Error('Snowstorm Vite proxy path must start with "/".');
+  if (html.includes('</head>')) {
+    return html.replace('</head>', `${script}</head>`);
   }
 
-  const proxyPath = path.replace(/\/$/, '');
-  if (!proxyPath) {
-    throw new Error('Snowstorm Vite proxy path must not be the origin root.');
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${script}</body>`);
   }
 
-  const targetUrl = new URL(target);
-  if (!['http:', 'https:'].includes(targetUrl.protocol)) {
-    throw new Error('Snowstorm Vite proxy target must use http or https.');
-  }
-
-  if (targetUrl.search || targetUrl.hash) {
-    throw new Error('Snowstorm Vite proxy target must not contain query parameters or a fragment.');
-  }
-
-  const targetBasePath = targetUrl.pathname.replace(/\/$/, '');
-
-  return {
-    [proxyPath]: {
-      target: targetUrl.origin,
-      changeOrigin: true,
-      rewrite: requestPath => `${targetBasePath}${requestPath.slice(proxyPath.length)}`
-    }
-  };
+  return `${html}${script}`;
 }
 
 /**
@@ -61,7 +46,6 @@ export function createSnowstormProxyConfig({ target, path = DEFAULT_SNOWSTORM_PR
  * @property {string[]} [resourceTypes]
  * @property {boolean} [exposeGlobal]
  * @property {string} [globalKey]
- * @property {{ target: string, path?: string }} [snowstormProxy]
  */
 
 export function terminologyVitePlugin(options = {}) {
@@ -73,8 +57,7 @@ export function terminologyVitePlugin(options = {}) {
     resourceTypes = DEFAULT_RESOURCE_TYPES,
     exposeGlobal = true,
     globalKey = DEFAULT_GLOBAL_PACKAGES_KEY,
-    metadataGlobalKey = DEFAULT_PACKAGE_METADATA_GLOBAL_KEY,
-    snowstormProxy
+    metadataGlobalKey = DEFAULT_PACKAGE_METADATA_GLOBAL_KEY
   } = options;
 
   /** @type {string} */
@@ -82,27 +65,6 @@ export function terminologyVitePlugin(options = {}) {
 
   return {
     name: 'fdh-terminology-packages',
-
-    config(userConfig, { command }) {
-      if (!snowstormProxy || command !== 'serve') {
-        return;
-      }
-
-      const snowstormProxyConfig = createSnowstormProxyConfig(snowstormProxy);
-      const snowstormProxyPath = Object.keys(snowstormProxyConfig)[0];
-
-      if (userConfig.server?.proxy?.[snowstormProxyPath]) {
-        throw new Error(
-          `Snowstorm Vite proxy path "${snowstormProxyPath}" is already configured by the host application.`
-        );
-      }
-
-      return {
-        server: {
-          proxy: snowstormProxyConfig
-        }
-      };
-    },
 
     configResolved(config) {
       root = config.root;
@@ -163,24 +125,20 @@ export function terminologyVitePlugin(options = {}) {
       ].join('\n');
     },
 
-    transformIndexHtml(html) {
-      if (!exposeGlobal) {
-        return html;
-      }
+    transformIndexHtml: {
+      // The core HTML transform subsequently runs import analysis on this
+      // script, which resolves the virtual module before the browser sees it.
+      order: 'pre',
+      handler(html) {
+        if (!exposeGlobal) {
+          return html;
+        }
 
-      return {
-        html,
-        tags: [
-          {
-            tag: 'script',
-            attrs: {
-              type: 'module'
-            },
-            children: `import discoveredPackages, { packageMetadata } from '${VIRTUAL_MODULE_ID}'; globalThis[${JSON.stringify(globalKey)}] = discoveredPackages; globalThis[${JSON.stringify(metadataGlobalKey)}] = packageMetadata;`,
-            injectTo: 'head-prepend'
-          }
-        ]
-      };
+        return injectPackageRegistryScript(
+          html,
+          createPackageRegistryScript(globalKey, metadataGlobalKey)
+        );
+      }
     }
   };
 }

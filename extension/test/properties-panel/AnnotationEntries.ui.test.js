@@ -280,6 +280,57 @@ describe('terminology properties panel UI', () => {
       .toEqual(['Terminology servers (API)']);
   });
 
+  it('sorts local package providers by their visible dropdown labels', async () => {
+    const context = await createTestContext({
+      id: 'Task_SortedPackageProviders',
+      type: 'bpmn:Task',
+      name: 'Sorted Package Providers Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [
+          {
+            id: 'pkg-kdl',
+            displayName: 'dvmd.kdl.r4 (2025.0.1) — KDL',
+            sourceType: 'package',
+            sourceName: 'KDL',
+            sourceLabel: 'dvmd.kdl.r4@2025.0.1'
+          },
+          {
+            id: 'pkg-ihe',
+            displayName: 'de.ihe-d.terminology (3.0.1) — IHE XDS Document Class',
+            sourceType: 'package',
+            sourceName: 'IHE XDS Document Class',
+            sourceLabel: 'de.ihe-d.terminology@3.0.1'
+          },
+          {
+            id: 'pkg-hl7',
+            displayName: 'hl7.terminology.r4 (7.1.0)',
+            sourceType: 'package',
+            sourceName: 'HL7 Terminology R4',
+            sourceLabel: 'hl7.terminology.r4@7.1.0'
+          }
+        ],
+        search: vi.fn(),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+
+    const terminologySelect = getControlByLabel(view.container, 'Terminology');
+
+    expect(Array.from(terminologySelect.options).map(option => option.textContent)).toEqual([
+      '– select –',
+      'HL7 Terminology R4 (hl7.terminology.r4@7.1.0)',
+      'IHE XDS Document Class (de.ihe-d.terminology@3.0.1)',
+      'KDL (dvmd.kdl.r4@2025.0.1)'
+    ]);
+  });
+
   it('labels API and package providers with their source metadata', async () => {
     const context = await createTestContext({
       id: 'Task_ProviderSources',
@@ -574,7 +625,7 @@ describe('terminology properties panel UI', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('LOINC redirected the search request. Use a redirect-free endpoint or a same-origin proxy.')).toBeTruthy();
+      expect(screen.getByText('LOINC redirected the search request. Use a redirect-free endpoint or a host-owned same-origin endpoint.')).toBeTruthy();
     });
   });
 
@@ -748,6 +799,97 @@ describe('terminology properties panel UI', () => {
     const xml = await serializeXml(context.moddle, context.definitions);
 
     expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
+  });
+
+  it('marks saved Codings yellow when their CodeSystem version is unavailable', async () => {
+    const context = await createTestContext({
+      id: 'Task_OutdatedCoding',
+      type: 'bpmn:Task',
+      name: 'Outdated Coding Task'
+    });
+    const isCodeSystemVersionOutdated = vi.fn((system, version) =>
+      system === 'http://snomed.info/sct' && version === '2024-09'
+    );
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => PROVIDERS,
+        search: vi.fn(async () => ({
+          items: [{
+            code: '254292007',
+            display: 'Tumor staging (tumor staging)',
+            system: 'http://snomed.info/sct',
+            version: '2024-09'
+          }]
+        })),
+        isCodeSystemVersionOutdated,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const annotationView = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(annotationView.container, {
+      text: 'Legacy coding',
+      codings: [{
+        providerId: 'snomed-ct',
+        searchTerm: 'Tumor staging',
+        resultLabel: 'Tumor staging (tumor staging)'
+      }]
+    });
+
+    const outdatedCoding = annotationView.container.querySelector(
+      '.annotation-item__coding--outdated'
+    );
+    const warning = outdatedCoding.querySelector('.coding-version-warning');
+
+    expect(outdatedCoding).toBeTruthy();
+    expect(warning).toBeTruthy();
+    expect(warning.getAttribute('aria-label'))
+      .toBe('Saved CodeSystem version is not available locally');
+    expect(isCodeSystemVersionOutdated).toHaveBeenCalledWith(
+      'http://snomed.info/sct',
+      '2024-09'
+    );
+  });
+
+  it('keeps saved Codings normal when their CodeSystem version remains available', async () => {
+    const context = await createTestContext({
+      id: 'Task_CurrentCoding',
+      type: 'bpmn:Task',
+      name: 'Current Coding Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => PROVIDERS,
+        search: vi.fn(async () => ({
+          items: [{
+            code: '254292007',
+            display: 'Tumor staging (tumor staging)',
+            system: 'http://snomed.info/sct',
+            version: '2024-09'
+          }]
+        })),
+        isCodeSystemVersionOutdated: () => false,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const annotationView = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(annotationView.container, {
+      text: 'Available coding',
+      codings: [{
+        providerId: 'snomed-ct',
+        searchTerm: 'Tumor staging',
+        resultLabel: 'Tumor staging (tumor staging)'
+      }]
+    });
+
+    expect(annotationView.container.querySelector(
+      '.annotation-item__coding--outdated'
+    )).toBeNull();
   });
 
   it('keeps CodeSystem versions distinct when selecting parallel package providers', async () => {

@@ -1,18 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import {
-  DEMO_SNOWSTORM_PROXY_PATH,
-  createDemoTerminologyConfig
-} from '../../../demo/src/terminology-config.js';
+import { createDemoTerminologyConfig } from '../../../demo/src/terminology-config.js';
 
 describe('demo terminology configuration', () => {
-  it('uses the Vite Snowstorm proxy during development when a proxy target is configured', () => {
+  it('uses an explicit external Snowstorm base URL when configured', () => {
     expect(createDemoTerminologyConfig({
       DEV: true,
-      VITE_SNOWSTORM_PROXY_TARGET: 'https://snowstorm.example.test/snomed-ct'
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
     })).toEqual({
       snomedConfig: {
         transport: 'snowstorm',
-        baseUrl: DEMO_SNOWSTORM_PROXY_PATH,
+        baseUrl: 'https://snowstorm.example.test/snomed-ct',
         branch: 'MAIN',
         language: 'de',
         languageStrategy: 'header',
@@ -22,9 +19,8 @@ describe('demo terminology configuration', () => {
     });
   });
 
-  it('uses an explicit external Snowstorm base URL outside development', () => {
+  it('preserves the configured Snowstorm request settings', () => {
     expect(createDemoTerminologyConfig({
-      DEV: false,
       VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
       VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE',
       VITE_SNOWSTORM_LANGUAGE: 'en-GB',
@@ -44,15 +40,14 @@ describe('demo terminology configuration', () => {
     });
   });
 
-  it('does not configure Snowstorm without an external URL or development proxy target', () => {
+  it('does not configure Snowstorm without an external URL', () => {
     expect(createDemoTerminologyConfig({ DEV: true })).toEqual({});
-    expect(createDemoTerminologyConfig({ DEV: false })).toEqual({});
   });
 
   it('rejects an invalid Snowstorm result limit', () => {
     expect(() => createDemoTerminologyConfig({
       DEV: true,
-      VITE_SNOWSTORM_PROXY_TARGET: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
       VITE_SNOWSTORM_MAX_RESULTS: '0'
     })).toThrow('VITE_SNOWSTORM_MAX_RESULTS must be a positive integer.');
   });
