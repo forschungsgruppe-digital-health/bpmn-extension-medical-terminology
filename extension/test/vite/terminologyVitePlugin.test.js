@@ -299,6 +299,91 @@ describe('terminologyVitePlugin', () => {
     expect(code).toContain('CodeSystem-v3-ActCode.json');
   });
 
+  it('keeps different installed versions in separate generated registry entries', () => {
+    const root = createTestRoot();
+    tmpRoots.push(root);
+
+    writeJson(join(root, 'package.json'), {
+      name: 'consumer-app',
+      dependencies: {
+        '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology': '0.1.0',
+        'hl7.terminology.r4': '6.0.2'
+      }
+    });
+
+    const terminologyPackageDir = createPackage(root, '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology', {
+      exports: './src/index.js',
+      dependencies: {
+        'hl7.terminology.r4': '7.1.0'
+      }
+    }, {
+      'src/index.js': 'export const terminology = true;\n'
+    });
+
+    createPackage(root, 'hl7.terminology.r4', {
+      version: '6.0.2',
+      exports: './dist/index.js'
+    }, {
+      'dist/index.js': 'export default {};\n',
+      'CodeSystem-legacy.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/acme","version":"2024.1"}\n'
+    });
+
+    createNestedPackage(terminologyPackageDir, 'hl7.terminology.r4', {
+      version: '7.1.0',
+      exports: './dist/index.js'
+    }, {
+      'dist/index.js': 'export default {};\n',
+      'CodeSystem-current.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/acme","version":"2025.1"}\n'
+    });
+
+    const code = runPlugin(root);
+
+    expect(code).toContain('"hl7.terminology.r4@6.0.2": [');
+    expect(code).toContain('"hl7.terminology.r4@7.1.0": [');
+    expect(code).toContain('"version": "6.0.2"');
+    expect(code).toContain('"version": "7.1.0"');
+    expect(code).toContain('CodeSystem-legacy.json');
+    expect(code).toContain('CodeSystem-current.json');
+  });
+
+  it('marks an identically versioned direct and transitive package as deduplicated', () => {
+    const root = createTestRoot();
+    tmpRoots.push(root);
+
+    writeJson(join(root, 'package.json'), {
+      name: 'consumer-app',
+      dependencies: {
+        '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology': '0.1.0',
+        'hl7.terminology.r4': '7.1.0'
+      }
+    });
+
+    createPackage(root, '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology', {
+      exports: './src/index.js',
+      dependencies: {
+        'hl7.terminology.r4': '7.1.0'
+      }
+    }, {
+      'src/index.js': 'export const terminology = true;\n'
+    });
+
+    createPackage(root, 'hl7.terminology.r4', {
+      version: '7.1.0',
+      exports: './dist/index.js'
+    }, {
+      'dist/index.js': 'export default {};\n',
+      'CodeSystem-current.json': '{"resourceType":"CodeSystem","url":"https://example.org/CodeSystem/acme"}\n'
+    });
+
+    const code = runPlugin(root);
+    const registryEntries = code.match(/"hl7\.terminology\.r4": \[/g) || [];
+
+    expect(registryEntries).toHaveLength(1);
+    expect(code).toContain('"directDependency": true');
+    expect(code).toContain('"transitiveDependency": true');
+    expect(code).toContain('"deduplicated": true');
+  });
+
   it('exports package metadata from package.json', () => {
     const root = createTestRoot();
     tmpRoots.push(root);

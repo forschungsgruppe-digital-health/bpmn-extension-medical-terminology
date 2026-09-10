@@ -229,11 +229,37 @@ createDefaultTerminologyServices({
 Set `displayName` instead when the application needs to replace the entire
 label.
 
-Package discovery creates one aggregate provider per package. When exactly one
-CodeSystem is selected from a package, its FHIR `title`, `name`, `id`, or
-canonical URL is appended as the component. `componentLabels` overrides that
-component by package name and canonical CodeSystem URL. Invalid provider IDs,
-package names, or CodeSystem URLs fail fast with a descriptive error.
+Package discovery creates one aggregate provider per installed package
+version. When exactly one CodeSystem is selected from a package, its FHIR
+`title`, `name`, `id`, or canonical URL is appended as the component.
+`componentLabels` overrides that component by package name (or by a
+version-qualified package key) and canonical CodeSystem URL. Invalid provider
+IDs, package names, or CodeSystem URLs fail fast with a descriptive error.
+
+When npm resolves one package version for both a direct and a transitive
+requirement, discovery keeps one provider and emits this non-blocking warning:
+
+```text
+[terminology] Package "hl7.terminology.r4" version "7.1.0" is installed directly and transitively. The package was deduplicated; one terminology provider will be used.
+```
+
+When different versions are installed in different `node_modules` paths, the
+registry keeps both entries instead of overwriting one by package name. Their
+keys are version-qualified (`hl7.terminology.r4@6.0.2` and
+`hl7.terminology.r4@7.1.0`), their display names include the package version,
+and their provider IDs are stable IDs such as
+`pkg-hl7-terminology-r4-6-0-2` and `pkg-hl7-terminology-r4-7-1-0`.
+`disabledProviderIds` can therefore disable one installed version without
+disabling the other. A single unversioned or legacy package entry keeps the
+existing `pkg-<package-name>` ID; explicit package data without npm metadata
+also keeps its existing ID and version behavior.
+
+The package version identifies the installed npm terminology package. It is
+not the FHIR CodeSystem version. Search concepts retain the selected
+CodeSystem's own `version`, and only that value is written to the existing
+`term:coding/@version` attribute in BPMN XML. The npm package version is
+available as provider/package metadata and is never substituted into the
+Coding.
 
 TypeScript consumers can import the public configuration types from
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/types`.
@@ -287,6 +313,10 @@ For another FHIR terminology server, keep `transport: 'fhir'` and set
 instance, use `transport: 'snowstorm'` as shown above. The configured
 `defaultEcl` is sent as the `ecl` query parameter, and `languageStrategy:
 'header'` sends the configured language as `Accept-Language`.
+
+There is no built-in public Snowstorm REST endpoint. Snowstorm transport is
+therefore opt-in and requires an explicit `baseUrl` or a same-origin proxy;
+the default SNOMED provider uses the FHIR endpoint above.
 
 ### CORS, proxies, and custom fetch functions
 
@@ -540,11 +570,37 @@ createDefaultTerminologyServices({
 The plugin discovers installed FHIR terminology packages from the application's
 dependency graph and exposes them on
 `globalThis.__FDH_TERMINOLOGY_PACKAGES__`. The services create one provider
-per discovered package. Each provider searches all CodeSystems in that package,
-so the properties-panel dropdown stays compact while the selected coding still
-keeps its concrete CodeSystem URL and version.
+per discovered package version. If npm has deduplicated equal direct and
+transitive requirements, the registry contains one provider and emits the
+warning described above. Each provider searches only the CodeSystems from its
+own package version, so parallel versions remain independently searchable and
+selectable while the selected coding still keeps its concrete CodeSystem URL
+and version.
 
-The package names are explicit keys in `packages`. Within each package,
+The package names are explicit keys in `packages`; when parallel versions are
+provided manually, use version-qualified keys and matching metadata:
+
+```js
+packageDiscovery: {
+  packages: {
+    'hl7.terminology.r4@6.0.2': oldCodeSystems,
+    'hl7.terminology.r4@7.1.0': currentCodeSystems
+  },
+  metadata: {
+    'hl7.terminology.r4@6.0.2': {
+      packageName: 'hl7.terminology.r4',
+      version: '6.0.2'
+    },
+    'hl7.terminology.r4@7.1.0': {
+      packageName: 'hl7.terminology.r4',
+      version: '7.1.0'
+    }
+  }
+}
+```
+
+`include` and `exclude` match the canonical package name and may also target a
+version-qualified package key. Within each package version,
 `include` and `exclude` match exact canonical `CodeSystem.url` values, never
 filenames. `exclude` takes precedence over `include`, and `include: ['*']`
 loads every CodeSystem from that package. A configured URL that does not exist

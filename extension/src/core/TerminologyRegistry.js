@@ -72,7 +72,7 @@ export class TerminologyRegistry {
 
   /**
    * List all registered providers with metadata.
-   * @returns {Array<{ id: string, displayName: string, systemUri: string, capabilities: object }>}
+   * @returns {Array<{ id: string, displayName: string, systemUri: string, version?: string, packageKey?: string, packageName?: string, packageVersion?: string, capabilities: object }>}
    */
   listProviders() {
     return [...this._providers.values()].map(p => ({
@@ -80,6 +80,9 @@ export class TerminologyRegistry {
       displayName: p.displayName,
       systemUri: p.systemUri,
       version: p.version,
+      packageKey: p.packageKey,
+      packageName: p.packageName,
+      packageVersion: p.packageVersion,
       sourceType: p.sourceType,
       sourceLabel: p.sourceLabel,
       sourceName: p.sourceName,

@@ -44,6 +44,9 @@ declare module 'virtual:fdh-terminology-packages' {
     packageName?: string;
     title?: string;
     version?: string;
+    directDependency?: boolean;
+    transitiveDependency?: boolean;
+    deduplicated?: boolean;
   }>;
   export default packages;
 }

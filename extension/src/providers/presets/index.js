@@ -1,4 +1,5 @@
 import { createPackageCollectionProvider } from '../../services/TerminologyServices.js';
+import { createPackageKey } from '../../services/PackageMetadata.js';
 
 import iheXdsClassCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDSclassCode.json' with { type: 'json' };
 import iheXdsTypeCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDStypeCode.json' with { type: 'json' };
@@ -48,14 +49,30 @@ function warnMissingHl7PackageCodeSystems() {
 }
 
 function getPackageMetadata(preset, config) {
+  const configuredPackageMetadata = config.packageMetadata;
+  const isSingleMetadataObject = configuredPackageMetadata
+    && (
+      typeof configuredPackageMetadata.packageName === 'string'
+      || typeof configuredPackageMetadata.title === 'string'
+      || typeof configuredPackageMetadata.version === 'string'
+    );
+  const defaultMetadata = DEFAULT_PACKAGE_METADATA[preset.packageName];
+  const defaultVersion = defaultMetadata?.version;
+  const configuredMetadata = isSingleMetadataObject
+    ? configuredPackageMetadata
+    : configuredPackageMetadata?.[
+      createPackageKey(preset.packageName, defaultVersion)
+    ]
+      || configuredPackageMetadata?.[preset.packageName]
+      || {};
   const metadata = {
-    ...DEFAULT_PACKAGE_METADATA[preset.packageName],
-    ...config.packageMetadata?.[preset.packageName]
+    ...defaultMetadata,
+    ...configuredMetadata
   };
 
   if (
     preset.normalizeDefaultTitle
-    && metadata.title === DEFAULT_PACKAGE_METADATA[preset.packageName]?.title
+    && metadata.title === defaultMetadata?.title
   ) {
     return {
       ...metadata,
@@ -115,11 +132,15 @@ export function createPackagePresetProvider(presetId, config = {}) {
     return null;
   }
 
+  const packageMetadata = getPackageMetadata(preset, config);
+
   return createPackageCollectionProvider({
     id: preset.id,
     ...config,
+    packageKey: config.packageKey
+      || createPackageKey(preset.packageName, packageMetadata.version),
     packageName: preset.packageName,
-    packageMetadata: getPackageMetadata(preset, config),
+    packageMetadata,
     componentLabel: config.componentLabel || preset.componentLabel,
     sourceName: config.sourceName || preset.sourceName,
     codeSystems

@@ -3,12 +3,19 @@ export interface PackageMetadata {
   packageName?: string;
   title?: string;
   version?: string;
+  /** Set when discovery saw the package as a direct dependency. */
+  directDependency?: boolean;
+  /** Set when discovery saw the package as a transitive dependency. */
+  transitiveDependency?: boolean;
+  /** Set when direct and transitive requirements resolved to one installation. */
+  deduplicated?: boolean;
 }
 
 export interface Concept {
   code: string;
   display?: string;
   system: string;
+  /** Version of the concrete CodeSystem; packageVersion is separate metadata. */
   version?: string;
   active?: boolean;
   properties?: Record<string, unknown>;
@@ -47,6 +54,11 @@ export interface TerminologyProvider {
   readonly id: string;
   readonly displayName: string;
   readonly systemUri: string;
+  readonly packageKey?: string;
+  readonly packageName?: string;
+  /** Version of the installed npm terminology package. */
+  readonly packageVersion?: string;
+  readonly packageMetadata?: PackageMetadata;
   readonly sourceType?: 'api' | 'package';
   readonly sourceLabel?: string;
   readonly sourceName?: string;
@@ -68,7 +80,8 @@ export interface CodeSystemResource {
 export interface PackageProviderOptions {
   displayName?: string;
   componentLabel?: string;
-  packageMetadata?: Record<string, PackageMetadata>;
+  /** A single metadata object or the legacy package-name keyed metadata map. */
+  packageMetadata?: PackageMetadata | Record<string, PackageMetadata>;
 }
 
 export interface FhirProviderConfig {
@@ -84,6 +97,8 @@ export interface FhirProviderConfig {
 
 export interface PackageProviderConfig extends PackageProviderOptions {
   id: string;
+  /** Stable registry key, usually `packageName@packageVersion` for parallel versions. */
+  packageKey?: string;
   packageName?: string;
   systemUri?: string;
   codeSystem?: CodeSystemResource;
@@ -103,15 +118,23 @@ export interface PackageDiscoveryConfig {
   /** Exclude package names after applying `include`. */
   exclude?: string[];
   mode?: 'auto' | 'whitelist';
-  /** Explicit package data, registered independently of `enablePackageDefaults`. */
+  /**
+   * Explicit package data, registered independently of `enablePackageDefaults`.
+   * Keys may be plain package names or version-qualified `packageName@version`
+   * keys when multiple installed versions are supplied.
+   */
   packages?: Record<string, CodeSystemResource[]>;
+  /** Package names or version-qualified package keys to include. */
   packageNames?: string[];
   modules?: Record<string, CodeSystemResource>;
+  /** Metadata uses the same keys as `packages`; plain package-name fallbacks are supported. */
   metadata?: Record<string, PackageMetadata>;
+  /** Labels may be keyed by a version-qualified package key or package name. */
   componentLabels?: Record<string, Record<string, string>>;
 }
 
 export interface PackageAutoDiscoveryConfig {
+  /** Bundler-exposed package collections may use version-qualified package keys. */
   packages?: Record<string, CodeSystemResource[]>;
   metadata?: Record<string, PackageMetadata>;
   globalKey?: string;

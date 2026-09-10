@@ -54,6 +54,7 @@ export function createPackageTerminologyProvider(config) {
  * @param {{
  *   id: string,
  *   displayName?: string,
+ *   packageKey?: string,
  *   packageName?: string,
  *   packageMetadata?: { packageName?: string, title?: string, version?: string },
  *   componentLabel?: string,
@@ -95,6 +96,10 @@ export function createPackageCollectionProvider(config) {
 
   provider.getCodeSystemUris = () => [...codeSystemUris];
   provider.sourceType = 'package';
+  provider.packageKey = config.packageKey;
+  provider.packageName = config.packageName;
+  provider.packageVersion = config.packageMetadata?.version;
+  provider.packageMetadata = config.packageMetadata;
   provider.sourceLabel = formatPackageSourceLabel(config.packageName, config.packageMetadata);
   provider.sourceName = config.sourceName
     || config.componentLabel

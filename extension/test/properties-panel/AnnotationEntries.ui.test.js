@@ -750,6 +750,70 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
   });
 
+  it('keeps CodeSystem versions distinct when selecting parallel package providers', async () => {
+    const context = await createTestContext({
+      id: 'Task_ParallelPackageVersions',
+      type: 'bpmn:Task',
+      name: 'Parallel Package Versions Task'
+    });
+    const providers = [
+      {
+        id: 'pkg-acme-terminology-6-0-2',
+        displayName: 'ACME Terminology (6.0.2)',
+        sourceType: 'package',
+        sourceName: 'ACME Terminology',
+        sourceLabel: 'acme.terminology@6.0.2',
+        systemUri: 'https://example.org/CodeSystem/acme'
+      },
+      {
+        id: 'pkg-acme-terminology-7-1-0',
+        displayName: 'ACME Terminology (7.1.0)',
+        sourceType: 'package',
+        sourceName: 'ACME Terminology',
+        sourceLabel: 'acme.terminology@7.1.0',
+        systemUri: 'https://example.org/CodeSystem/acme'
+      }
+    ];
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => providers,
+        search: vi.fn(async (term, providerId) => ({
+          items: [{
+            code: providerId.endsWith('6-0-2') ? 'OLD' : 'NEW',
+            display: providerId.endsWith('6-0-2') ? 'Legacy concept' : 'Current concept',
+            system: 'https://example.org/CodeSystem/acme',
+            version: providerId.endsWith('6-0-2') ? '2024.1' : '2025.1'
+          }]
+        }))
+      }
+    });
+
+    const annotationView = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(annotationView.container, {
+      text: 'Parallel package version codings',
+      codings: [{
+        providerId: 'pkg-acme-terminology-6-0-2',
+        searchTerm: 'Legacy',
+        resultLabel: 'Legacy concept'
+      }]
+    });
+    await createAnnotation(annotationView.container, {
+      codings: [{
+        providerId: 'pkg-acme-terminology-7-1-0',
+        searchTerm: 'Current',
+        resultLabel: 'Current concept'
+      }]
+    });
+
+    const xml = await serializeXml(context.moddle, context.definitions);
+
+    expect(xml).toContain('<term:coding system="https://example.org/CodeSystem/acme" version="2024.1" code="OLD" display="Legacy concept"');
+    expect(xml).toContain('<term:coding system="https://example.org/CodeSystem/acme" version="2025.1" code="NEW" display="Current concept"');
+    expect(xml).not.toContain('version="6.0.2"');
+    expect(xml).not.toContain('version="7.1.0"');
+  });
+
   it('persists the SNOMED release version in XML', async () => {
     const context = await createTestContext({
       id: 'Task_SnomedVersion',

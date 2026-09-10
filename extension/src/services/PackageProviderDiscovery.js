@@ -1,5 +1,5 @@
 import { createPackageCollectionProvider } from './TerminologyServices.js';
-import { formatPackageDisplayName } from './PackageMetadata.js';
+import { resolvePackageMetadata } from './PackageMetadata.js';
 
 export const DEFAULT_DISCOVERY_INCLUDE = Object.freeze([
   '*'
@@ -26,8 +26,15 @@ function toSafeIdPart(value) {
     .replace(/^-|-$/g, '');
 }
 
-function toProviderId(packageName) {
-  return `pkg-${toSafeIdPart(packageName)}`;
+function toProviderId(packageKey, version) {
+  const versionSuffix = version && packageKey.endsWith(`@${version}`)
+    ? `-${version}`
+    : '';
+  const idKey = versionSuffix
+    ? `${packageKey.slice(0, -version.length - 1)}${versionSuffix}`
+    : packageKey;
+
+  return `pkg-${toSafeIdPart(idKey)}`;
 }
 
 function matchesPattern(packageName, pattern) {
@@ -44,16 +51,20 @@ function matchesPattern(packageName, pattern) {
   return regex.test(packageName);
 }
 
-function isIncluded(packageName, includePatterns, mode) {
+function isIncluded(packageName, includePatterns, mode, packageKey = packageName) {
   if (!includePatterns.length) {
     return mode !== 'whitelist';
   }
 
-  return includePatterns.some(pattern => matchesPattern(packageName, pattern));
+  return includePatterns.some(pattern =>
+    matchesPattern(packageName, pattern) || matchesPattern(packageKey, pattern)
+  );
 }
 
-function isExcluded(packageName, excludePatterns) {
-  return excludePatterns.some(pattern => matchesPattern(packageName, pattern));
+function isExcluded(packageName, excludePatterns, packageKey = packageName) {
+  return excludePatterns.some(pattern =>
+    matchesPattern(packageName, pattern) || matchesPattern(packageKey, pattern)
+  );
 }
 
 function dedupeCodeSystems(codeSystems = []) {
@@ -74,35 +85,99 @@ function dedupeCodeSystems(codeSystems = []) {
   return uniqueCodeSystems;
 }
 
-function validateComponentLabels(packages, componentLabels = {}) {
-  for (const [packageName, labels] of Object.entries(componentLabels)) {
-    if (!packages[packageName]) {
-      throw new Error(`Component labels reference unknown package "${packageName}".`);
+function getPackageEntries(packages, metadata = {}) {
+  const entriesByIdentity = new Map();
+
+  for (const [packageKey, codeSystems] of Object.entries(packages || {})) {
+    const resolved = resolvePackageMetadata(packageKey, metadata);
+    const identityKey = resolved.version
+      ? `${resolved.packageName}@${resolved.version}`
+      : packageKey;
+    const current = entriesByIdentity.get(identityKey);
+
+    if (!current) {
+      entriesByIdentity.set(identityKey, {
+        packageKey,
+        packageName: resolved.packageName,
+        version: resolved.version,
+        packageMetadata: resolved.packageMetadata,
+        codeSystems: codeSystems || []
+      });
+      continue;
     }
 
-    const systemUris = new Set(dedupeCodeSystems(packages[packageName]).map(codeSystem => codeSystem.url));
-    for (const systemUri of Object.keys(labels || {})) {
-      if (!systemUris.has(systemUri)) {
-        throw new Error(
-          `Component label references unknown CodeSystem "${systemUri}" in package "${packageName}".`
-        );
+    current.codeSystems = [
+      ...current.codeSystems,
+      ...(codeSystems || [])
+    ];
+    current.packageMetadata = {
+      ...current.packageMetadata,
+      ...resolved.packageMetadata,
+      directDependency: Boolean(
+        current.packageMetadata.directDependency
+        || resolved.packageMetadata.directDependency
+      ),
+      transitiveDependency: Boolean(
+        current.packageMetadata.transitiveDependency
+        || resolved.packageMetadata.transitiveDependency
+      ),
+      deduplicated: Boolean(
+        current.packageMetadata.deduplicated
+        || resolved.packageMetadata.deduplicated
+      )
+    };
+
+    if (packageKey === resolved.packageName) {
+      current.packageKey = packageKey;
+    }
+  }
+
+  return [...entriesByIdentity.values()];
+}
+
+function getComponentLabels(componentLabels, packageKey, packageName) {
+  return componentLabels?.[packageKey] || componentLabels?.[packageName] || {};
+}
+
+function validateComponentLabels(packages, componentLabels = {}, metadata = {}) {
+  const packageEntries = getPackageEntries(packages, metadata);
+
+  for (const [labelKey, labels] of Object.entries(componentLabels)) {
+    const matchingEntries = packageEntries.filter(entry =>
+      entry.packageKey === labelKey || entry.packageName === labelKey
+    );
+
+    if (!matchingEntries.length) {
+      throw new Error(`Component labels reference unknown package "${labelKey}".`);
+    }
+
+    for (const entry of matchingEntries) {
+      const systemUris = new Set(
+        dedupeCodeSystems(entry.codeSystems).map(codeSystem => codeSystem.url)
+      );
+
+      for (const systemUri of Object.keys(labels || {})) {
+        if (!systemUris.has(systemUri)) {
+          throw new Error(
+            `Component label references unknown CodeSystem "${systemUri}" in package "${labelKey}".`
+          );
+        }
       }
     }
   }
 }
 
-function getNodeModulesPackagePath(packageName) {
-  return `/node_modules/${packageName}/`;
-}
-
 function getPackageNameFromNodeModulesPath(path) {
+  const normalizedPath = path.startsWith('node_modules/')
+    ? `/${path}`
+    : path;
   const marker = '/node_modules/';
-  const markerIndex = path.indexOf(marker);
+  const markerIndex = normalizedPath.lastIndexOf(marker);
   if (markerIndex < 0) {
     return null;
   }
 
-  const relative = path.slice(markerIndex + marker.length);
+  const relative = normalizedPath.slice(markerIndex + marker.length);
   const parts = relative.split('/');
 
   if (!parts[0]) {
@@ -116,40 +191,74 @@ function getPackageNameFromNodeModulesPath(path) {
   return parts[0];
 }
 
+function getPackageKeyFromPath(path, packageName, metadata = {}) {
+  const candidates = Object.keys(metadata)
+    .map(packageKey => ({
+      packageKey,
+      ...resolvePackageMetadata(packageKey, metadata)
+    }))
+    .filter(entry => entry.packageName === packageName);
+
+  const versionedCandidate = candidates.find(entry =>
+    entry.version && path.includes(`${entry.packageName}@${entry.version}`)
+  );
+
+  if (versionedCandidate) {
+    return versionedCandidate.packageKey;
+  }
+
+  if (candidates.length === 1) {
+    return candidates[0].packageKey;
+  }
+
+  return packageName;
+}
+
 /**
  * Group Vite glob-loaded CodeSystem modules by explicit package names.
  *
  * @param {Record<string, import('@types/fhir').fhir4.CodeSystem>} modules
  * @param {string[]} packageNames
+ * @param {Record<string, { packageName?: string, title?: string, version?: string }>} [metadata]
  * @returns {Record<string, import('@types/fhir').fhir4.CodeSystem[]>}
  */
-export function collectPackageCodeSystemsFromModules(modules = {}, packageNames = []) {
-  const uniquePackageNames = [...new Set((packageNames || []).filter(Boolean))];
+export function collectPackageCodeSystemsFromModules(modules = {}, packageNames = [], metadata = {}) {
+  const uniquePackageKeys = [...new Set((packageNames || []).filter(Boolean))];
+  const packageEntries = uniquePackageKeys.map(packageKey => ({
+    packageKey,
+    ...resolvePackageMetadata(packageKey, metadata)
+  }));
   const codeSystemsByPackageName = {};
   const seenUrisByPackageName = {};
 
-  uniquePackageNames.forEach(packageName => {
-    codeSystemsByPackageName[packageName] = [];
-    seenUrisByPackageName[packageName] = new Set();
+  uniquePackageKeys.forEach(packageKey => {
+    codeSystemsByPackageName[packageKey] = [];
+    seenUrisByPackageName[packageKey] = new Set();
   });
 
   for (const [path, codeSystem] of Object.entries(modules || {})) {
-    for (const packageName of uniquePackageNames) {
-      if (!path.includes(getNodeModulesPackagePath(packageName))) {
-        continue;
-      }
+    const detectedPackageName = getPackageNameFromNodeModulesPath(path);
+    const matchingEntries = packageEntries.filter(entry =>
+      entry.packageName === detectedPackageName
+      || entry.packageKey === detectedPackageName
+    );
+    const matchingEntry = matchingEntries.find(entry =>
+      entry.version && path.includes(`${entry.packageName}@${entry.version}`)
+    ) || matchingEntries.find(entry => !entry.version) || matchingEntries[0];
 
-      const systemUri = codeSystem?.url || `${codeSystem?.id || ''}`;
-      const seenUris = seenUrisByPackageName[packageName];
-
-      if (!systemUri || seenUris.has(systemUri)) {
-        continue;
-      }
-
-      seenUris.add(systemUri);
-      codeSystemsByPackageName[packageName].push(codeSystem);
-      break;
+    if (!matchingEntry) {
+      continue;
     }
+
+    const systemUri = codeSystem?.url || `${codeSystem?.id || ''}`;
+    const seenUris = seenUrisByPackageName[matchingEntry.packageKey];
+
+    if (!systemUri || seenUris.has(systemUri)) {
+      continue;
+    }
+
+    seenUris.add(systemUri);
+    codeSystemsByPackageName[matchingEntry.packageKey].push(codeSystem);
   }
 
   return codeSystemsByPackageName;
@@ -159,7 +268,7 @@ export function collectPackageCodeSystemsFromModules(modules = {}, packageNames 
  * Group Vite glob-loaded CodeSystem modules by package path detection.
  *
  * @param {(pattern: string, options: { eager: true, import: 'default' }) => Record<string, import('@types/fhir').fhir4.CodeSystem>} globFn
- * @param {{ patterns?: string[] }} [config]
+ * @param {{ patterns?: string[], metadata?: Record<string, { packageName?: string, title?: string, version?: string }> }} [config]
  * @returns {Record<string, import('@types/fhir').fhir4.CodeSystem[]>}
  */
 export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
@@ -170,6 +279,7 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
   const patterns = config.patterns || DEFAULT_AUTO_DISCOVERY_GLOBS;
   const codeSystemsByPackageName = {};
   const seenUrisByPackageName = {};
+  const metadata = config.metadata || {};
 
   for (const pattern of patterns) {
     const modules = globFn(pattern, { eager: true, import: 'default' }) || {};
@@ -184,18 +294,20 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
         continue;
       }
 
-      if (!codeSystemsByPackageName[packageName]) {
-        codeSystemsByPackageName[packageName] = [];
-        seenUrisByPackageName[packageName] = new Set();
+      const packageKey = getPackageKeyFromPath(path, packageName, metadata);
+
+      if (!codeSystemsByPackageName[packageKey]) {
+        codeSystemsByPackageName[packageKey] = [];
+        seenUrisByPackageName[packageKey] = new Set();
       }
 
-      const seenUris = seenUrisByPackageName[packageName];
+      const seenUris = seenUrisByPackageName[packageKey];
       if (seenUris.has(systemUri)) {
         continue;
       }
 
       seenUris.add(systemUri);
-      codeSystemsByPackageName[packageName].push(codeSystem);
+      codeSystemsByPackageName[packageKey].push(codeSystem);
     }
   }
 
@@ -213,7 +325,8 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
  *   mode?: 'auto' | 'whitelist',
  *   metadata?: Record<string, { packageName?: string, title?: string, version?: string }>,
  *   componentLabels?: Record<string, Record<string, string>>,
- *   excludeSystemUris?: Iterable<string>
+ *   excludeSystemUris?: Iterable<string>,
+ *   excludePackageCodeSystems?: Array<{ packageName: string, version?: string, systemUri: string }>
  * }} [config]
  * @returns {import('../core/TerminologyProvider').TerminologyProvider[]}
  */
@@ -223,28 +336,64 @@ export function discoverPackageProviders(packages = {}, config = {}) {
   const mode = config.mode || 'auto';
   const metadata = config.metadata || {};
   const excludedSystemUris = new Set(config.excludeSystemUris || []);
+  const excludedPackageCodeSystems = config.excludePackageCodeSystems || [];
+  const packageEntries = getPackageEntries(packages, metadata);
 
-  validateComponentLabels(packages, config.componentLabels);
+  validateComponentLabels(packages, config.componentLabels, metadata);
 
-  return Object.entries(packages)
-    .filter(([packageName]) =>
+  return packageEntries
+    .filter(({ packageKey, packageName }) =>
       packageName
-      && isIncluded(packageName, includePatterns, mode)
-      && !isExcluded(packageName, excludePatterns)
+      && isIncluded(packageName, includePatterns, mode, packageKey)
+      && !isExcluded(packageName, excludePatterns, packageKey)
     )
-    .flatMap(([packageName, codeSystems]) => {
+    .flatMap(({
+      packageKey,
+      packageName,
+      version,
+      packageMetadata,
+      codeSystems
+    }) => {
+      if (
+        packageMetadata?.deduplicated
+        && packageMetadata.directDependency
+        && packageMetadata.transitiveDependency
+      ) {
+        console.warn(
+          `[terminology] Package "${packageName}" version "${version || 'unknown'}" ` +
+          'is installed directly and transitively. The package was deduplicated; ' +
+          'one terminology provider will be used.'
+        );
+      }
+
       const uniqueCodeSystems = dedupeCodeSystems(codeSystems)
-        .filter(codeSystem => !excludedSystemUris.has(codeSystem.url));
-      const componentLabels = config.componentLabels?.[packageName] || {};
+        .filter(codeSystem =>
+          !excludedSystemUris.has(codeSystem.url)
+          && !excludedPackageCodeSystems.some(excluded =>
+            excluded.systemUri === codeSystem.url
+            && excluded.packageName === packageName
+            && (
+              !excluded.version
+              || !version
+              || excluded.version === version
+            )
+          )
+        );
+      const componentLabels = getComponentLabels(
+        config.componentLabels,
+        packageKey,
+        packageName
+      );
 
       if (!uniqueCodeSystems.length) {
         return [];
       }
 
       return [createPackageCollectionProvider({
-        id: toProviderId(packageName),
+        id: toProviderId(packageKey, version),
+        packageKey,
         packageName,
-        packageMetadata: metadata[packageName],
+        packageMetadata,
         componentLabel: uniqueCodeSystems.length === 1
           ? componentLabels[uniqueCodeSystems[0].url]
           : undefined,
