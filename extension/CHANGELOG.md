@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.5...terminology-v0.1.6) (2026-09-10)
+
+
+### Bug Fixes
+
+* **terminology:** preserve parallel package versions ([064c6eb](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/064c6ebfe36e265b044e539d49816e3316fe9161))
+
 ## [0.1.5](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.4...terminology-v0.1.5) (2026-09-09)
 
 
