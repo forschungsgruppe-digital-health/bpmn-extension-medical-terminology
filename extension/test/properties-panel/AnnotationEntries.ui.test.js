@@ -280,6 +280,57 @@ describe('terminology properties panel UI', () => {
       .toEqual(['Terminology servers (API)']);
   });
 
+  it('sorts local package providers by their visible dropdown labels', async () => {
+    const context = await createTestContext({
+      id: 'Task_SortedPackageProviders',
+      type: 'bpmn:Task',
+      name: 'Sorted Package Providers Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [
+          {
+            id: 'pkg-kdl',
+            displayName: 'dvmd.kdl.r4 (2025.0.1) — KDL',
+            sourceType: 'package',
+            sourceName: 'KDL',
+            sourceLabel: 'dvmd.kdl.r4@2025.0.1'
+          },
+          {
+            id: 'pkg-ihe',
+            displayName: 'de.ihe-d.terminology (3.0.1) — IHE XDS Document Class',
+            sourceType: 'package',
+            sourceName: 'IHE XDS Document Class',
+            sourceLabel: 'de.ihe-d.terminology@3.0.1'
+          },
+          {
+            id: 'pkg-hl7',
+            displayName: 'hl7.terminology.r4 (7.1.0)',
+            sourceType: 'package',
+            sourceName: 'HL7 Terminology R4',
+            sourceLabel: 'hl7.terminology.r4@7.1.0'
+          }
+        ],
+        search: vi.fn(),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+
+    const terminologySelect = getControlByLabel(view.container, 'Terminology');
+
+    expect(Array.from(terminologySelect.options).map(option => option.textContent)).toEqual([
+      '– select –',
+      'HL7 Terminology R4 (hl7.terminology.r4@7.1.0)',
+      'IHE XDS Document Class (de.ihe-d.terminology@3.0.1)',
+      'KDL (dvmd.kdl.r4@2025.0.1)'
+    ]);
+  });
+
   it('labels API and package providers with their source metadata', async () => {
     const context = await createTestContext({
       id: 'Task_ProviderSources',
@@ -574,7 +625,7 @@ describe('terminology properties panel UI', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('LOINC redirected the search request. Use a redirect-free endpoint or a same-origin proxy.')).toBeTruthy();
+      expect(screen.getByText('LOINC redirected the search request. Use a redirect-free endpoint or a host-owned same-origin endpoint.')).toBeTruthy();
     });
   });
 

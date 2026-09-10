@@ -21,7 +21,7 @@ export function createRequestError(response, requestUrl, { cause } = {}) {
     ? 'network'
     : (status === 401 || status === 403 ? 'authorization' : 'server');
   const message = isRedirect
-    ? `Terminology server ${host} redirected the request${status ? ` (HTTP ${status})` : ''}. Configure a redirect-free endpoint or a same-origin proxy.`
+    ? `Terminology server ${host} redirected the request${status ? ` (HTTP ${status})` : ''}. Configure a redirect-free endpoint or a host-owned same-origin endpoint.`
     : status
     ? `Terminology server ${host} returned HTTP ${status}.`
     : `Terminology server ${host} could not be reached.`;

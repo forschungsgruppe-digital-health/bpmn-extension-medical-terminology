@@ -29,7 +29,7 @@ describe('SnomedCtProvider', () => {
     expect(provider.displayName).toBe('SNOMED CT International');
   });
 
-  it('supports a relative same-origin proxy baseUrl', async () => {
+  it('supports a relative host-owned baseUrl', async () => {
     const fetchFn = createMockFetch({ items: [], total: 0 });
     const provider = createProvider({
       baseUrl: '/api/snowstorm/snomed-ct',
