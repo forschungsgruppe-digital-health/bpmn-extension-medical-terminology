@@ -88,6 +88,41 @@ jobs:
         run: npm run check:packages
 
       # Blocking gate: no high/critical CVEs in *production* (shipped) dependencies.
-      # Dev-only advisories are tracked separately and do not block here.
+      # Dev-only advisories are tracked separately and do not block here. The
+      # upstream npm package named hl7.fhir.r4.core is malicious (GHSA-qg8x-2hq5-hwf3),
+      # but this project obtains a data-only FHIR package with that name from
+      # Simplifier, pinned by the lockfile integrity hash. npm audit cannot
+      # distinguish the registry source, so this one false positive is removed
+      # before enforcing the blocking threshold.
       - name: Dependency audit (production deps)
-        run: npm audit --omit=dev --audit-level=high
+        run: |
+          npm audit --omit=dev --audit-level=high --json > audit.json || true
+          node -e '
+            const fs = require("fs");
+            const audit = JSON.parse(fs.readFileSync("audit.json", "utf8"));
+            const allowed = "GHSA-qg8x-2hq5-hwf3";
+            const core = audit.vulnerabilities?.["hl7.fhir.r4.core"];
+            const lockfile = JSON.parse(fs.readFileSync("package-lock.json", "utf8"));
+            const coreResolution = lockfile.packages?.["node_modules/hl7.fhir.r4.core"]?.resolved;
+            const affected = new Set(["hl7.fhir.r4.core", ...(core?.effects || [])]);
+            const isOnlyAllowedFinding = core?.via?.length === 1 &&
+              core.via[0]?.url?.includes(allowed) &&
+              [...affected].filter(name => name !== "hl7.fhir.r4.core").every(name => (audit.vulnerabilities[name]?.via || []).every(
+                entry => typeof entry === "string" && affected.has(entry)
+              ));
+            if (
+              isOnlyAllowedFinding &&
+              coreResolution === "https://packages.simplifier.net/hl7.fhir.r4.core/4.0.1"
+            ) {
+              for (const name of affected) {
+                delete audit.vulnerabilities[name];
+              }
+            }
+            const remaining = Object.values(audit.vulnerabilities || {}).filter(v =>
+              v.severity === "high" || v.severity === "critical"
+            );
+            if (remaining.length) {
+              console.error(JSON.stringify(remaining, null, 2));
+              process.exit(1);
+            }
+          '
