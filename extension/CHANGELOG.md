@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.8](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.7...terminology-v0.1.8) (2026-09-10)
+
+
+### Bug Fixes
+
+* filter technical terminology dependencies ([20aca2a](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/20aca2a159f98e99e0c20a9ef0dbf3b93e78bd57))
+* **terminology:** restrict package discovery and normalize labels ([02c8f7b](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/02c8f7b9811a68faade0b356684430f79a09e055))
+
 ## [0.1.7](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.6...terminology-v0.1.7) (2026-09-10)
 
 
