@@ -5,16 +5,6 @@ const IHE_XDS_RESOURCE_URLS = Object.freeze([
   'http://ihe-d.de/CodeSystems/IHEXDStypeCode'
 ]);
 
-const DEFAULT_PACKAGE_RESOURCE_FILES = Object.freeze({
-  'de.ihe-d.terminology': Object.freeze([
-    'CodeSystem-IHEXDSclassCode.json',
-    'CodeSystem-IHEXDStypeCode.json'
-  ]),
-  'dvmd.kdl.r4': Object.freeze([
-    'codesystem-kdl.xml.json'
-  ])
-});
-
 const DEFAULT_PACKAGE_RESOURCE_URLS = Object.freeze({
   'de.ihe-d.terminology': IHE_XDS_RESOURCE_URLS,
   'dvmd.kdl.r4': Object.freeze([
@@ -29,10 +19,10 @@ export const DEFAULT_TERMINOLOGY_PACKAGE_NAMES = Object.freeze([
 ]);
 
 export function getDefaultPackageResourceFilter(packageName) {
-  const files = DEFAULT_PACKAGE_RESOURCE_FILES[packageName];
+  const include = DEFAULT_PACKAGE_RESOURCE_URLS[packageName];
 
-  return files
-    ? { files: [...files] }
+  return include
+    ? { include: [...include], warnOnMissing: true }
     : {};
 }
 

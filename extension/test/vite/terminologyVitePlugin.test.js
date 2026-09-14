@@ -1,7 +1,7 @@
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { build, createServer as createViteServer } from 'vite';
 import { terminologyVitePlugin } from '../../src/vite/plugin.js';
 
@@ -363,7 +363,7 @@ describe('terminologyVitePlugin', () => {
       exports: './dist/index.js'
     }, {
       'dist/index.js': 'export default {};\n',
-      'codesystem-kdl.xml.json': '{"resourceType":"CodeSystem","url":"http://dvmd.de/fhir/CodeSystem/kdl","version":"2024"}\n'
+      'codesystem-kdl.json': '{"resourceType":"CodeSystem","url":"http://dvmd.de/fhir/CodeSystem/kdl","version":"2024"}\n'
     });
     createNestedPackage(terminologyPackageDir, 'dvmd.kdl.r4', {
       version: '2025.0.1',
@@ -385,7 +385,55 @@ describe('terminologyVitePlugin', () => {
     expect(code).toContain('"version": "2025.0.1"');
     expect(code).toContain('CodeSystem-legacy.json');
     expect(code).toContain('CodeSystem-current.json');
+    expect(code).toContain('codesystem-kdl.json');
     expect(code).toContain('codesystem-kdl.xml.json');
+  });
+
+  it('warns and skips a default package without a compatible CodeSystem resource', () => {
+    const root = createTestRoot();
+    tmpRoots.push(root);
+
+    writeJson(join(root, 'package.json'), {
+      name: 'consumer-app',
+      dependencies: {
+        '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology': '0.1.0'
+      }
+    });
+
+    const terminologyPackageDir = createPackage(
+      root,
+      '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology',
+      {
+        exports: './src/index.js',
+        dependencies: {
+          'dvmd.kdl.r4': '2024.0.0'
+        }
+      },
+      {
+        'src/index.js': 'export const terminology = true;\n'
+      }
+    );
+
+    createNestedPackage(terminologyPackageDir, 'dvmd.kdl.r4', {
+      version: '2024.0.0',
+      exports: './dist/index.js'
+    }, {
+      'dist/index.js': 'export default {};\n',
+      'CodeSystem-other.json': '{"resourceType":"CodeSystem","url":"https://example.org/other"}\n'
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      const code = runPlugin(root);
+
+      expect(code).not.toContain('"dvmd.kdl.r4": [');
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('No compatible default CodeSystem resources')
+      );
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('marks an identically versioned direct and transitive package as deduplicated', () => {

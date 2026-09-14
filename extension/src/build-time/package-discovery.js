@@ -117,6 +117,10 @@ function filterResourceFiles(packageDir, packageName, resourceFiles, resourceFil
   const missingSelector = selectors.find(selector => !availableSelectors.has(selector));
 
   if (missingSelector) {
+    if (resourceFilter?.warnOnMissing) {
+      return [];
+    }
+
     throw new Error(
       `[fdh-terminology] Resource selector "${missingSelector}" not found in package "${packageName}".`
     );
@@ -461,19 +465,23 @@ export function discoverTerminologyPackageFiles(options) {
       return [];
     }
 
+    const resourceFilter = packageSelection.resourceFilters[packageKey]
+      || packageSelection.resourceFilters[packageName]
+      || (!explicitPackages
+        ? getDefaultPackageResourceFilter(packageName)
+        : undefined);
     const resourceFiles = filterResourceFiles(
       packageDir,
       packageKey,
       findResourceFiles(packageDir, resourceTypes),
-      packageSelection.resourceFilters[packageKey]
-        || packageSelection.resourceFilters[packageName]
-        || (!explicitPackages
-          ? getDefaultPackageResourceFilter(packageName)
-          : undefined)
+      resourceFilter
     );
 
     if (resourceFiles.length === 0) {
-      console.warn(`[fdh-terminology] No CodeSystem resources found in "${packageKey}" - skipping.`);
+      const warning = resourceFilter?.warnOnMissing
+        ? `No compatible default CodeSystem resources found in "${packageKey}" - skipping.`
+        : `No CodeSystem resources found in "${packageKey}" - skipping.`;
+      console.warn(`[fdh-terminology] ${warning}`);
       return [];
     }
 

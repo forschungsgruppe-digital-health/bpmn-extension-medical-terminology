@@ -517,7 +517,8 @@ describe('TerminologyServices', () => {
           'acme.terminology': [{
             resourceType: 'CodeSystem',
             id: 'custom-cs',
-            url: 'https://example.org/CodeSystem/custom'
+            url: 'https://example.org/CodeSystem/custom',
+            concept: [{ code: 'CUSTOM', display: 'Custom concept' }]
           }]
         }
       }
@@ -545,7 +546,8 @@ describe('TerminologyServices', () => {
           'acme.terminology': [{
             resourceType: 'CodeSystem',
             id: 'custom-cs',
-            url: 'https://example.org/CodeSystem/custom'
+            url: 'https://example.org/CodeSystem/custom',
+            concept: [{ code: 'CUSTOM', display: 'Custom concept' }]
           }]
         }
       }
@@ -576,7 +578,8 @@ describe('TerminologyServices', () => {
           'acme.terminology': [{
             resourceType: 'CodeSystem',
             id: 'custom-cs',
-            url: 'https://example.org/CodeSystem/custom'
+            url: 'https://example.org/CodeSystem/custom',
+            concept: [{ code: 'CUSTOM', display: 'Custom concept' }]
           }]
         }
       }
@@ -678,6 +681,8 @@ describe('TerminologyServices', () => {
 
     expect(providers.some(provider => provider.id === 'pkg-hl7-terminology-r4'))
       .toBe(false);
+    expect(providers.some(provider => provider.id === 'hl7-terminology-r4-package'))
+      .toBe(false);
   });
 
   it('should reject invalid package provider overrides', () => {
@@ -722,6 +727,54 @@ describe('TerminologyServices', () => {
         }
       }
     })).toThrow('Component label references unknown CodeSystem');
+  });
+
+  it('warns and skips an explicitly configured package without CodeSystems', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const providers = createDefaultPackageProviders({
+      enablePackageDefaults: false,
+      packageAutoDiscovery: false,
+      packageDiscovery: {
+        enabled: true,
+        include: ['empty.terminology'],
+        mode: 'whitelist',
+        packages: {
+          'empty.terminology': []
+        }
+      }
+    });
+
+    expect(providers).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(
+      '[terminology] Package "empty.terminology" has no CodeSystem resources with embedded concepts; skipping.'
+    );
+    warn.mockRestore();
+  });
+
+  it('warns and skips a package CodeSystem without embedded concepts', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const providers = createDefaultPackageProviders({
+      enablePackageDefaults: false,
+      packageAutoDiscovery: false,
+      packageDiscovery: {
+        enabled: true,
+        include: ['empty.terminology'],
+        mode: 'whitelist',
+        packages: {
+          'empty.terminology': [{
+            resourceType: 'CodeSystem',
+            id: 'empty',
+            url: 'https://example.test/CodeSystem/empty'
+          }]
+        }
+      }
+    });
+
+    expect(providers).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(
+      '[terminology] Package "empty.terminology" has no CodeSystem resources with embedded concepts; skipping.'
+    );
+    warn.mockRestore();
   });
 
   it('should search all CodeSystems through a package provider', async () => {

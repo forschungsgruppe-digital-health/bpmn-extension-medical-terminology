@@ -37,4 +37,38 @@ describe('loadCodeSystemFromFhir()', () => {
       loadCodeSystemFromFhir('http://example.com/missing', 'https://example.com/fhir', fetchFn)
     ).rejects.toThrow('is not available');
   });
+
+  it('forwards the configured fetch function to a dynamically loaded provider', async () => {
+    const fetchFn = vi.fn(async url => {
+      if (url.includes('/CodeSystem?')) {
+        return {
+          ok: true,
+          json: async () => ({
+            entry: [{
+              resource: {
+                resourceType: 'CodeSystem',
+                url: 'https://example.test/CodeSystem/empty',
+                title: 'Empty Test CodeSystem'
+              }
+            }]
+          })
+        };
+      }
+
+      return {
+        ok: true,
+        json: async () => ({ expansion: { contains: [], total: 0 } })
+      };
+    });
+
+    const provider = await loadCodeSystemFromFhir(
+      'https://example.test/CodeSystem/empty',
+      'https://example.test/fhir',
+      fetchFn
+    );
+
+    await expect(provider.search('absent')).resolves.toEqual({ concepts: [], total: 0 });
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(fetchFn.mock.calls[1][0]).toContain('/ValueSet/$expand');
+  });
 });

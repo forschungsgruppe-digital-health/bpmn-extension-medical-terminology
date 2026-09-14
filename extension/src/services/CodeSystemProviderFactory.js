@@ -42,6 +42,12 @@ function extractConcepts(items, systemUri, version, concepts) {
   }
 }
 
+export function hasCodeSystemConcepts(codeSystem) {
+  return (codeSystem?.concept || []).some(concept =>
+    Boolean(concept?.code) || hasCodeSystemConcepts(concept)
+  );
+}
+
 /**
  * Create a StaticProvider from a FHIR CodeSystem JSON resource.
  *

@@ -46,6 +46,7 @@ export async function loadCodeSystemFromFhir(systemUrl, fhirBaseUrl, fetchFn) {
     systemUri: systemUrl,
     valueSetUri,
     baseUrl: fhirBaseUrl,
-    version
+    version,
+    fetchFn
   });
 }

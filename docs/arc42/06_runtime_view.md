@@ -86,11 +86,13 @@ const result = await terminologyRegistry.search('pneumonia', 'snomed-ct');
 const concept = await terminologyRegistry.lookup('169069000', 'snomed-ct');
 ```
 
-The registry delegates to the selected provider. `SnomedCtProvider` uses
-Snowstorm or the configured FHIR transport; `FhirProvider` uses FHIR
-`$expand`/`$lookup`; `StaticProvider` searches in-memory concepts. Package
-providers are built from FHIR `CodeSystem` resources and preserve each
-resource's canonical URL in returned concepts.
+The registry delegates to the selected provider. The default SNOMED provider
+is a `FhirProvider` configured for the Ontoserver FHIR endpoint and uses FHIR
+`$expand`/`$lookup`. When an integrator explicitly selects Snowstorm transport,
+the default factory instead registers a `SnomedCtProvider`. `StaticProvider`
+searches in-memory concepts. Package providers are built from FHIR
+`CodeSystem` resources and preserve each resource's canonical URL in returned
+concepts.
 
 ## Scenario 5 — Discover package-backed CodeSystems
 

@@ -87,6 +87,22 @@ describe('FhirTerminologyAdapter', () => {
       expect(calledUrl.searchParams.get('url')).toBe('http://loinc.org/vs');
     });
 
+    it('treats an empty ValueSet expansion as a successful search without matches', async () => {
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: createMockFetch({
+          expansion: {
+            contains: [],
+            total: 0
+          }
+        })
+      });
+
+      await expect(adapter.search({ term: 'absent', limit: 10, offset: 0 }))
+        .resolves.toEqual({ items: [], total: 0 });
+    });
+
     it('should handle inactive concepts', async () => {
       const mockFetch = createMockFetch({
         expansion: {
