@@ -1,4 +1,5 @@
 import { createPackageCollectionProvider } from './TerminologyServices.js';
+import { hasCodeSystemConcepts } from './CodeSystemProviderFactory.js';
 import { resolvePackageMetadata } from './PackageMetadata.js';
 
 export const DEFAULT_DISCOVERY_INCLUDE = Object.freeze([
@@ -379,13 +380,17 @@ export function discoverPackageProviders(packages = {}, config = {}) {
             )
           )
         );
+      const searchableCodeSystems = uniqueCodeSystems.filter(hasCodeSystemConcepts);
       const componentLabels = getComponentLabels(
         config.componentLabels,
         packageKey,
         packageName
       );
 
-      if (!uniqueCodeSystems.length) {
+      if (!searchableCodeSystems.length) {
+        console.warn(
+          `[terminology] Package "${packageName}" has no CodeSystem resources with embedded concepts; skipping.`
+        );
         return [];
       }
 
@@ -394,11 +399,11 @@ export function discoverPackageProviders(packages = {}, config = {}) {
         packageKey,
         packageName,
         packageMetadata,
-        componentLabel: uniqueCodeSystems.length === 1
-          ? componentLabels[uniqueCodeSystems[0].url]
+        componentLabel: searchableCodeSystems.length === 1
+          ? componentLabels[searchableCodeSystems[0].url]
           : undefined,
-        includeCodeSystemName: uniqueCodeSystems.length === 1,
-        codeSystems: uniqueCodeSystems
+        includeCodeSystemName: searchableCodeSystems.length === 1,
+        codeSystems: searchableCodeSystems
       })];
     })
 }

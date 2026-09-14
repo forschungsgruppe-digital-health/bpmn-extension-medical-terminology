@@ -224,6 +224,17 @@ describe('default terminology configuration matrix', () => {
     );
   });
 
+  it('rejects an unsupported SNOMED transport during configuration', () => {
+    expect(() => createDefaultTerminologyConfig({
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      loaderConfig: false,
+      snomedConfig: {
+        transport: 'snowstom'
+      }
+    })).toThrow('Unsupported SNOMED transport "snowstom". Expected "fhir" or "snowstorm".');
+  });
+
   it('enablePackageDefaults: false registers explicit packageDiscovery.packages', async () => {
     const services = createDefaultTerminologyServices({
       enablePackageDefaults: false,

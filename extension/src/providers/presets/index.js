@@ -1,4 +1,5 @@
 import { createPackageCollectionProvider } from '../../services/TerminologyServices.js';
+import { hasCodeSystemConcepts } from '../../services/CodeSystemProviderFactory.js';
 import { createPackageKey } from '../../services/PackageMetadata.js';
 
 import iheXdsClassCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDSclassCode.json' with { type: 'json' };
@@ -34,17 +35,17 @@ function collectUniqueCodeSystems(codeSystems) {
     }
 
     seenSystemUris.add(systemUri);
-    uniqueCodeSystems.push(codeSystem);
+    if (hasCodeSystemConcepts(codeSystem)) {
+      uniqueCodeSystems.push(codeSystem);
+    }
   }
 
   return uniqueCodeSystems;
 }
 
-function warnMissingHl7PackageCodeSystems() {
+function warnMissingPackageConcepts(packageName) {
   console.warn(
-    '[terminology] No CodeSystem JSON resources were found for "hl7.terminology.r4". ' +
-    'The default HL7 package preset will be skipped. ' +
-    'Use packageAutoDiscovery or pass `hl7CodeSystems` to supply a package-backed provider.'
+    `[terminology] Package "${packageName}" has no CodeSystem resources with embedded concepts; skipping.`
   );
 }
 
@@ -92,8 +93,7 @@ const PACKAGE_PROVIDER_PRESETS = Object.freeze({
     id: 'hl7-terminology-r4-package',
     packageName: 'hl7.terminology.r4',
     normalizeDefaultTitle: true,
-    resolveCodeSystems: config => config.codeSystems || loadHl7TerminologyR4CodeSystems(),
-    returnNullIfEmpty: true
+    resolveCodeSystems: config => config.codeSystems || loadHl7TerminologyR4CodeSystems()
   }),
   'ihe-xds-class': Object.freeze({
     id: 'ihe-xds-class',
@@ -119,10 +119,10 @@ export function createPackagePresetProvider(presetId, config = {}) {
     throw new Error(`Unknown package preset "${presetId}".`);
   }
 
-  const codeSystems = preset.resolveCodeSystems(config);
+  const codeSystems = collectUniqueCodeSystems(preset.resolveCodeSystems(config) || []);
 
-  if (preset.returnNullIfEmpty && (!codeSystems || !codeSystems.length)) {
-    warnMissingHl7PackageCodeSystems();
+  if (!codeSystems.length) {
+    warnMissingPackageConcepts(preset.packageName);
     return null;
   }
 

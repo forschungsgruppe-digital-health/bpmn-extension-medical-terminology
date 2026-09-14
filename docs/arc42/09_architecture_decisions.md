@@ -12,6 +12,7 @@ ADRs.
 |---|---|---|
 | [ADR-0001](../adr/0001-versioning-and-release-please.md) | Keep one release SemVer across extension artifacts while leaving the `term:` namespace URI stable | Release automation, descriptor compatibility, generated XSD |
 | [ADR-0002](../adr/0002-bundled-terminology-defaults.md) | Bundle default FHIR terminology packages as runtime dependencies and expose their providers without mandatory consumer discovery setup | Default service configuration and package-backed CodeSystems |
+| [ADR-0003](../adr/0003-bound-automatic-package-discovery.md) | Limit automatic package discovery to the bundled HL7, IHE XDS, and KDL resources | Vite discovery, runtime package registries, and bundle size |
 
 ## Decision log
 

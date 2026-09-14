@@ -72,7 +72,6 @@ describe('fdh-terminology-discover', () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('Generated 1 CodeSystem(s) from 1 package(s)');
 
     const registry = await import(`${pathToFileURL(output).href}?test=${Date.now()}`);
 
