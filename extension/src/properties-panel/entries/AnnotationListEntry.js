@@ -40,6 +40,7 @@ export function AnnotationListEntry(props) {
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [formError, setFormError] = useState('');
   const searchRequestSequence = useRef(0);
+  const searchAbortController = useRef(null);
   const searchBlurTimeout = useRef(null);
   const searchSuggestionItemRefs = useRef([]);
   const searchInputRef = useRef(null);
@@ -138,6 +139,10 @@ export function AnnotationListEntry(props) {
       return `${providerName} redirected the search request. Use a redirect-free endpoint or a host-owned same-origin endpoint.`;
     }
 
+    if (error?.kind === 'timeout') {
+      return `${providerName} did not respond in time. Please try again.`;
+    }
+
     return `${providerName} could not be reached. Check your network connection and server URL.`;
   }
 
@@ -227,6 +232,9 @@ export function AnnotationListEntry(props) {
 
   async function runSearch(term, providerId) {
     const normalizedTerm = term.trim();
+    searchAbortController.current?.abort();
+    const abortController = new AbortController();
+    searchAbortController.current = abortController;
     const requestId = ++searchRequestSequence.current;
 
     setSearchError('');
@@ -267,7 +275,7 @@ export function AnnotationListEntry(props) {
         return;
       }
 
-      const searchOptions = { limit: 15, offset: 0 };
+      const searchOptions = { limit: 15, offset: 0, signal: abortController.signal };
       const result = await terminologyRegistry.search(normalizedTerm, resolvedProviderId, searchOptions);
 
       if (requestId !== searchRequestSequence.current) {
@@ -287,11 +295,16 @@ export function AnnotationListEntry(props) {
     } finally {
       if (requestId === searchRequestSequence.current) {
         setSearchBusy(false);
+        if (searchAbortController.current === abortController) {
+          searchAbortController.current = null;
+        }
       }
     }
   }
 
   function resetSearchState() {
+    searchAbortController.current?.abort();
+    searchAbortController.current = null;
     if (searchBlurTimeout.current) {
       clearTimeout(searchBlurTimeout.current);
       searchBlurTimeout.current = null;
@@ -700,10 +713,8 @@ export function AnnotationListEntry(props) {
                   ${isCodingVersionOutdated(c) && html`
                     <span
                       class="coding-version-warning"
-                      role="img"
-                      aria-label="Saved CodeSystem version is not available locally"
                       title="Saved CodeSystem version is not available locally"
-                    >!</span>
+                    >Version unavailable</span>
                   `}
                 </div>
               `)}

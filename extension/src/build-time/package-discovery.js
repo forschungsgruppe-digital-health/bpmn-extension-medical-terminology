@@ -24,7 +24,8 @@ function readFhirIndex(packageDir) {
 
   try {
     return JSON.parse(readFileSync(indexPath, 'utf-8'));
-  } catch {
+  } catch (error) {
+    console.warn(`[fdh-terminology] Could not read FHIR package index "${indexPath}": ${error.message}`);
     return null;
   }
 }
@@ -85,7 +86,8 @@ export function readPackageMetadata(packageDir, packageName) {
     }
 
     return Object.keys(metadata).length > 0 ? metadata : null;
-  } catch {
+  } catch (error) {
+    console.warn(`[fdh-terminology] Could not read package metadata "${join(packageDir, 'package.json')}": ${error.message}`);
     return null;
   }
 }
@@ -173,8 +175,8 @@ function findPackageRoot(startDir, expectedPackageName) {
         if (pkg?.name === expectedPackageName) {
           return currentDir;
         }
-      } catch {
-        // Ignore malformed package.json and keep walking up.
+      } catch (error) {
+        console.warn(`[fdh-terminology] Could not read package metadata "${packageJsonPath}": ${error.message}`);
       }
     }
 
@@ -197,8 +199,8 @@ function findPackageDirInNodeModules(baseDir, packageName) {
         if (pkg?.name === packageName) {
           return candidateDir;
         }
-      } catch {
-        // Ignore malformed package.json and continue searching upwards.
+      } catch (error) {
+        console.warn(`[fdh-terminology] Could not read package metadata "${packageJsonPath}": ${error.message}`);
       }
     }
 
@@ -245,7 +247,8 @@ function readPackageDependenciesFromPackageJson(packageJsonPath) {
       ...Object.keys(pkg.dependencies || {}),
       ...Object.keys(pkg.devDependencies || {})
     ];
-  } catch {
+  } catch (error) {
+    console.warn(`[fdh-terminology] Could not read package dependencies "${packageJsonPath}": ${error.message}`);
     return [];
   }
 }

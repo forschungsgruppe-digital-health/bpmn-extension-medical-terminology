@@ -427,7 +427,11 @@ describe('terminology properties panel UI', () => {
       expect(screen.getByText('No matching terminology concepts found.')).toBeTruthy();
     });
 
-    expect(search).toHaveBeenCalledWith('unknown term', 'loinc', { limit: 15, offset: 0 });
+    expect(search).toHaveBeenCalledWith('unknown term', 'loinc', expect.objectContaining({
+      limit: 15,
+      offset: 0,
+      signal: expect.any(AbortSignal)
+    }));
     expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
   });
 
@@ -845,7 +849,8 @@ describe('terminology properties panel UI', () => {
 
     expect(outdatedCoding).toBeTruthy();
     expect(warning).toBeTruthy();
-    expect(warning.getAttribute('aria-label'))
+    expect(warning.textContent).toBe('Version unavailable');
+    expect(warning.getAttribute('title'))
       .toBe('Saved CodeSystem version is not available locally');
     expect(isCodeSystemVersionOutdated).toHaveBeenCalledWith(
       'http://snomed.info/sct',

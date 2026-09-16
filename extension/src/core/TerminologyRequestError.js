@@ -9,18 +9,22 @@ export class TerminologyRequestError extends Error {
   }
 }
 
-export function createRequestError(response, requestUrl, { cause } = {}) {
+export function createRequestError(response, requestUrl, { cause, kind: explicitKind } = {}) {
   const host = new URL(requestUrl).host;
   const status = response?.status;
   const isRedirect = response?.redirected
     || response?.type === 'opaqueredirect'
     || (status >= 300 && status < 400);
-  const kind = isRedirect
+  const kind = explicitKind || (isRedirect
     ? 'redirect'
     : !status
     ? 'network'
-    : (status === 401 || status === 403 ? 'authorization' : 'server');
-  const message = isRedirect
+    : (status === 401 || status === 403 ? 'authorization' : 'server'));
+  const message = kind === 'timeout'
+    ? `Terminology server ${host} did not respond before the request timed out.`
+    : kind === 'aborted'
+    ? `Terminology request to ${host} was cancelled.`
+    : isRedirect
     ? `Terminology server ${host} redirected the request${status ? ` (HTTP ${status})` : ''}. Configure a redirect-free endpoint or a host-owned same-origin endpoint.`
     : status
     ? `Terminology server ${host} returned HTTP ${status}.`

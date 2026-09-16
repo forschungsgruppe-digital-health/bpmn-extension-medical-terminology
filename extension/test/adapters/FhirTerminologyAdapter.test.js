@@ -4,6 +4,7 @@ import { FhirTerminologyAdapter } from '../../src/adapters/FhirTerminologyAdapte
 function createMockFetch(responseBody, ok = true) {
   return vi.fn(async () => ({
     ok,
+    status: ok ? 200 : 500,
     json: async () => responseBody
   }));
 }
@@ -150,6 +151,41 @@ describe('FhirTerminologyAdapter', () => {
           kind: 'network',
           host: 'fhir.bfarm.de'
         });
+    });
+
+    it('classifies an externally aborted search request', async () => {
+      const controller = new AbortController();
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: vi.fn((_, { signal }) => new Promise((_, reject) => {
+          signal.addEventListener('abort', () => reject(new Error('aborted')));
+        }))
+      });
+
+      const result = adapter.search({ term: 'test', limit: 10, offset: 0, signal: controller.signal });
+      controller.abort();
+
+      await expect(result).rejects.toMatchObject({ kind: 'aborted' });
+    });
+
+    it('enforces the configured search request timeout', async () => {
+      vi.useFakeTimers();
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        requestTimeoutMs: 100,
+        fetchFn: vi.fn((_, { signal }) => new Promise((_, reject) => {
+          signal.addEventListener('abort', () => reject(new Error('timed out')));
+        }))
+      });
+
+      const result = adapter.search({ term: 'test', limit: 10, offset: 0 });
+      const assertion = expect(result).rejects.toMatchObject({ kind: 'timeout' });
+      await vi.advanceTimersByTimeAsync(100);
+
+      await assertion;
+      vi.useRealTimers();
     });
 
     it('should reject with a data error for an invalid expansion response', async () => {
@@ -321,26 +357,35 @@ describe('FhirTerminologyAdapter', () => {
       expect(calledUrl.searchParams.get('version')).toBe('2025.0.0');
     });
 
-    it('should return null on non-OK response', async () => {
+    it('should return null only when the code is not found', async () => {
       const adapter = new FhirTerminologyAdapter({
         baseUrl: BASE_URL,
         systemUri: SYSTEM_URI,
-        fetchFn: createMockFetch({}, false)
+        fetchFn: vi.fn(async () => ({ ok: false, status: 404 }))
       });
 
       const concept = await adapter.lookup('INVALID');
       expect(concept).toBeNull();
     });
 
-    it('should return null on fetch error', async () => {
+    it('should propagate a network failure', async () => {
       const adapter = new FhirTerminologyAdapter({
         baseUrl: BASE_URL,
         systemUri: SYSTEM_URI,
         fetchFn: vi.fn(async () => { throw new Error('network error'); })
       });
 
-      const concept = await adapter.lookup('INVALID');
-      expect(concept).toBeNull();
+      await expect(adapter.lookup('INVALID')).rejects.toMatchObject({ kind: 'network' });
+    });
+
+    it('should propagate server failures instead of treating them as a missing code', async () => {
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: vi.fn(async () => ({ ok: false, status: 503 }))
+      });
+
+      await expect(adapter.lookup('INVALID')).rejects.toMatchObject({ kind: 'server', status: 503 });
     });
 
     it('should set Accept: application/fhir+json header', async () => {

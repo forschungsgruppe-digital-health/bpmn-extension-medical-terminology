@@ -46,7 +46,8 @@ export class FhirProvider extends TerminologyProvider {
       lookupParameters: config.lookupParameters,
       auth: config.auth,
       fetchFn: config.fetchFn,
-      headers: config.headers
+      headers: config.headers,
+      requestTimeoutMs: config.requestTimeoutMs
     });
   }
 
@@ -67,7 +68,8 @@ export class FhirProvider extends TerminologyProvider {
       result = await this._adapter.search({
         term,
         limit: options.limit ?? this._maxResults,
-        offset: options.offset ?? 0
+        offset: options.offset ?? 0,
+        signal: options.signal
       });
     } catch (error) {
       console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);

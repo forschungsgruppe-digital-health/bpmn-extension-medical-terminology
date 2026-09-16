@@ -4,6 +4,7 @@ import { SnowstormAdapter } from '../../src/adapters/SnowstormAdapter.js';
 function createMockFetch(responseBody, ok = true) {
   return vi.fn(async () => ({
     ok,
+    status: ok ? 200 : 500,
     json: async () => responseBody
   }));
 }
@@ -143,6 +144,19 @@ describe('SnowstormAdapter', () => {
         });
     });
 
+    it('forwards an abort signal for an in-flight search', async () => {
+      const controller = new AbortController();
+      const mockFetch = vi.fn((_, { signal }) => new Promise((_, reject) => {
+        signal.addEventListener('abort', () => reject(new Error('aborted')));
+      }));
+      const adapter = new SnowstormAdapter({ baseUrl: BASE_URL, fetchFn: mockFetch });
+
+      const result = adapter.search({ term: 'test', limit: 5, offset: 0, signal: controller.signal });
+      controller.abort();
+
+      await expect(result).rejects.toMatchObject({ kind: 'aborted' });
+    });
+
     it('classifies an HTTP redirect as a redirect error', async () => {
       const adapter = new SnowstormAdapter({
         baseUrl: BASE_URL,
@@ -232,8 +246,11 @@ describe('SnowstormAdapter', () => {
       expect(concept.version).toBe('20240901');
     });
 
-    it('should return null for non-OK response', async () => {
-      const adapter = new SnowstormAdapter({ baseUrl: BASE_URL, fetchFn: createMockFetch({}, false) });
+    it('should return null when a concept is not found', async () => {
+      const adapter = new SnowstormAdapter({
+        baseUrl: BASE_URL,
+        fetchFn: vi.fn(async () => ({ ok: false, status: 404 }))
+      });
       const concept = await adapter.lookup('INVALID');
       expect(concept).toBeNull();
     });
@@ -251,10 +268,12 @@ describe('SnowstormAdapter', () => {
       expect(parents[0].code).toBe('71388002');
     });
 
-    it('should return empty array on error', async () => {
-      const adapter = new SnowstormAdapter({ baseUrl: BASE_URL, fetchFn: createMockFetch({}, false) });
-      const parents = await adapter.getParents('INVALID');
-      expect(parents).toEqual([]);
+    it('should propagate a hierarchy server failure', async () => {
+      const adapter = new SnowstormAdapter({
+        baseUrl: BASE_URL,
+        fetchFn: vi.fn(async () => ({ ok: false, status: 503 }))
+      });
+      await expect(adapter.getParents('INVALID')).rejects.toMatchObject({ kind: 'server', status: 503 });
     });
   });
 
