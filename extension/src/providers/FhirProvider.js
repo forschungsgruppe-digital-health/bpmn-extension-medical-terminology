@@ -4,6 +4,7 @@ import { FhirTerminologyAdapter } from '../adapters/FhirTerminologyAdapter.js';
 /**
  * Generic provider for any code system hosted on a FHIR Terminology Server.
  * Reusable for LOINC, ICD-10-GM, OPS, ATC, ICD-O-3, etc.
+ * @category Providers
  */
 export class FhirProvider extends TerminologyProvider {
 

@@ -5,6 +5,9 @@ function getResultItems(result) {
   return Array.isArray(items) ? items : [];
 }
 
+/**
+ * @category Providers
+ */
 export class FallbackProvider extends TerminologyProvider {
 
   /**

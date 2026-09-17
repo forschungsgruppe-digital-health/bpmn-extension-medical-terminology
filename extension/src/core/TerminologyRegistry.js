@@ -8,6 +8,7 @@
  *
  *   const results = await registry.search('pneumonia', 'snomed-ct');
  *   const concept = await registry.lookup('169069000', 'snomed-ct');
+ * @category Extensibility
  */
 export class TerminologyRegistry {
 

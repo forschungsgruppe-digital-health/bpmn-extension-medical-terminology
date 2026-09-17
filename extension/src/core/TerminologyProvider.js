@@ -16,6 +16,7 @@
  * @property {string} displayName - Human-readable name
  * @property {string} systemUri - CodeSystem URI (e.g. 'http://snomed.info/sct')
  * @property {import('./types.js').TerminologyCapabilities} capabilities
+ * @category Extensibility
  */
 export class TerminologyProvider {
 

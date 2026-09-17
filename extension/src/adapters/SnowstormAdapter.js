@@ -34,6 +34,9 @@ export function resolveSnowstormBaseUrl(baseUrl) {
   return new URL(rawBaseUrl, origin).toString().replace(/\/$/, '');
 }
 
+/**
+ * @category Extensibility
+ */
 export class SnowstormAdapter {
 
   /**

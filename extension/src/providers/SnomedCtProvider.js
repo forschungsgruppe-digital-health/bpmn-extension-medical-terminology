@@ -12,6 +12,9 @@ function applyProviderVersion(concept, version) {
   return { ...concept, version };
 }
 
+/**
+ * @category Providers
+ */
 export class SnomedCtProvider extends TerminologyProvider {
 
   /**

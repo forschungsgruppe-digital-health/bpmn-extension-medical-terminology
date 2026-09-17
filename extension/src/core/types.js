@@ -33,6 +33,7 @@
 /**
  * A FHIR R4 ValueSet expansion contains entry.
  * @typedef {fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
+ * @category Core types
  */
 
 /**
@@ -66,12 +67,14 @@
  * @property {string} [version] - Code system version (maps to fhir4.Coding.version)
  * @property {boolean} [active] - Whether the concept is active
  * @property {Record<string, unknown>} [properties] - Provider-specific extras
+ * @category Core types
  */
 
 /**
  * @typedef {Object} SearchResult
  * @property {Concept[]} concepts
  * @property {number} [total] - Total matches when the provider can supply it
+ * @category Core types
  */
 
 /**
@@ -81,6 +84,7 @@
  * @property {string} [language]
  * @property {boolean} [activeOnly]
  * @property {Record<string, string>} [filter] - Provider-specific filters
+ * @category Core types
  */
 
 /**
@@ -89,6 +93,7 @@
  * @property {boolean} lookup
  * @property {boolean} hierarchy
  * @property {boolean} validate
+ * @category Core types
  */
 
 /**
@@ -98,4 +103,5 @@
  * @property {typeof fetch} [fetchFn]
  * @property {number} [timeoutMs]
  * @property {Record<string, string>} [headers]
+ * @category Core types
  */

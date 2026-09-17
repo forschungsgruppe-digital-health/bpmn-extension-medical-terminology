@@ -8,7 +8,7 @@
     "typedoc-plugin-markdown",
     "typedoc-plugin-coverage"
   ],
-  "out": "docs-site/src/content/docs/api",
+  "out": "docs-site/.typedoc-out",
   "excludeInternal": true,
   "excludePrivate": true,
   "exclude": [
@@ -38,7 +38,7 @@
   "coverageOutputType": "json",
   "coverageOutputPath": "docs-site/.typedoc-coverage.json",
   "skipErrorChecking": true,
-  "defaultCategory": "Other",
+  "defaultCategory": "Core types",
   "categoryOrder": [
     "Getting started",
     "Configuration",
@@ -46,9 +46,9 @@
     "Extensibility",
     "Annotations",
     "Properties panel",
+    "Core types",
     "XML schema",
     "Discovery",
-    "Internal helpers",
-    "Other"
+    "Internal helpers"
   ]
 }

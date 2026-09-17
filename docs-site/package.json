@@ -1,0 +1,21 @@
+{
+  "name": "bpmn-terminology-docs-site",
+  "private": true,
+  "type": "module",
+  "description": "Documentation site for the medical terminology BPMN extension. Deliberately not an npm workspace: it is a documentation artefact, not part of the published package, and keeping it out of the workspace set keeps its dependency tree away from every other install.",
+  "scripts": {
+    "predev": "node scripts/import-repo-docs.mjs && node scripts/build-api-sidebar.mjs",
+    "dev": "astro dev",
+    "prebuild": "node scripts/import-repo-docs.mjs && node scripts/build-api-sidebar.mjs",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.42.1",
+    "astro": "^7.3.3",
+    "starlight-typedoc": "^0.23.1",
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.13.0"
+  }
+}

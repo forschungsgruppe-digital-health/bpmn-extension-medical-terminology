@@ -45,6 +45,7 @@ function resolveBaseUrl(baseUrl) {
  * @typedef {fhir4.ParametersParameter} FhirParametersParameter
  * @typedef {import('../core/types.js').Concept} Concept
  * @typedef {import('../core/types.js').ConnectionConfig} ConnectionConfig
+ * @category Extensibility
  */
 
 export class FhirTerminologyAdapter {
