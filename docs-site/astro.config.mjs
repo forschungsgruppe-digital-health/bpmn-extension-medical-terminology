@@ -10,6 +10,41 @@ import { readFileSync } from 'node:fs';
 // what it is for, so the generated one replaces it.
 const apiSidebar = JSON.parse(readFileSync(new URL('./src/generated/api-sidebar.json', import.meta.url), 'utf8'));
 
+
+const SITE_BASE = '/bpmn-extension-medical-terminology';
+
+/**
+ * Prefix root-relative links written in Markdown with the site base.
+ *
+ * Astro rewrites links it generates, but not the ones you write yourself, so
+ * `[schema](/schema/)` in a page would resolve to the domain root and 404 with
+ * no build error. Rewriting them here keeps the content base-agnostic: pages
+ * are written as if the site were at the root, which is also how they read on
+ * GitHub.
+ */
+function rehypeBaseLinks() {
+  return tree => {
+    const visit = node => {
+      if (node.type === 'element' && node.properties) {
+        for (const attribute of ['href', 'src']) {
+          const value = node.properties[attribute];
+          if (
+            typeof value === 'string' &&
+            value.startsWith('/') &&
+            !value.startsWith('//') &&
+            value !== SITE_BASE &&
+            !value.startsWith(`${SITE_BASE}/`)
+          ) {
+            node.properties[attribute] = SITE_BASE + value;
+          }
+        }
+      }
+      for (const child of node.children || []) visit(child);
+    };
+    visit(tree);
+  };
+}
+
 const REPO = 'https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 export default defineConfig({
@@ -18,12 +53,17 @@ export default defineConfig({
   // `site` builds absolute URLs for the sitemap and Open Graph tags, `base`
   // prefixes every internal link and asset.
   site: 'https://forschungsgruppe-digital-health.github.io',
-  base: '/bpmn-extension-medical-terminology',
+  base: SITE_BASE,
   trailingSlash: 'always',
+
+  markdown: {
+    rehypePlugins: [rehypeBaseLinks]
+  },
 
   integrations: [
     starlight({
       title: 'BPMN Medical Terminology',
+      favicon: '/favicon.svg',
       description:
         'Bind coded concepts from clinical code systems to BPMN elements, in the BPMN file itself.',
       lastUpdated: true,

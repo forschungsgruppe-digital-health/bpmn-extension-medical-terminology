@@ -38,6 +38,7 @@
     "docs:dev": "npm run docs:api && npm --prefix docs-site run dev",
     "docs:build": "npm run docs:api && npm --prefix docs-site run build",
     "docs:preview": "npm --prefix docs-site run preview",
+    "docs:links": "node tools/check-site-links.mjs",
     "verify": "npm run check:packages && npm run generate:hl7:check && npm run check:conformance && npm test",
     "hooks:install": "node tools/setup-hooks.mjs",
     "prepare": "node tools/setup-hooks.mjs"
