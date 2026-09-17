@@ -40,20 +40,28 @@ export class SnowstormAdapter {
    * @param {Object} config
    * @param {string} config.baseUrl - e.g. 'http://localhost:8080/snowstorm/snomed-ct'
    * @param {string} [config.branch='MAIN']
-   * @param {import('../core/types').ConnectionConfig['auth']} [config.auth]
+   * @param {import('../core/types.js').ConnectionConfig['auth']} [config.auth]
    * @param {typeof fetch} [config.fetchFn]
    * @param {Record<string, string>} [config.headers]
    * @param {number} [config.requestTimeoutMs=15000]
    */
   constructor(config) {
+    /** @internal */
     this._baseUrl = resolveSnowstormBaseUrl(config.baseUrl);
+    /** @internal */
     this._branch = config.branch || 'MAIN';
+    /** @internal */
     this._auth = config.auth;
+    /** @internal */
     this._fetch = config.fetchFn || globalThis.fetch.bind(globalThis);
+    /** @internal */
     this._extraHeaders = config.headers || {};
+    /** @internal */
     this._requestTimeoutMs = config.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     // language config
+    /** @internal */
     this._languageStrategy = config.languageStrategy ?? languageConfig.languageStrategy ?? 'param';
+    /** @internal */
     this._configuredLanguage = config.language ?? languageConfig.language;
   }
 
@@ -65,7 +73,7 @@ export class SnowstormAdapter {
    * @param {string} [params.language]
    * @param {Record<string, string>} [params.additionalParams]
    * @param {AbortSignal} [params.signal]
-   * @returns {Promise<{ items: import('../core/types').Concept[], total?: number }>}
+   * @returns {Promise<{ items: import('../core/types.js').Concept[], total?: number }>}
    */
   async search(params) {
     const url = new URL(`${this._baseUrl}/${this._branch}/concepts`);
@@ -140,7 +148,7 @@ export class SnowstormAdapter {
 
   /**
    * @param {string} code
-   * @returns {Promise<import('../core/types').Concept | null>}
+   * @returns {Promise<import('../core/types.js').Concept | null>}
    */
   async lookup(code) {
     const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${encodeURIComponent(code)}`);
@@ -149,7 +157,7 @@ export class SnowstormAdapter {
 
   /**
    * @param {string} code
-   * @returns {Promise<import('../core/types').Concept[]>}
+   * @returns {Promise<import('../core/types.js').Concept[]>}
    */
   async getParents(code) {
     const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${encodeURIComponent(code)}/parents`);
@@ -158,7 +166,7 @@ export class SnowstormAdapter {
 
   /**
    * @param {string} code
-   * @returns {Promise<import('../core/types').Concept[]>}
+   * @returns {Promise<import('../core/types.js').Concept[]>}
    */
   async getChildren(code) {
     const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${encodeURIComponent(code)}/children`);
@@ -166,6 +174,7 @@ export class SnowstormAdapter {
     return this._getConceptList(url, { allowNotFound: true, allowWrappedItems: true });
   }
 
+  /** @internal */
   async _getConcept(url, { allowNotFound = false } = {}) {
     const res = await this._requestOrThrow(url, { allowNotFound });
     if (!res) return null;
@@ -179,6 +188,7 @@ export class SnowstormAdapter {
     }
   }
 
+  /** @internal */
   async _getConceptList(url, { allowNotFound = false, allowWrappedItems = false } = {}) {
     const res = await this._requestOrThrow(url, { allowNotFound });
     if (!res) return [];
@@ -195,6 +205,7 @@ export class SnowstormAdapter {
     }
   }
 
+  /** @internal */
   async _requestOrThrow(url, { allowNotFound = false } = {}) {
     let res;
     try {
@@ -210,6 +221,7 @@ export class SnowstormAdapter {
     return res;
   }
 
+  /** @internal */
   _resolveLanguage() {
     if (this._configuredLanguage) return normalizeLanguage(this._configuredLanguage);
     const nav = typeof globalThis !== 'undefined' ? globalThis.navigator : undefined;

@@ -7,10 +7,10 @@ import { loadCodeSystemFromFhir } from './FhirCodeSystemLoader.js';
  * terminology server URL.
  *
  * @param {Object} config
- * @param {import('../core/TerminologyRegistry').TerminologyRegistry} config.terminologyRegistry
+ * @param {import('../core/TerminologyRegistry.js').TerminologyRegistry} config.terminologyRegistry
  * @param {string} config.fhirBaseUrl
  * @param {typeof fetch} [config.fetchFn]
- * @param {(systemUri: string, fhirBaseUrl: string, fetchFn?: typeof fetch) => Promise<import('../core/TerminologyProvider').TerminologyProvider>} [config.loadProvider]
+ * @param {(systemUri: string, fhirBaseUrl: string, fetchFn?: typeof fetch) => Promise<import('../core/TerminologyProvider.js').TerminologyProvider>} [config.loadProvider]
  */
 export function createFhirTerminologyProviderLoader(config) {
   const {

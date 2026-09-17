@@ -15,7 +15,7 @@
  * @property {string} id - Unique provider identifier (e.g. 'snomed-ct')
  * @property {string} displayName - Human-readable name
  * @property {string} systemUri - CodeSystem URI (e.g. 'http://snomed.info/sct')
- * @property {import('./types').TerminologyCapabilities} capabilities
+ * @property {import('./types.js').TerminologyCapabilities} capabilities
  */
 export class TerminologyProvider {
 
@@ -28,7 +28,7 @@ export class TerminologyProvider {
   /** @type {string} */
   get systemUri() { throw new Error('Not implemented: systemUri'); }
 
-  /** @type {import('./types').TerminologyCapabilities} */
+  /** @type {import('./types.js').TerminologyCapabilities} */
   get capabilities() {
     return { search: false, lookup: false, hierarchy: false, validate: false };
   }
@@ -36,8 +36,8 @@ export class TerminologyProvider {
   /**
    * Free-text search for concepts.
    * @param {string} term
-   * @param {import('./types').SearchOptions} [options]
-   * @returns {Promise<import('./types').SearchResult>}
+   * @param {import('./types.js').SearchOptions} [options]
+   * @returns {Promise<import('./types.js').SearchResult>}
    */
   async search(term, options) {
     throw new Error('Not implemented: search()');
@@ -46,7 +46,7 @@ export class TerminologyProvider {
   /**
    * Look up a single concept by code.
    * @param {string} code
-   * @returns {Promise<import('./types').Concept | null>}
+   * @returns {Promise<import('./types.js').Concept | null>}
    */
   async lookup(code) {
     throw new Error('Not implemented: lookup()');
@@ -68,7 +68,7 @@ export class TerminologyProvider {
   /**
    * Navigate the hierarchy (parents/children). Optional.
    * @param {string} code
-   * @returns {Promise<{ parents: import('./types').Concept[], children: import('./types').Concept[] }>}
+   * @returns {Promise<{ parents: import('./types.js').Concept[], children: import('./types.js').Concept[] }>}
    */
   async getHierarchy(code) {
     return { parents: [], children: [] };

@@ -18,16 +18,22 @@ export class FhirProvider extends TerminologyProvider {
    * @param {string} [config.language]
    * @param {Record<string, string>} [config.expandParameters]
    * @param {Record<string, string>} [config.lookupParameters]
-   * @param {import('../core/types').ConnectionConfig['auth']} [config.auth]
+   * @param {import('../core/types.js').ConnectionConfig['auth']} [config.auth]
    * @param {typeof fetch} [config.fetchFn]
    */
   constructor(config) {
     super();
+    /** @internal */
     this._id = config.id;
+    /** @internal */
     this._displayName = config.displayName;
+    /** @internal */
     this._systemUri = config.systemUri;
+    /** @internal */
     this._sourceType = 'api';
+    /** @internal */
     this._sourceLabel = new URL(config.baseUrl).host;
+    /** @internal */
     this._version = config.version
       || config.lookupParameters?.version
       || config.expandParameters?.valueSetVersion
@@ -35,9 +41,11 @@ export class FhirProvider extends TerminologyProvider {
       || (typeof config.expandParameters?.['system-version'] === 'string'
         ? config.expandParameters['system-version'].split('|')[1]
         : undefined);
+    /** @internal */
     this._maxResults = config.maxResults || 15;
     
     // Use valueSetUri for the adapter if provided, otherwise fallback to systemUri
+    /** @internal */
     this._adapter = new FhirTerminologyAdapter({
       baseUrl: config.baseUrl,
       systemUri: config.systemUri,

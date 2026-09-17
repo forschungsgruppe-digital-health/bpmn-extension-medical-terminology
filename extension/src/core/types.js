@@ -17,37 +17,37 @@
  * Our internal Concept type is a superset of fhir4.Coding with
  * additional provider-specific properties.
  *
- * @typedef {import('@types/fhir').fhir4.Coding} FhirCoding
+ * @typedef {fhir4.Coding} FhirCoding
  */
 
 /**
  * A FHIR R4 CodeableConcept — wraps one or more Codings.
- * @typedef {import('@types/fhir').fhir4.CodeableConcept} FhirCodeableConcept
+ * @typedef {fhir4.CodeableConcept} FhirCodeableConcept
  */
 
 /**
  * A FHIR R4 ValueSet — used by ValueSet/$expand responses.
- * @typedef {import('@types/fhir').fhir4.ValueSet} FhirValueSet
+ * @typedef {fhir4.ValueSet} FhirValueSet
  */
 
 /**
  * A FHIR R4 ValueSet expansion contains entry.
- * @typedef {import('@types/fhir').fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
+ * @typedef {fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
  */
 
 /**
  * A FHIR R4 CodeSystem — used by CodeSystem/$lookup responses.
- * @typedef {import('@types/fhir').fhir4.CodeSystem} FhirCodeSystem
+ * @typedef {fhir4.CodeSystem} FhirCodeSystem
  */
 
 /**
  * A FHIR R4 Parameters resource — used for $lookup responses.
- * @typedef {import('@types/fhir').fhir4.Parameters} FhirParameters
+ * @typedef {fhir4.Parameters} FhirParameters
  */
 
 /**
  * A FHIR R4 Bundle — used when searching for CodeSystem resources.
- * @typedef {import('@types/fhir').fhir4.Bundle} FhirBundle
+ * @typedef {fhir4.Bundle} FhirBundle
  */
 
 // ─── Internal Types ─────────────────────────────────────────
