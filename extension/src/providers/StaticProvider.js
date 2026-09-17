@@ -3,6 +3,7 @@ import { TerminologyProvider } from '../core/TerminologyProvider.js';
 /**
  * Provider for small, static code systems loaded from memory.
  * No server required. Suitable for IHE XDS codes, KDL, custom value sets.
+ * @category Providers
  */
 export class StaticProvider extends TerminologyProvider {
 
@@ -10,15 +11,20 @@ export class StaticProvider extends TerminologyProvider {
    * @param {string} id
    * @param {string} displayName
    * @param {string} systemUri
-   * @param {import('../core/types').Concept[]} concepts
+   * @param {import('../core/types.js').Concept[]} concepts
    * @param {string} [version]
    */
   constructor(id, displayName, systemUri, concepts, version) {
     super();
+    /** @internal */
     this._id = id;
+    /** @internal */
     this._displayName = displayName;
+    /** @internal */
     this._systemUri = systemUri;
+    /** @internal */
     this._concepts = concepts;
+    /** @internal */
     this._version = version;
   }
 

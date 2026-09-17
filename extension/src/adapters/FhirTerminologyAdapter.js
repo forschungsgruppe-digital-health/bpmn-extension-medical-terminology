@@ -39,12 +39,13 @@ function resolveBaseUrl(baseUrl) {
 }
 
 /**
- * @typedef {import('@types/fhir').fhir4.ValueSet} FhirValueSet
- * @typedef {import('@types/fhir').fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
- * @typedef {import('@types/fhir').fhir4.Parameters} FhirParameters
- * @typedef {import('@types/fhir').fhir4.ParametersParameter} FhirParametersParameter
- * @typedef {import('../core/types').Concept} Concept
- * @typedef {import('../core/types').ConnectionConfig} ConnectionConfig
+ * @typedef {fhir4.ValueSet} FhirValueSet
+ * @typedef {fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
+ * @typedef {fhir4.Parameters} FhirParameters
+ * @typedef {fhir4.ParametersParameter} FhirParametersParameter
+ * @typedef {import('../core/types.js').Concept} Concept
+ * @typedef {import('../core/types.js').ConnectionConfig} ConnectionConfig
+ * @category Extensibility
  */
 
 export class FhirTerminologyAdapter {
@@ -62,19 +63,30 @@ export class FhirTerminologyAdapter {
    * @param {number} [config.requestTimeoutMs=15000]
    */
   constructor(config) {
+    /** @internal */
     this._baseUrl = resolveBaseUrl(config.baseUrl);
+    /** @internal */
     this._systemUri = config.systemUri;
+    /** @internal */
     this._valueSetUri = config.valueSetUri || null;
+    /** @internal */
     this._auth = config.auth;
+    /** @internal */
     this._fetch = config.fetchFn || globalThis.fetch.bind(globalThis);
+    /** @internal */
     this._extraHeaders = config.headers || {};
+    /** @internal */
     this._expandParameters = config.expandParameters || {};
+    /** @internal */
     this._lookupParameters = config.lookupParameters || {};
+    /** @internal */
     this._requestTimeoutMs = config.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     // Language configuration:
     // languageStrategy: 'param' (use displayLanguage query param) or 'header' (use Accept-Language header)
+    /** @internal */
     this._languageStrategy = config.languageStrategy ?? languageConfig.languageStrategy ?? 'param';
     // configured language comes from constructor config or central language config file
+    /** @internal */
     this._configuredLanguage = config.language ?? languageConfig.language;
   }
 
@@ -294,11 +306,13 @@ export class FhirTerminologyAdapter {
   }
 
   /**
-   * Perform an authenticated FHIR HTTP request.
+   * Resolve the language tag to request from the terminology server.
    *
-   * @param {URL} url
-   * @param {Record<string,string>} [additionalHeaders]
-   * @returns {Promise<Response>}
+   * Precedence: the explicitly configured language, then the first language
+   * advertised by the browser, then `'en'`. The result is always narrowed to
+   * the primary subtag, so `de-DE` becomes `de`.
+   *
+   * @returns {string} A primary language subtag such as `'de'` or `'en'`.
    * @private
    */
   _resolveLanguage() {
@@ -310,6 +324,18 @@ export class FhirTerminologyAdapter {
     return 'en';
   }
 
+  /**
+   * Perform an authenticated FHIR HTTP request.
+   *
+   * Applies the configured `Accept` header, any headers supplied to the
+   * constructor, and Bearer or Basic credentials when configured.
+   *
+   * @param {URL} url - Fully resolved request URL.
+   * @param {Record<string, string>} [additionalHeaders] - Merged over the configured headers.
+   * @param {AbortSignal} [signal] - Cancels the request when aborted.
+   * @returns {Promise<Response>}
+   * @private
+   */
   async _request(url, additionalHeaders = {}, signal) {
     const headers = { Accept: FHIR_MIME_TYPE, ...this._extraHeaders, ...additionalHeaders };
     if (this._auth?.type === 'Bearer') headers['Authorization'] = `Bearer ${this._auth.token}`;

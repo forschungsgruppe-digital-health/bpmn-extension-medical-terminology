@@ -27,7 +27,12 @@
  * @property {string} lookupOperation - Operation URL for CodeSystem lookup
  */
 
-/** @type {FhirVersionConfig} */
+/**
+ * The FHIR R4 profile: release 4.0.1, and the operation names used against it.
+ *
+ * @type {FhirVersionConfig}
+ * @category Configuration
+ */
 export const FHIR_R4 = Object.freeze({
   version: 'R4',
   fhirRelease: '4.0.1',
@@ -36,7 +41,13 @@ export const FHIR_R4 = Object.freeze({
   lookupOperation: 'CodeSystem/$lookup'
 });
 
-/** @type {FhirVersionConfig} */
+/**
+ * The FHIR R5 profile: release 5.0.0. Declared for a future migration; the
+ * package currently targets R4, see {@link ACTIVE_FHIR_VERSION}.
+ *
+ * @type {FhirVersionConfig}
+ * @category Configuration
+ */
 export const FHIR_R5 = Object.freeze({
   version: 'R5',
   fhirRelease: '5.0.0',
@@ -54,11 +65,15 @@ export const FHIR_R5 = Object.freeze({
  * 3. Run the full test suite to verify compatibility
  *
  * @type {FhirVersionConfig}
+ * @category Configuration
  */
 export const ACTIVE_FHIR_VERSION = FHIR_R4;
 
 /**
- * FHIR mime type for HTTP Accept and Content-Type headers.
+ * FHIR mime type for HTTP `Accept` and `Content-Type` headers, taken from
+ * {@link ACTIVE_FHIR_VERSION}.
+ *
  * @type {string}
+ * @category Configuration
  */
 export const FHIR_MIME_TYPE = ACTIVE_FHIR_VERSION.mimeType;

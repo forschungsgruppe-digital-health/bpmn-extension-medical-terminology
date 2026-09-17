@@ -1,4 +1,4 @@
-import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { is } from 'bpmn-js/lib/util/ModelUtil.js';
 import { AnnotationListEntry } from './entries/AnnotationListEntry.js';
 import { resolveTerminologyPropertiesConfig } from './config.js';
 

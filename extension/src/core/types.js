@@ -17,37 +17,38 @@
  * Our internal Concept type is a superset of fhir4.Coding with
  * additional provider-specific properties.
  *
- * @typedef {import('@types/fhir').fhir4.Coding} FhirCoding
+ * @typedef {fhir4.Coding} FhirCoding
  */
 
 /**
  * A FHIR R4 CodeableConcept — wraps one or more Codings.
- * @typedef {import('@types/fhir').fhir4.CodeableConcept} FhirCodeableConcept
+ * @typedef {fhir4.CodeableConcept} FhirCodeableConcept
  */
 
 /**
  * A FHIR R4 ValueSet — used by ValueSet/$expand responses.
- * @typedef {import('@types/fhir').fhir4.ValueSet} FhirValueSet
+ * @typedef {fhir4.ValueSet} FhirValueSet
  */
 
 /**
  * A FHIR R4 ValueSet expansion contains entry.
- * @typedef {import('@types/fhir').fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
+ * @typedef {fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
+ * @category Core types
  */
 
 /**
  * A FHIR R4 CodeSystem — used by CodeSystem/$lookup responses.
- * @typedef {import('@types/fhir').fhir4.CodeSystem} FhirCodeSystem
+ * @typedef {fhir4.CodeSystem} FhirCodeSystem
  */
 
 /**
  * A FHIR R4 Parameters resource — used for $lookup responses.
- * @typedef {import('@types/fhir').fhir4.Parameters} FhirParameters
+ * @typedef {fhir4.Parameters} FhirParameters
  */
 
 /**
  * A FHIR R4 Bundle — used when searching for CodeSystem resources.
- * @typedef {import('@types/fhir').fhir4.Bundle} FhirBundle
+ * @typedef {fhir4.Bundle} FhirBundle
  */
 
 // ─── Internal Types ─────────────────────────────────────────
@@ -66,12 +67,14 @@
  * @property {string} [version] - Code system version (maps to fhir4.Coding.version)
  * @property {boolean} [active] - Whether the concept is active
  * @property {Record<string, unknown>} [properties] - Provider-specific extras
+ * @category Core types
  */
 
 /**
  * @typedef {Object} SearchResult
  * @property {Concept[]} concepts
  * @property {number} [total] - Total matches when the provider can supply it
+ * @category Core types
  */
 
 /**
@@ -81,6 +84,7 @@
  * @property {string} [language]
  * @property {boolean} [activeOnly]
  * @property {Record<string, string>} [filter] - Provider-specific filters
+ * @category Core types
  */
 
 /**
@@ -89,6 +93,7 @@
  * @property {boolean} lookup
  * @property {boolean} hierarchy
  * @property {boolean} validate
+ * @category Core types
  */
 
 /**
@@ -98,4 +103,5 @@
  * @property {typeof fetch} [fetchFn]
  * @property {number} [timeoutMs]
  * @property {Record<string, string>} [headers]
+ * @category Core types
  */

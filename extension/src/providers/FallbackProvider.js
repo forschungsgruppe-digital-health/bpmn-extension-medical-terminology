@@ -5,6 +5,9 @@ function getResultItems(result) {
   return Array.isArray(items) ? items : [];
 }
 
+/**
+ * @category Providers
+ */
 export class FallbackProvider extends TerminologyProvider {
 
   /**
@@ -34,10 +37,15 @@ export class FallbackProvider extends TerminologyProvider {
       throw new Error('FallbackProvider requires both providers to use the same systemUri.');
     }
 
+    /** @internal */
     this._id = id;
+    /** @internal */
     this._displayName = displayName || primaryProvider.displayName || fallbackProvider.displayName;
+    /** @internal */
     this._systemUri = resolvedSystemUri;
+    /** @internal */
     this._primaryProvider = primaryProvider;
+    /** @internal */
     this._fallbackProvider = fallbackProvider;
   }
 
@@ -116,6 +124,7 @@ export class FallbackProvider extends TerminologyProvider {
     return this._fallbackProvider.getHierarchy(code);
   }
 
+  /** @internal */
   _warnFallback(operation, error) {
     console.warn(
       `[terminology] Primary provider "${this._primaryProvider.id}" failed during ${operation}; using fallback provider "${this._fallbackProvider.id}".`,

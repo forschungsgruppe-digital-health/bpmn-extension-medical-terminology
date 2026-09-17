@@ -45,3 +45,14 @@ coverage/
 
 # Local-only analysis report (intentionally not committed)
 /CODE-HEALTH-TOOLING-REPORT.md
+
+# Documentation site: generated pages and local build output
+docs-site/node_modules/
+docs-site/.astro/
+docs-site/src/content/docs/api/
+docs-site/src/content/docs/architecture/
+docs-site/.typedoc-coverage.json
+docs-site/.typedoc-out/
+
+# Assembled Pages tree (documentation + API reference + demo)
+_site/

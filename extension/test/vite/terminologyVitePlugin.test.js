@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -38,7 +38,10 @@ function createNestedPackage(parentPackageDir, packageName, packageJson, files =
 }
 
 function createTestRoot() {
-  return mkdtempSync(join(tmpdir(), 'fdh-terminology-plugin-'));
+  // realpathSync: on macOS os.tmpdir() is a symlink into /private/var, and Vite
+  // keys its html-proxy cache on the resolved path. Without this the fixture is
+  // requested under one path and cached under another, and the test 404s.
+  return realpathSync(mkdtempSync(join(tmpdir(), 'fdh-terminology-plugin-')));
 }
 
 function runPlugin(root, options) {

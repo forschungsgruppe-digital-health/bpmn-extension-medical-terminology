@@ -54,7 +54,7 @@ export function hasCodeSystemConcepts(codeSystem) {
  * This is useful for local package-backed terminology sources such as
  * `hl7.terminology.r4`, but it also works with any other FHIR CodeSystem JSON.
  *
- * @param {import('@types/fhir').fhir4.CodeSystem} codeSystem
+ * @param {fhir4.CodeSystem} codeSystem
  * @param {{ id?: string, displayName?: string, systemUri?: string }} [options]
  * @returns {StaticProvider}
  */

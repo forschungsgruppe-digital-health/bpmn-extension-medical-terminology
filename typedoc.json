@@ -1,0 +1,55 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "extension/src/index.js"
+  ],
+  "tsconfig": "tsconfig.docs.json",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-coverage"
+  ],
+  "out": "docs-site/.typedoc-out",
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "exclude": [
+    "**/moddle/clinical.json"
+  ],
+  "readme": "none",
+  "githubPages": false,
+  "hidePageHeader": true,
+  "hideBreadcrumbs": true,
+  "useCodeBlocks": true,
+  "expandObjects": true,
+  "parametersFormat": "table",
+  "validation": {
+    "notExported": true,
+    "invalidLink": true,
+    "notDocumented": true
+  },
+  "requiredToBeDocumented": [
+    "Class",
+    "Function",
+    "Method",
+    "Interface",
+    "TypeAlias",
+    "Enum",
+    "Accessor"
+  ],
+  "coverageOutputType": "json",
+  "coverageOutputPath": "docs-site/.typedoc-coverage.json",
+  "skipErrorChecking": true,
+  "defaultCategory": "Core types",
+  "categoryOrder": [
+    "Getting started",
+    "Configuration",
+    "Providers",
+    "Extensibility",
+    "Annotations",
+    "Properties panel",
+    "Core types",
+    "XML schema",
+    "Discovery",
+    "Internal helpers"
+  ],
+  "entryFileName": "index.md"
+}
