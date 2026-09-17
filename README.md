@@ -12,7 +12,11 @@ terminology services, and a Vite plugin for discovering terminology packages.
 All annotations are stored as standard BPMN 2.0 `extensionElements`, so BPMN
 tools that do not understand the extension preserve the model unchanged.
 
-> **Live Demo:** [bpmn-extension-medical-terminology](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
+> **Documentation:** <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/>
+> — guides, the generated API reference, the XML schema and the compatibility matrix.
+>
+> **Live demo:** <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/>
+> — a bpmn-js modeler with the terminology properties-panel group enabled.
 
 ## Funding
 
@@ -134,6 +138,11 @@ application as usual; the terminology styles inherit its fonts, colors, and
 CSS variables.
 
 ## Programmatic Usage
+
+> The documentation site carries an expanded version of this section, including the
+> [default values](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/defaults/) generated from the code and the
+> language options that are not described below:
+> <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/>
 
 ```js
 import {
@@ -712,6 +721,23 @@ the host application's `baseUrl`; that infrastructure is outside this
 package.
 
 ## Documentation
+
+The documentation site at <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/> is the place to start. It carries the guides,
+the API reference generated from the source, the XML schema reference and the compatibility
+matrix, and it is rebuilt from this repository on every push to `main`. Build it locally with
+`npm run docs:install` followed by `npm run docs:dev`.
+
+| Page | Audience | Content |
+|---|---|---|
+| [Use cases](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/use-cases/) | Anyone evaluating the extension | The problem it solves and worked scenarios |
+| [Configuration](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/) | Integrators | Composition roots, providers, servers, authentication, language |
+| [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) | Integrators and modellers | The user-facing surface, its wiring contract and its current limits |
+| [XML schema](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/schema/) | Tooling integrators | Namespace, content model, serialisation, forward compatibility |
+| [Compatibility](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/compatibility/) | Integrators | Supported versions, the bundler-only model, coexistence with other extensions |
+| [Extending](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/extending/) | Contributors | Writing a provider or a transport adapter |
+| [API reference](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/api/) | Developers | Every export, generated from the source |
+
+The repository documents below remain the source for what they cover.
 
 | Document | Audience | Content |
 |---|---|---|
