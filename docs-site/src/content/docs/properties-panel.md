@@ -71,10 +71,15 @@ a panel that looks complete but has no terminology picker. Opening the add form 
 
 > No terminology systems are available right now.
 
+and typing into the search field reports:
+
+> No terminology registry configured (demo without live provider).
+
 It is not silent, but it is easy to misread as "the servers are down". The fix is to add
 `createTerminologyModule(...)` — or `createDefaultTerminologyModule()` — to
-`additionalModules`. The same message also appears when a registry *is* present but every
-registered provider reports `capabilities.search === false`.
+`additionalModules`. The first message also appears when a registry *is* present but every
+registered provider reports `capabilities.search === false`; the second appears only when no
+registry was injected at all.
 :::
 
 ### A complete, working integration
