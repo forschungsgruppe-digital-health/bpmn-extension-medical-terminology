@@ -20,7 +20,7 @@ import { spawnSync } from 'node:child_process';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
-const index = join(repoRoot, 'docs-site', '.typedoc-out', 'README.md');
+const index = join(repoRoot, 'docs-site', '.typedoc-out', 'index.md');
 const target = join(here, '..', 'src', 'generated', 'api-sidebar.json');
 
 if (!existsSync(index)) {

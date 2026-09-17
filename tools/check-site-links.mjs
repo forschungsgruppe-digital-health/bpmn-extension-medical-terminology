@@ -38,11 +38,12 @@ function htmlFiles(directory) {
 
 function resolves(target) {
   const relativePath = target.slice(base.length).replace(/^\//, '');
+  // A bare directory does not resolve: GitHub Pages serves index.html or 404s.
   return [
     join(root, relativePath, 'index.html'),
-    join(root, relativePath),
-    `${join(root, relativePath.replace(/\/$/, ''))}.html`
-  ].some(existsSync);
+    `${join(root, relativePath.replace(/\/$/, ''))}.html`,
+    join(root, relativePath)
+  ].some(candidate => existsSync(candidate) && statSync(candidate).isFile());
 }
 
 const pages = htmlFiles(root);

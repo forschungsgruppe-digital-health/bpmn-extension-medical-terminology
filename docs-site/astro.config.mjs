@@ -78,6 +78,8 @@ export default defineConfig({
           output: 'api',
           typeDoc: {
             plugin: ['typedoc-plugin-markdown'],
+            // Route the reference index at /api/ rather than /api/readme/.
+            entryFileName: 'index.md',
             excludeInternal: true,
             excludePrivate: true,
             exclude: ['**/moddle/clinical.json'],

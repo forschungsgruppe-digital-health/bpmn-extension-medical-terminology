@@ -50,5 +50,6 @@
     "XML schema",
     "Discovery",
     "Internal helpers"
-  ]
+  ],
+  "entryFileName": "index.md"
 }

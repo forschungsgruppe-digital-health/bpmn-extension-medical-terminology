@@ -40,6 +40,7 @@ function quote(value) {
 }
 
 const chapters = readdirSync(source).filter(name => name.endsWith('.md')).sort();
+const imported = [];
 let written = 0;
 
 for (const name of chapters) {
@@ -69,7 +70,32 @@ for (const name of chapters) {
   ].join('\n');
 
   writeFileSync(join(target, name), `${frontmatter}\n${withoutHeading}`);
+  imported.push({ number: Number(number), title, slug: basename });
   written += 1;
 }
+
+// A landing page, so /architecture/ resolves rather than 404ing as a bare
+// sidebar group.
+const indexBody = [
+  '---',
+  'title: "Architecture"',
+  'description: "The arc42 architecture documentation for the terminology extension."',
+  'editUrl: false',
+  'sidebar:',
+  '  order: 0',
+  '---',
+  '',
+  'The architecture is documented with [arc42](https://arc42.org), a twelve-chapter template.',
+  'The chapters are maintained in',
+  '[`docs/arc42/`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42)',
+  'and imported here unchanged, so the repository stays the single source.',
+  '',
+  '| Chapter | Contents |',
+  '| --- | --- |',
+  ...imported.map(entry => `| [${entry.number}. ${entry.title}](/architecture/${entry.slug}/) | arc42 chapter ${entry.number} |`),
+  ''
+].join('\n');
+
+writeFileSync(join(target, 'index.md'), indexBody);
 
 console.log(`Imported ${written} arc42 chapter(s) into src/content/docs/architecture/.`);
