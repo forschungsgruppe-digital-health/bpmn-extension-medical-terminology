@@ -1,0 +1,86 @@
+name: docs-preview
+
+# Builds the full published tree for a pull request and attaches it as a
+# downloadable artifact.
+#
+# GitHub Pages serves one site per repository and its environment accepts
+# deployments from the default branch only, so a branch cannot be previewed at
+# a URL without replacing the live site. Reviewing the artifact costs one
+# download and touches nothing:
+#
+#   gh run download <run-id> --name site-preview --dir preview
+#   npx serve preview          (or any static server)
+
+on:
+  pull_request:
+    paths:
+      - 'docs-site/**'
+      - 'docs/**'
+      - 'extension/src/**'
+      - 'demo/**'
+      - 'tools/generate-config-defaults.mjs'
+      - 'typedoc.json'
+      - 'tsconfig.docs.json'
+      - '.github/workflows/docs-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install package dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install documentation site dependencies
+        run: npm ci --prefix docs-site
+
+      - name: Check documentation types
+        run: npm run docs:types
+
+      - name: Check API documentation coverage
+        run: npm run docs:gate
+
+      - name: Build documentation site
+        run: npm run docs:build
+
+      - name: Build demo application
+        env:
+          BASE_PATH: /bpmn-extension-medical-terminology/demo/
+          BUILD_SOURCEMAP: 'false'
+        run: npm run build
+
+      - name: Assemble the published tree
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          cp -R docs-site/dist/. _site/
+          mkdir -p _site/demo
+          cp -R demo/dist/. _site/demo/
+          {
+            echo "### Documentation preview"
+            echo ""
+            echo "- Pages: $(find _site -name '*.html' | wc -l)"
+            echo "- Files: $(find _site -type f | wc -l)"
+            echo "- Size: $(du -sh _site | cut -f1)"
+            echo ""
+            echo 'Download it with `gh run download ${{ github.run_id }} --name site-preview --dir preview`, then serve the `preview` directory.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload preview
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: site-preview
+          path: _site
+          retention-days: 14
