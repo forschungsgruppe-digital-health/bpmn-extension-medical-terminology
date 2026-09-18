@@ -1,17 +1,14 @@
 import { html } from 'htm/preact';
 import { useEffect, useRef, useState } from '@bpmn-io/properties-panel/preact/hooks';
-import { TextAreaEntry, TextFieldEntry } from '@bpmn-io/properties-panel';
+import { TextAreaEntry, TextFieldEntry, TooltipEntry } from '@bpmn-io/properties-panel';
 import { useService } from 'bpmn-js-properties-panel';
 import {
   getAnnotations,
-  addAnnotation,
   createId,
   getCodingKey,
-  getUsedIds,
-  getUsedCodingKeys,
-  isValidId,
-  removeAnnotation
+  isValidId
 } from '../../services/AnnotationHelper.js';
+import { saveAnnotation, deleteAnnotation } from '../../services/AnnotationModeling.js';
 import {
   normalizeConcepts,
   getSearchResultSummary,
@@ -23,10 +20,12 @@ export function AnnotationListEntry(props) {
   const { element } = props;
   const moddle = useService('moddle');
   const modeling = useService('modeling');
+  const eventBus = useService('eventBus', false);
   const elementRegistry = useService('elementRegistry', false);
   const terminologyRegistry = useService('terminologyRegistry', false);
   const terminologyProviderLoader = useService('terminologyProviderLoader', false);
 
+  const [editingAnnotation, setEditingAnnotation] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState(createEmptyForm());
   const [refreshToken, setRefresh] = useState(0);
@@ -150,44 +149,30 @@ export function AnnotationListEntry(props) {
     return getSearchableProviders().find(provider => provider.id === selectedProviderId) || null;
   }
 
-  function getExistingIds() {
+  function getOtherAnnotations() {
     if (!elementRegistry?.forEach) {
-      return getUsedIds(bo);
+      return getAnnotations(bo).filter(annotation => annotation !== editingAnnotation);
     }
 
-    const ids = [];
-
-    elementRegistry.forEach((registryElement) => {
-      const businessObject = registryElement.businessObject;
-
-      if (!businessObject) {
-        return;
+    const annotations = new Set();
+    elementRegistry.forEach(({ businessObject }) => {
+      if (businessObject) {
+        getAnnotations(businessObject).forEach(annotation => {
+          if (annotation !== editingAnnotation) annotations.add(annotation);
+        });
       }
-
-      ids.push(...getUsedIds(businessObject));
     });
+    return [...annotations];
+  }
 
-    return ids;
+  function getExistingIds() {
+    return getOtherAnnotations().map(annotation => annotation.id).filter(Boolean);
   }
 
   function getExistingCodingKeys() {
-    if (!elementRegistry?.forEach) {
-      return getUsedCodingKeys(bo);
-    }
-
-    const keys = [];
-
-    elementRegistry.forEach((registryElement) => {
-      const businessObject = registryElement.businessObject;
-
-      if (!businessObject) {
-        return;
-      }
-
-      keys.push(...getUsedCodingKeys(businessObject));
-    });
-
-    return keys;
+    return getOtherAnnotations().flatMap(annotation =>
+      (annotation.codings || []).map(getCodingKey).filter(Boolean)
+    );
   }
 
   function getResolvedId(currentFormData) {
@@ -322,6 +307,7 @@ export function AnnotationListEntry(props) {
 
   function resetFormState() {
     searchRequestSequence.current += 1;
+    setEditingAnnotation(null);
     setFormData(createEmptyForm());
     setSelectedProviderId('');
     resetSearchState();
@@ -374,7 +360,7 @@ export function AnnotationListEntry(props) {
     }
 
     if (submit) {
-      handleAdd(nextFormData);
+      handleSave(nextFormData);
     }
   }
 
@@ -382,8 +368,8 @@ export function AnnotationListEntry(props) {
     addCodingToForm(createCodingFromConcept(c), options);
   }
 
-  function handleAdd(nextFormData = formData) {
-    // Prevent adding empty annotations (require free text or at least one coding)
+  function handleSave(nextFormData = formData) {
+    // Require free text or at least one coding when creating or editing.
     const hasText = nextFormData.text && nextFormData.text.trim();
     const hasCodings = nextFormData.codings && nextFormData.codings.length > 0;
 
@@ -421,21 +407,36 @@ export function AnnotationListEntry(props) {
 
     setFormError('');
 
-    addAnnotation(bo, moddle, {
+    if (editingAnnotation && !getAnnotations(bo).includes(editingAnnotation)) {
+      setFormError('This annotation no longer exists. Cancel and reopen the form.');
+      return;
+    }
+
+    saveAnnotation(element, moddle, modeling, {
       id,
       text: nextFormData.text || undefined,
       codings: nextFormData.codings
-    });
-
-    // Force re-render and mark model as changed
-    modeling.updateModdleProperties(element, bo, {});
+    }, editingAnnotation);
     closeForm();
     setRefresh(n => n + 1);
   }
 
-  function handleRemove(index) {
-    removeAnnotation(bo, index);
-    modeling.updateModdleProperties(element, bo, {});
+  function handleEdit(annotation) {
+    resetFormState();
+    setEditingAnnotation(annotation);
+    setFormData({
+      id: annotation.id || '',
+      text: annotation.text || '',
+      codings: (annotation.codings || []).map(({ system, code, display, version }) => ({
+        system, code, display, version
+      }))
+    });
+    setShowForm(true);
+  }
+
+  function handleRemove(annotation) {
+    deleteAnnotation(element, modeling, annotation);
+    if (annotation === editingAnnotation) closeForm();
     setRefresh(n => n + 1);
   }
 
@@ -524,7 +525,7 @@ export function AnnotationListEntry(props) {
       if (e.key === 'Tab' && !e.shiftKey && !searchTerm.trim()) {
         e.preventDefault();
         e.stopPropagation();
-        handleAdd();
+        handleSave();
       }
       return;
     }
@@ -583,7 +584,7 @@ export function AnnotationListEntry(props) {
 
     e.preventDefault();
     e.stopPropagation();
-    handleAdd();
+    handleSave();
   }
 
   function handleRemoveCoding(index) {
@@ -599,6 +600,22 @@ export function AnnotationListEntry(props) {
       setFormError('');
     }
   }
+
+  useEffect(() => {
+    closeForm();
+  }, [bo]);
+
+  useEffect(() => {
+    if (!eventBus) return;
+    const handleChanged = ({ elements }) => {
+      if (elements.includes(element)) {
+        closeForm();
+        setRefresh(current => current + 1);
+      }
+    };
+    eventBus.on('elements.changed', handleChanged);
+    return () => eventBus.off('elements.changed', handleChanged);
+  }, [eventBus, element]);
 
   useEffect(() => {
     if (!terminologyRegistry || typeof terminologyRegistry.on !== 'function' || typeof terminologyRegistry.off !== 'function') {
@@ -692,30 +709,34 @@ export function AnnotationListEntry(props) {
       <!-- Existing annotations list -->
       ${annotations.length > 0 && html`
         <div class="annotation-list">
-          ${annotations.map((ann, i) => html`
+          ${annotations.map((ann) => html`
             <div class="annotation-item annotation-item--saved">
               <div class="annotation-item__header">
                 ${ann.id && html`<code class="coding-code">${ann.id}</code>`}
                 <button
+                  type="button"
+                  class="annotation-item__edit"
+                  aria-label=${`Edit annotation ${ann.id || ''}`}
+                  onClick=${() => handleEdit(ann)}
+                >Edit</button>
+                <button
+                  type="button"
                   class="annotation-item__remove"
                   title="Remove"
-                  onClick=${() => handleRemove(i)}
+                  onClick=${() => handleRemove(ann)}
                 >×</button>
               </div>
               ${ann.text && html`
                 <div class="annotation-item__text">${ann.text}</div>
               `}
-              ${(ann.codings || []).map(c => html`
+              ${(ann.codings || []).map((c, index) => html`
                 <div class="annotation-item__coding ${isCodingVersionOutdated(c) ? 'annotation-item__coding--outdated' : ''}">
-                  <span class="coding-system">${getSystemShortName(c.system, terminologyRegistry)}</span>
-                  <code class="coding-code">${c.code}</code>
-                  ${c.display && html`<span class="coding-display">${c.display}</span>`}
-                  ${isCodingVersionOutdated(c) && html`
-                    <span
-                      class="coding-version-warning"
-                      title="Saved CodeSystem version is not available locally"
-                    >Version unavailable</span>
-                  `}
+                  <${CodingDetails}
+                    coding=${c}
+                    registry=${terminologyRegistry}
+                    outdated=${isCodingVersionOutdated(c)}
+                    tooltipId=${`${element.id}-${ann.id}-coding-${index}`}
+                  />
                 </div>
               `)}
             </div>
@@ -734,9 +755,10 @@ export function AnnotationListEntry(props) {
         </button>
       `}
 
-      <!-- Add form -->
+      <!-- Annotation form -->
       ${showForm && html`
         <div class="annotation-form" onKeyDown=${handleFormKeyDown}>
+          ${editingAnnotation && html`<div class="form-hint">Edit annotation</div>`}
           <${TextFieldEntry}
             element=${bo}
             id="annotation-id"
@@ -799,11 +821,14 @@ export function AnnotationListEntry(props) {
                <label class="bio-properties-panel-label">Selected codings</label>
                <div class="selected-codings">
                   ${formData.codings.map((coding, index) => html`
-                    <div class="selected-coding">
+                    <div class="selected-coding ${isCodingVersionOutdated(coding) ? 'selected-coding--outdated' : ''}">
                       <div class="selected-coding__content">
-                        <span class="coding-system">${getSystemShortName(coding.system, terminologyRegistry)}</span>
-                        <code class="coding-code">${coding.code}</code>
-                        ${coding.display && html`<span class="coding-display">${coding.display}</span>`}
+                        <${CodingDetails}
+                          coding=${coding}
+                          registry=${terminologyRegistry}
+                          outdated=${isCodingVersionOutdated(coding)}
+                          tooltipId=${`${element.id}-selected-coding-${index}`}
+                        />
                       </div>
                       <button
                         type="button"
@@ -873,7 +898,9 @@ export function AnnotationListEntry(props) {
               `}
               <div class="form-row">
                 <div class="form-hint">
-                  Press Tab or Enter to add an annotation (multiple entries allowed).
+                  ${editingAnnotation
+                    ? 'Select search results to add codings to this annotation.'
+                    : 'Press Tab or Enter to add an annotation (multiple entries allowed).'}
                   To submit, press Tab in the empty search field.
                 </div>
               </div>
@@ -887,13 +914,37 @@ export function AnnotationListEntry(props) {
             <button
               type="button"
               class="annotation-submit-btn bio-properties-panel-button"
-              onClick=${() => handleAdd()}
-            >Save annotation</button>
+              onClick=${() => handleSave()}
+            >${editingAnnotation ? 'Save changes' : 'Save annotation'}</button>
+            <button
+              type="button"
+              class="annotation-cancel-btn bio-properties-panel-button"
+              onClick=${closeForm}
+            >Cancel</button>
           </div>
         </div>
       `}
     </div>
   `;
+}
+
+function CodingDetails({ coding, registry, outdated, tooltipId }) {
+  const content = html`
+    <div class="coding-details" id=${`bio-properties-panel-${tooltipId}`}>
+      <span class="coding-system">${getSystemShortName(coding.system, registry)}</span>
+      <code class="coding-code">${coding.code}</code>
+      ${coding.display && html`<span class="coding-display">${coding.display}</span>`}
+      ${outdated && html`<span class="coding-version-warning" role="img" aria-label="Version unavailable">⚠</span>`}
+    </div>
+  `;
+
+  return outdated ? html`
+    <${TooltipEntry}
+      forId=${tooltipId}
+      value=${`Version unavailable: "${getSystemShortName(coding.system, registry)} ${coding.version}" is not installed.`}
+      direction="left"
+    >${content}<//>
+  ` : content;
 }
 
 function getSystemShortName(uri, registry) {
