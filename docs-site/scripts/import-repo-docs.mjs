@@ -9,13 +9,14 @@
  * and are not committed.
  */
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
 const source = join(repoRoot, 'docs', 'arc42');
 const target = join(here, '..', 'src', 'content', 'docs', 'architecture');
+const repositoryUrl = 'https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 if (!existsSync(source)) {
   console.error(`No arc42 chapters at ${source}`);
@@ -39,6 +40,41 @@ function quote(value) {
   return `"${value.replace(/"/g, '\\"')}"`;
 }
 
+/**
+ * Translate links that are correct in docs/arc42 into routes that are correct
+ * after the chapter has moved below /architecture/ on the generated site.
+ * Repository-only documents remain links to their canonical GitHub source.
+ */
+function rewriteRepositoryLinks(markdown, sourceFile) {
+  return markdown.replace(/(\]\()([^)]+)(\))/g, (match, opening, value, closing) => {
+    const trimmed = value.trim();
+    const targetMatch = trimmed.match(/^(\S+)(.*)$/);
+    if (!targetMatch) return match;
+
+    const [, rawTarget, suffix] = targetMatch;
+    if (/^(?:[a-z][a-z+.-]*:|#|\/)/i.test(rawTarget)) return match;
+
+    const [pathPart, fragment] = rawTarget.split('#', 2);
+    const absoluteTarget = resolve(dirname(sourceFile), pathPart);
+    const repositoryPath = relative(repoRoot, absoluteTarget).split(sep).join('/');
+    if (repositoryPath.startsWith('../')) return match;
+
+    let rewritten;
+    const chapter = repositoryPath.match(/^docs\/arc42\/(.+)\.md$/);
+    if (chapter) {
+      rewritten = `/architecture/${chapter[1]}/`;
+    } else if (repositoryPath === 'docs/ARCHITECTURE.md') {
+      rewritten = '/architecture/';
+    } else {
+      const view = rawTarget.endsWith('/') ? 'tree' : 'blob';
+      rewritten = `${repositoryUrl}/${view}/main/${repositoryPath}`;
+    }
+
+    if (fragment) rewritten += `#${fragment}`;
+    return `${opening}${rewritten}${suffix}${closing}`;
+  });
+}
+
 const chapters = readdirSync(source).filter(name => name.endsWith('.md')).sort();
 const imported = [];
 let written = 0;
@@ -50,7 +86,10 @@ for (const name of chapters) {
   const title = titleFor(basename, body);
 
   // Drop the top-level heading: Starlight renders the frontmatter title as h1.
-  const withoutHeading = body.replace(/^#\s+.+\n+/, '');
+  const withoutHeading = rewriteRepositoryLinks(
+    body.replace(/^#\s+.+\n+/, ''),
+    join(source, name)
+  );
 
   const frontmatter = [
     '---',
@@ -64,7 +103,7 @@ for (const name of chapters) {
     ':::note',
     'This chapter is part of the arc42 architecture documentation, maintained at',
     `[\`docs/arc42/${name}\`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/arc42/${name})`,
-    'and imported here unchanged.',
+    'and imported here with repository-relative links adapted for the site.',
     ':::',
     ''
   ].join('\n');
