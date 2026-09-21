@@ -113,7 +113,13 @@ export function checkSiteLinks(root = '_site', configuredBase = '/bpmn-extension
       }
 
       if (url.hash && resolved.endsWith('.html')) {
-        const fragment = decodeURIComponent(url.hash.slice(1));
+        let fragment;
+        try {
+          fragment = decodeURIComponent(url.hash.slice(1));
+        } catch {
+          record(broken, rawTarget, pageName);
+          continue;
+        }
         const targetHtml = readFileSync(resolved, 'utf8');
         const ids = new Set([...targetHtml.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
         if (!ids.has(fragment)) {

@@ -59,4 +59,14 @@ describe('checkSiteLinks', () => {
 
     expect([...result.unprefixed.keys()]).toEqual(['/schema/']);
   });
+
+  it('reports malformed encoded fragments without crashing', () => {
+    const root = fixture({
+      'index.html': '<a href="#%ZZ">Broken fragment</a>'
+    });
+
+    const result = checkSiteLinks(root, '/project');
+
+    expect(result.broken.size).toBe(1);
+  });
 });
