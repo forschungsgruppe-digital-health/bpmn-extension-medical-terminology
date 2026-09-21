@@ -11,6 +11,12 @@ import {
 } from './PackageMetadata.js';
 import { createFhirTerminologyProviderLoader } from './TerminologyProviderLoader.js';
 
+/**
+ * @typedef {Object} TerminologyServices - Runtime services consumed by the properties-panel module.
+ * @property {TerminologyRegistry} terminologyRegistry - Registry containing every configured provider.
+ * @property {import('./TerminologyProviderLoader.js').TerminologyProviderLoader} [terminologyProviderLoader] - Optional lazy loader for FHIR-hosted CodeSystems.
+ */
+
 function createPackageProviderId(id) {
   return `${id}-package`;
 }
@@ -218,7 +224,7 @@ function normalizePackageProvider(providerOrConfig) {
  *   }>,
  *   loaderConfig?: false | Omit<Parameters<typeof createFhirTerminologyProviderLoader>[0], 'terminologyRegistry'>
  * }} [config]
- * @returns {{ terminologyRegistry: TerminologyRegistry, terminologyProviderLoader?: ReturnType<typeof createFhirTerminologyProviderLoader> }}
+ * @returns {TerminologyServices}
  */
 export function createTerminologyServices(config = {}) {
   const terminologyRegistry = config.terminologyRegistry || new TerminologyRegistry();
@@ -249,7 +255,7 @@ export function createTerminologyServices(config = {}) {
  * Expose terminology services as a bpmn-js module that can be passed into
  * `additionalModules`.
  *
- * @param {{ terminologyRegistry: TerminologyRegistry, terminologyProviderLoader?: any }} services
+ * @param {TerminologyServices} services
  * @returns {Record<string, [string, any]>}
  */
 export function createTerminologyModule(services) {

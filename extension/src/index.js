@@ -45,9 +45,6 @@
  * @categoryDescription Properties panel
  * The bpmn-js properties-panel integration and its configuration.
  *
- * @categoryDescription XML schema
- * The moddle descriptor that defines the `term:` namespace.
- *
  * @categoryDescription Discovery
  * Finding terminology packages at build time, and labelling what was found.
  *
@@ -91,6 +88,54 @@
  * A FHIR R4 ValueSet expansion entry, as returned by `$expand`.
  *
  * @typedef {import('./core/types.js').FhirValueSetExpansionContains} FhirValueSetExpansionContains
+ */
+
+/**
+ * Version-specific FHIR operation names and media type.
+ *
+ * @typedef {import('./core/fhir-version.js').FhirVersionConfig} FhirVersionConfig
+ */
+
+/**
+ * Supported FHIR release family identifier.
+ *
+ * @typedef {import('./core/fhir-version.js').FhirVersionCode} FhirVersionCode
+ */
+
+/**
+ * Minimal shape shared by BPMN and terminology moddle elements.
+ *
+ * @typedef {import('./services/AnnotationHelper.js').ModdleElement} ModdleElement
+ */
+
+/**
+ * Factory used to create BPMN and terminology moddle elements.
+ *
+ * @typedef {import('./services/AnnotationHelper.js').Moddle} Moddle
+ */
+
+/**
+ * Coded concept persisted inside a terminology annotation.
+ *
+ * @typedef {import('./services/AnnotationHelper.js').TerminologyCoding} TerminologyCoding
+ */
+
+/**
+ * Loader that registers FHIR-backed providers on demand.
+ *
+ * @typedef {import('./services/TerminologyProviderLoader.js').TerminologyProviderLoader} TerminologyProviderLoader
+ */
+
+/**
+ * Runtime services consumed by the properties-panel module.
+ *
+ * @typedef {import('./services/TerminologyServices.js').TerminologyServices} TerminologyServices
+ */
+
+/**
+ * bpmn-js dependency-injection module for the terminology properties group.
+ *
+ * @typedef {import('./properties-panel/index.js').TerminologyPropertiesPanelModuleDefinition} TerminologyPropertiesPanelModuleDefinition
  */
 
 /** @category Configuration */

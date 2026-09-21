@@ -192,6 +192,13 @@ export class TerminologyRegistry {
     this._listeners.get(event).add(listener);
   }
 
+  /**
+   * Remove a previously registered registry-event listener.
+   *
+   * Calling this for an unknown event or listener is a no-op.
+   * @param {string} event - Event name passed to {@link on}.
+   * @param {Function} listener - The same function previously passed to {@link on}.
+   */
   off(event, listener) {
     this._listeners.get(event)?.delete(listener);
   }

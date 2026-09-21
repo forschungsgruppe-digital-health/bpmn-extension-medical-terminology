@@ -52,7 +52,9 @@ export class FallbackProvider extends TerminologyProvider {
   get id() { return this._id; }
   get displayName() { return this._displayName; }
   get systemUri() { return this._systemUri; }
+  /** Version advertised by the primary provider, falling back to the secondary provider. */
   get version() { return this._primaryProvider.version || this._fallbackProvider.version; }
+  /** Union of the operations supported by the primary and fallback providers. */
   get capabilities() {
     return {
       search: Boolean(this._primaryProvider.capabilities?.search || this._fallbackProvider.capabilities?.search),

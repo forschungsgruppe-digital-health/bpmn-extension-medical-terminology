@@ -13,7 +13,7 @@
  * A moddle element as produced by bpmn-moddle. bpmn-js publishes this type as
  * `any`, so the package declares its own minimal shape.
  *
- * @typedef {object} ModdleElement
+ * @typedef {object} ModdleElement - Minimal shape shared by BPMN and terminology moddle elements.
  * @property {string} $type - Namespaced type name, for example `term:Annotation`.
  * @property {ModdleElement} [$parent] - Owning element, maintained by the model.
  */
@@ -21,7 +21,7 @@
 /**
  * The moddle factory injected by bpmn-js as the `moddle` service.
  *
- * @typedef {object} Moddle
+ * @typedef {object} Moddle - Factory used to create BPMN and terminology moddle elements.
  * @property {(type: string, properties?: object) => ModdleElement} create
  *   Creates a new element of the given namespaced type.
  */
@@ -29,7 +29,7 @@
 /**
  * A single coded concept bound to a BPMN element.
  *
- * @typedef {object} TerminologyCoding
+ * @typedef {object} TerminologyCoding - Coded concept persisted inside a terminology annotation.
  * @property {string} system - Code system URI, for example `http://snomed.info/sct`.
  * @property {string} code - The code within that system.
  * @property {string} [display] - Human-readable label for the code.

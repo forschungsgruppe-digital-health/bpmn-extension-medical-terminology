@@ -29,7 +29,10 @@ export class TerminologyProvider {
   /** @type {string} */
   get systemUri() { throw new Error('Not implemented: systemUri'); }
 
-  /** @type {import('./types.js').TerminologyCapabilities} */
+  /**
+   * Operations this provider supports.
+   * @type {import('./types.js').TerminologyCapabilities}
+   */
   get capabilities() {
     return { search: false, lookup: false, hierarchy: false, validate: false };
   }

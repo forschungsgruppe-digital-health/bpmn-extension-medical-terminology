@@ -31,7 +31,9 @@ export class StaticProvider extends TerminologyProvider {
   get id() { return this._id; }
   get displayName() { return this._displayName; }
   get systemUri() { return this._systemUri; }
+  /** Version of the in-memory CodeSystem snapshot, when known. */
   get version() { return this._version; }
+  /** Operations supported by an in-memory provider. */
   get capabilities() {
     return { search: true, lookup: true, hierarchy: false, validate: true };
   }

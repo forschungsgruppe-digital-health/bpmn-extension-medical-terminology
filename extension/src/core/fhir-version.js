@@ -15,11 +15,11 @@
  */
 
 /**
- * @typedef {'R4' | 'R5'} FhirVersionCode
+ * @typedef {'R4' | 'R5'} FhirVersionCode - Supported FHIR release family identifier.
  */
 
 /**
- * @typedef {Object} FhirVersionConfig
+ * @typedef {Object} FhirVersionConfig - Version-specific FHIR operation names and media type.
  * @property {FhirVersionCode} version - FHIR version identifier
  * @property {string} fhirRelease - Full FHIR release string (e.g. '4.0.1')
  * @property {string} mimeType - FHIR content type for Accept/Content-Type headers

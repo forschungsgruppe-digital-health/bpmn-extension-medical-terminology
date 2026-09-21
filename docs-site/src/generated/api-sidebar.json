@@ -218,10 +218,6 @@
             "link": "/api/variables/default_terminology_properties_config/"
           },
           {
-            "label": "TerminologyPropertiesPanelModule",
-            "link": "/api/variables/terminologypropertiespanelmodule/"
-          },
-          {
             "label": "createTerminologyPropertiesPanelModule",
             "link": "/api/functions/createterminologypropertiespanelmodule/"
           }
@@ -240,6 +236,18 @@
             "link": "/api/interfaces/connectionconfig/"
           },
           {
+            "label": "FhirVersionConfig",
+            "link": "/api/interfaces/fhirversionconfig/"
+          },
+          {
+            "label": "Moddle",
+            "link": "/api/interfaces/moddle/"
+          },
+          {
+            "label": "ModdleElement",
+            "link": "/api/interfaces/moddleelement/"
+          },
+          {
             "label": "SearchOptions",
             "link": "/api/interfaces/searchoptions/"
           },
@@ -252,8 +260,32 @@
             "link": "/api/interfaces/terminologycapabilities/"
           },
           {
+            "label": "TerminologyCoding",
+            "link": "/api/interfaces/terminologycoding/"
+          },
+          {
+            "label": "TerminologyPropertiesPanelModuleDefinition",
+            "link": "/api/interfaces/terminologypropertiespanelmoduledefinition/"
+          },
+          {
+            "label": "TerminologyProviderLoader",
+            "link": "/api/interfaces/terminologyproviderloader/"
+          },
+          {
+            "label": "TerminologyServices",
+            "link": "/api/interfaces/terminologyservices/"
+          },
+          {
             "label": "FhirValueSetExpansionContains",
             "link": "/api/type-aliases/fhirvaluesetexpansioncontains/"
+          },
+          {
+            "label": "FhirVersionCode",
+            "link": "/api/type-aliases/fhirversioncode/"
+          },
+          {
+            "label": "TerminologyPropertiesPanelModule",
+            "link": "/api/variables/terminologypropertiespanelmodule/"
           }
         ]
       },

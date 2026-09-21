@@ -63,10 +63,15 @@ export class FhirProvider extends TerminologyProvider {
   get id() { return this._id; }
   get displayName() { return this._displayName; }
   get systemUri() { return this._systemUri; }
+  /** Configured CodeSystem or ValueSet version, when known. */
   get version() { return this._version; }
+  /** Machine-readable kind of the provider's backing source. */
   get sourceType() { return this._sourceType; }
+  /** Host name shown to users as the provider source. */
   get sourceLabel() { return this._sourceLabel; }
+  /** Human-readable name of the source represented by this provider. */
   get sourceName() { return this._displayName; }
+  /** Operations supported by the FHIR-backed provider. */
   get capabilities() {
     return { search: true, lookup: true, hierarchy: false, validate: true };
   }
