@@ -20,7 +20,7 @@ the report, explain failures — never hand-wave a pass.
 |---|---|
 | `npm run check:conformance` | bpmnlint + moddle roundtrip + XSD core (BPMN / extension conformance) |
 | `npm run check:packages` | npm / bpmn.io publishing conventions for `extension/` |
-| `npm run verify` | full gate: `check:packages` + `check:conformance` + tests (pre-push runs this) |
+| `npm run verify` | full gate: package/version checks, generated HL7 data check, conformance and tests (pre-push runs this) |
 
 ## Skills and when they apply
 
