@@ -3,7 +3,7 @@
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:term="https://clinical-bpmn.org/terminology/v1"
+                  xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
                   id="Definitions_valid"
                   targetNamespace="http://example.com/bpmn">
   <bpmn:process id="Process_1" isExecutable="false">

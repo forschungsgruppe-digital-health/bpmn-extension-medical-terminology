@@ -18,7 +18,7 @@ _Defines technical and domain terms as they are used in this repository._
 
 | Term | Definition |
 |---|---|
-| **`term:` namespace** | Prefix for `https://clinical-bpmn.org/terminology/v1`, the public XML namespace of this package. |
+| **`term:` namespace** | Prefix for `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`, the public XML namespace of this package. |
 | **`Annotations`** | `Element` container holding many `Annotation` values under `extensionElements`. |
 | **`Annotation`** | A terminology statement with an ID, optional free text, and zero or more codings. |
 | **`Coding`** | A code-system URI, code, optional display, and optional version serialized as a `term:Coding`. |

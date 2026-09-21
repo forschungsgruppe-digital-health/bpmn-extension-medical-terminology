@@ -120,6 +120,7 @@ export default defineConfig({
           { label: 'Properties panel', link: '/properties-panel/' }
         ] },
         { label: 'The data format', items: [
+          { label: 'Namespace v1', link: '/ns/terminology/v1/' },
           { label: 'XML schema', link: '/schema/' },
           { label: 'Compatibility', link: '/compatibility/' }
         ] },

@@ -184,7 +184,7 @@ construction:
 
 ```text
 Error: package with prefix <term> already defined
-Error: package with uri <https://clinical-bpmn.org/terminology/v1> already defined
+Error: package with uri <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1> already defined
 ```
 
 In practice: you may load as many extensions as you like as long as each brings its own
@@ -272,37 +272,33 @@ The details, including what happens with partially-recognised content, are on th
 
 :::danger[Do not load both libraries into the same modeller]
 [`bpmn-js-clinical-semantics`](https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics)
-is an earlier project from the same research group. Its terminology package declares **the
-same namespace URI** (`https://clinical-bpmn.org/terminology/v1`) and **the same prefix**
-(`term`) as this extension, with an incompatible annotation shape. Registering both
-descriptors in one `BpmnModdle` throws `package with prefix <term> already defined`.
+is an earlier project from the same research group. Its terminology package retains the old
+development namespace `https://clinical-bpmn.org/terminology/v1` and uses the same `term`
+prefix with an incompatible annotation shape. The new namespace removes the URI collision,
+but registering both descriptors in one `BpmnModdle` still throws
+`package with prefix <term> already defined`.
 :::
 
 The two models differ where it counts:
 
 | | This extension | `bpmn-js-clinical-semantics` |
 |---|---|---|
+| Namespace | `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` | `https://clinical-bpmn.org/terminology/v1` |
 | `term:Annotation` attributes | `id`, `text` | `aspect`, `mode`, `text` — no `id` |
 | Attributes on BPMN elements | none | `term:clinicalDomain`, via an `Annotatable` type that `extends` `bpmn:FlowNode`, `bpmn:DataObjectReference`, `bpmn:DataStoreReference` and `bpmn:MessageFlow` |
 | `term:Coding` attributes | `system`, `version`, `code`, `display` | the same four |
 | Second namespace | none | `fhirmap:` → `https://clinical-bpmn.org/fhir-mapping/v1` |
 | Licence | MIT | Apache-2.0 |
 
-Consequences for existing files, all verified:
+The distinct URIs now make files unambiguous. A file written by the predecessor is unknown
+foreign extension content to this descriptor and is not exposed as this package's
+`term:Annotation` model. Replacing only its URI would be incorrect because `aspect`, `mode`
+and `clinicalDomain` have no equivalent in the new structure.
 
-- Parsing a file written by the sibling library with **this** descriptor logs
-  `unknown attribute <term:clinicalDomain>`, `unknown attribute <aspect>` and
-  `unknown attribute <mode>`. The attributes survive the round trip, but the annotations have
-  no `id`, which the `annotation-requires-id` lint rule rejects and which the properties
-  panel needs as a stable handle.
-- The same file **fails** validation against `schema/clinical-semantics.xsd`:
-  `attribute 'aspect': The attribute 'aspect' is not allowed.`
-
-This extension supersedes the sibling library's terminology package. Which of the two owns
-the namespace URI going forward — and whether a migration path for existing files is needed —
-is part of the open namespace decision on the [roadmap](/roadmap/). Until then: pick one
-library per modeller, and treat files produced by the other as requiring conversion rather
-than as merely lint-dirty.
+This extension supersedes the sibling library's terminology package. There were no consumers
+or external BPMN files when the namespace changed, so no legacy reader or migration command
+is shipped. Treat predecessor files as requiring a deliberate semantic conversion, not a
+namespace search-and-replace.
 
 ## The bpmnlint plugin
 

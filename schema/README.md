@@ -4,7 +4,7 @@ This repository contains the formal XML Schema Definition (XSD) for extending BP
 
 ## Contents
 
-- `clinical-semantics.xsd`: The generated XSD defining the `https://clinical-bpmn.org/terminology/v1` namespace. It is derived from `extension/src/moddle/clinical.json` and provides the structural vocabulary for medical terminology.
+- `clinical-semantics.xsd`: The generated XSD defining the `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` namespace. It is derived from `extension/src/moddle/clinical.json` and provides the structural vocabulary for medical terminology.
 
 Regenerate it after changing the moddle descriptor with `npm run xsd:gen`.
 
@@ -18,7 +18,7 @@ To use these extensions in your BPMN 2.0 XML files, declare the namespace and in
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions 
     xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
-    xmlns:term="https://clinical-bpmn.org/terminology/v1">
+    xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1">
     
   <bpmn:process id="Process_1">
     <bpmn:task id="Task_1" name="Measure Blood Pressure">

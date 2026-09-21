@@ -46,9 +46,9 @@ what a consumer's toolchain can actually resolve. See
 
 [`CITATION.cff`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/CITATION.cff)
 and [`codemeta.json`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/codemeta.json)
-exist, but neither carries a DOI, and the citation file's `version` field still reads `0.1.0`,
-several releases behind the released version. For a research artefact that is a real gap: a
-reader of a paper or a project report cannot cite a specific, archived version of the software.
+carry synchronized release versions, but neither carries a DOI. For a research artefact that
+is a real gap: a reader of a paper or a project report cannot cite a specific, archived version
+of the software with a persistent identifier.
 
 The plan is to enable the Zenodo–GitHub integration, cut a release to mint a concept DOI, record
 the DOI in both metadata files, and keep their version fields in lockstep through release-please's
@@ -56,26 +56,18 @@ the DOI in both metadata files, and keep their version fields in lockstep throug
 [how to cite the project today](/support/) for the interim guidance. Tracked in
 [#36](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/36).
 
-### 3. Settle the namespace authority
+### 3. Publish the namespace contract
 
-The moddle descriptor declares the namespace URI `https://clinical-bpmn.org/terminology/v1`.
-An XML namespace is an identifier and is not required to resolve — but this one is worse than
-non-resolving: the domain is unregistered, so anyone could register it, and a second public
-repository currently publishes an **incompatible** content model under the same URI and the
-same `term:` prefix. A file containing `term:` content therefore cannot be interpreted
-unambiguously from the namespace alone.
+The authority and versioning policy are decided in
+[ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md).
+The descriptor now uses the organization-controlled, versioned Pages URI
+`https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`.
+Its [namespace reference](/ns/terminology/v1/) is generated from the descriptor and publishes
+the JSON descriptor and XSD beside the human-readable contract.
 
-The issue sets out three options — register the domain, move to an authority the organisation
-already controls, or switch to a URN — and asks for four things to be settled together: the
-authority, a naming scheme that covers the whole extension family (a companion FHIR-mapping
-extension needs a namespace too), an explicit rule for when the `/v1` path segment advances,
-and the resolution of the collision. It also notes that if the URI is going to change, now is
-the cheapest possible moment, because the migration cost grows with every annotated file in
-existence.
-
-Nothing has been decided yet. Tracked in
-[#35](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/35);
-the current shape of the serialised data is described on the [schema](/schema/) page.
+Issue [#35](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/35)
+can close after the changed descriptor and documentation are merged to `main`, Pages deploys,
+and the public URI and machine-readable artifacts have been verified live.
 
 ### 4. Complete the annotation editing loop
 

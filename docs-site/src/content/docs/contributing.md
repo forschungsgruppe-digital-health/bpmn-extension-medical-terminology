@@ -246,8 +246,9 @@ Some changes need more than a review:
 
 - **Renaming or removing a moddle type or property** in `extension/src/moddle/clinical.json` is a
   breaking change to the data format and needs explicit human sign-off. Changing the descriptor's
-  namespace `uri` is a deliberate breaking change that needs its own decision record — and there
-  is an open question about that namespace, described on the [roadmap](/roadmap/).
+  namespace `uri` is a deliberate breaking change that needs its own decision record. The current
+  authority and versioning rules are fixed by
+  [ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md).
 - **A non-trivial architectural decision** gets a record in `docs/adr/`, using the template in
   that directory. Existing records cover versioning and release automation, the bundled
   terminology defaults, and the bounds on automatic package discovery.

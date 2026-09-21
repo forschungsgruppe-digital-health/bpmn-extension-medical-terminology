@@ -12,9 +12,12 @@ consumer-facing API focused on one package:
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`.
 
 **A stable, dedicated XML namespace.** The descriptor uses the `term:` prefix
-and URI `https://clinical-bpmn.org/terminology/v1`. The namespace is a format
+and URI `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`. The namespace is a format
 contract, not a release counter. Ordinary package releases must not silently
 change it because existing diagrams depend on the URI.
+The URI resolves to a Starlight page generated from the descriptor; the JSON
+descriptor and generated XSD are published beside it. ADR-0004 records the
+authority, extension-family convention and format-major rules.
 
 **BPMN `extensionElements` as the persistence mechanism.** Terminology data is
 stored in standard BPMN `extensionElements`. This preserves BPMN core structure
@@ -54,7 +57,9 @@ release PR and updates the package, lint plugin, descriptor version, and XSD.
 Publishing is handled independently by `publish.yml` when a GitHub Release is
 published. The rationale for versioning is recorded in
 [ADR-0001](../adr/0001-versioning-and-release-please.md); bundled defaults are
-recorded in [ADR-0002](../adr/0002-bundled-terminology-defaults.md).
+recorded in [ADR-0002](../adr/0002-bundled-terminology-defaults.md), and the
+namespace contract in
+[ADR-0004](../adr/0004-namespace-authority-and-versioning.md).
 
 These strategies are summarized in [chapter 9](09_architecture_decisions.md)
 and in the repository [ADR directory](../adr/).

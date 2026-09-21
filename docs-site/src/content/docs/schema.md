@@ -13,7 +13,7 @@ what a tool that has never heard of this extension does with an annotated file.
 
 | | |
 |---|---|
-| Namespace URI | `https://clinical-bpmn.org/terminology/v1` |
+| Namespace URI | `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` |
 | Conventional prefix | `term` |
 | Moddle package name | `ClinicalTerminology` |
 | Tag alias | `lowerCase` |
@@ -22,25 +22,24 @@ The URI is defined in
 [`extension/src/moddle/clinical.json`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/moddle/clinical.json)
 and repeated in
 [`schema/clinical-semantics.xsd`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/schema/clinical-semantics.xsd).
+Its [generated namespace reference](/ns/terminology/v1/) publishes the exact
+content model together with the machine-readable descriptor and XSD.
 A document declares it like any other foreign namespace:
 
 ```xml
 <bpmn:definitions
     xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-    xmlns:term="https://clinical-bpmn.org/terminology/v1"
+    xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
     id="Definitions_1"
-    targetNamespace="http://example.com/bpmn">
+    targetNamespace="https://example.invalid/bpmn/process">
 ```
 
-:::note[A namespace URI is an identifier, not an address]
-`https://clinical-bpmn.org/terminology/v1` does **not** currently resolve to anything. That
-is normal for XML namespaces — an XML namespace name is a unique identifier, and nothing in
-the XML Namespaces specification requires it to be retrievable. Camunda's
-`http://camunda.org/schema/1.0/bpmn` and the BPMN model namespace
-`http://www.omg.org/spec/BPMN/20100524/MODEL` behave the same way: no parser ever fetches
-them. Whether this project should nevertheless own a resolving domain and publish the schema
-under it is an open decision, tracked on the [roadmap](/roadmap/). Nothing has been decided,
-and the prefix binding above is what every current file uses.
+:::note[A namespace URI is both identifier and documentation address]
+XML parsers compare this URI as an identifier and do not fetch it while reading a BPMN file.
+The project nevertheless publishes a human-readable contract at the same address so a person
+following the identifier can inspect the format, descriptor and XSD. The authority and its
+operational consequences are fixed by
+[ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md).
 :::
 
 ### Stability rules
@@ -48,16 +47,16 @@ and the prefix binding above is what every current file uses.
 The `/v1` in the URI is the **data-format contract version**, not the package version. The
 two move independently and deliberately:
 
-- A release bumps the package in lockstep across four artefacts: `extension/package.json`,
-  the bpmnlint plugin's `package.json`, the descriptor's `version` field, and the version
-  comment in the generated XSD. Release Please drives all four from one `extra-files` list.
+- A release bumps the package version and its coupled release metadata in lockstep. The
+  descriptor's `version` field is package metadata and does not change the namespace.
 - The namespace `uri` is **never** bumped automatically. Changing it would orphan every
   diagram already written, so it changes only by hand, as a deliberate breaking change,
   accompanied by its own architecture decision record.
 
-The reasoning is recorded in
-[ADR-0001](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0001-versioning-and-release-please.md)
-and summarised in the [architecture documentation](/architecture/).
+The release coupling is recorded in
+[ADR-0001](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0001-versioning-and-release-please.md);
+the namespace authority and format-version policy are recorded in
+[ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md).
 
 ## The content model
 
@@ -189,7 +188,7 @@ complete document that carries the extension, diagram interchange included.
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:term="https://clinical-bpmn.org/terminology/v1"
+                  xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
                   id="Definitions_valid"
                   targetNamespace="http://example.com/bpmn">
   <bpmn:process id="Process_1" isExecutable="false">
@@ -359,7 +358,7 @@ relative paths below resolve:
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <xsd:import namespace="http://www.omg.org/spec/BPMN/20100524/MODEL"
               schemaLocation="node_modules/bpmn-moddle/resources/bpmn/xsd/BPMN20.xsd"/>
-  <xsd:import namespace="https://clinical-bpmn.org/terminology/v1"
+  <xsd:import namespace="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
               schemaLocation="schema/clinical-semantics.xsd"/>
 </xsd:schema>
 ```
@@ -381,7 +380,7 @@ lax wildcard would skip the content entirely.
 ## Round-tripping, and what the conformance gate proves
 
 The promise this format makes is that opening a file and saving it again does not damage it.
-`npm run check:conformance` is the gate that keeps the promise. It chains six checks over
+`npm run check:conformance` is the gate that keeps the promise. It chains the checks below over
 the three fixtures in `examples/valid/`, and it is worth knowing what each one does and does
 not establish.
 
@@ -392,6 +391,8 @@ not establish.
 | XSD drift guard | `npm run xsd:gen:check` | yes | The committed XSD is exactly what the descriptor generates. |
 | Core + extension XSD | `npm run xsd:ext` | yes | Every fixture validates against BPMN core *and* the extension schema, with the canary proving the extension schema is engaged. |
 | Defaults drift guard | `npm run docs:defaults:check` | yes | The generated [default configuration](/configuration/defaults/) page still matches the code. |
+| Namespace-reference drift guard | `npm run docs:namespace:check` | yes | The generated namespace reference still matches the moddle descriptor. |
+| Namespace consistency | `npm run check:namespace` | yes | Descriptor, XSD, BPMN fixtures, and current documentation use the same controlled URI. |
 | BPMN core XSD | `npm run check:xsd` | no | Fixtures are schema-valid BPMN. Informational by design; pass `--strict` to make it fail the run. |
 
 The negative fixture under `examples/invalid/` is *not* part of this gate — the file set is
@@ -522,4 +523,4 @@ a round trip through a specific third-party tool, test that tool with
 - [Extending](/extending/) — the moddle and bpmn.io background behind the design.
 - [Architecture](/architecture/) — the arc42 documentation, including the namespace
   constraint.
-- [Roadmap](/roadmap/) — the open namespace decision and planned schema work.
+- [Namespace v1](/ns/terminology/v1/) — the generated, authoritative structural reference.

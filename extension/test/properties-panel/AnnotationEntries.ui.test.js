@@ -208,7 +208,7 @@ describe('terminology properties panel UI', () => {
     const context = await createTestContext({ id: 'Task_Synthetic', type: 'bpmn:Task' });
     const { rootElement: imported } = await context.moddle.fromXML(`
       <bpmn:task xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Task_Synthetic">
+        xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" id="Task_Synthetic">
         <bpmn:extensionElements><term:annotations>
           <term:annotation id="synthetic-1" text="Synthetic imported">
             <term:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" />

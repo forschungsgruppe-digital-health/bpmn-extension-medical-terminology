@@ -3,6 +3,7 @@
 - **Status:** accepted
 - **Date:** 2026-06-27
 - **Deciders:** maintainers
+- **Amended by:** [ADR-0004](0004-namespace-authority-and-versioning.md)
 
 ## Context
 
@@ -24,6 +25,10 @@ There is a trap: the moddle descriptor's namespace `uri`
 the XML namespace and break every diagram already in the wild (AGENTS.md lists
 changing the `uri` under "ask first"). So the release SemVer and the namespace
 contract version are two different things and must not be conflated.
+
+ADR-0004 later replaced the development namespace with the controlled GitHub
+Pages URI. The separation established here remains unchanged: the namespace
+format version and package SemVer still move independently.
 
 ## Decision
 

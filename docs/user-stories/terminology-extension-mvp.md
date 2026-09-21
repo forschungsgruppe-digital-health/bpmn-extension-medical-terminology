@@ -4,7 +4,7 @@
 > scope  
 > **Package:** `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` (`extension/`)
 > **Moddle descriptor:** [`extension/src/moddle/clinical.json`](../../extension/src/moddle/clinical.json)  
-> **Namespace:** `term`, `https://clinical-bpmn.org/terminology/v1`  
+> **Namespace:** `term`, `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`
 > **Date:** 2026-08-27
 
 This document records the current terminology-extension behavior and the

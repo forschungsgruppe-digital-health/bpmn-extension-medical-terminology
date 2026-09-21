@@ -72,7 +72,7 @@ describe('annotation modeling with the bpmn-js command handler', () => {
     const { moddle, modeling, commandStack } = setup();
     const { rootElement: bo } = await moddle.fromXML(`
       <bpmn:task xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:term="https://clinical-bpmn.org/terminology/v1" xmlns:test="https://example.invalid/test" id="Task_Imported">
+        xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" xmlns:test="https://example.invalid/test" id="Task_Imported">
         <bpmn:extensionElements>
           <test:metadata value="keep" />
           <term:annotations><term:annotation id="synthetic-1" text="Synthetic imported" test:flag="keep">

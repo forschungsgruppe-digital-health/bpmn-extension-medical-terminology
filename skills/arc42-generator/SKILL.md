@@ -26,7 +26,7 @@ This repository has one published package,
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`, a private `demo/` workspace,
 and the terminology lint plugin workspace under
 `extension/lint/bpmnlint-plugin-terminology`. It has one `term:` namespace:
-`https://clinical-bpmn.org/terminology/v1`.
+`https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`.
 
 FHIR terminology servers and FHIR `CodeSystem` resources are valid current
 concepts: document `FhirProvider`, `FhirTerminologyAdapter`, package-backed

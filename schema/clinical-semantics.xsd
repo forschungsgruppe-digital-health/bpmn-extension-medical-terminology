@@ -3,8 +3,8 @@
 <!-- Scope: STRUCTURE only. Semantic rules (e.g. required attributes) live in the bpmnlint plugin. -->
 <!-- extension version 0.1.9 (kept in sync by Release Please) x-release-please-version -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-            xmlns:term="https://clinical-bpmn.org/terminology/v1"
-            targetNamespace="https://clinical-bpmn.org/terminology/v1"
+            xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
+            targetNamespace="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
             elementFormDefault="qualified"
             attributeFormDefault="unqualified">
 

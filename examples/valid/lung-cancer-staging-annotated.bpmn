@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Definitions_Minimal_Annotated" targetNamespace="https://clinical-bpmn.org/examples/terminology" exporter="clinical-bpmn-demo" exporterVersion="0.1.0">
+<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" id="Definitions_Minimal_Annotated" targetNamespace="https://example.invalid/bpmn/terminology" exporter="clinical-bpmn-demo" exporterVersion="0.1.0">
 
   <!-- ============================================================
        Annotated BPMN Example: Lung Cancer Treatment Decision

@@ -163,7 +163,7 @@ Foreign child elements inside `<extensionElements>` must use a namespace other
 than the BPMN model namespace. This repository uses only:
 
 ```xml
-xmlns:term="https://clinical-bpmn.org/terminology/v1"
+xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
 ```
 
 Do not invent terminology elements in the `bpmn:` namespace. Foreign
@@ -278,7 +278,7 @@ The descriptor in this repository is
 ```json
 {
   "name": "ClinicalTerminology",
-  "uri": "https://clinical-bpmn.org/terminology/v1",
+  "uri": "https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1",
   "prefix": "term",
   "types": [
     {

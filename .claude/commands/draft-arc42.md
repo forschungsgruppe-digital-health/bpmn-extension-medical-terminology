@@ -16,7 +16,7 @@ Generate or refresh the one-file-per-section arc42 documentation under
    hooks, and workflows.
 3. Reflect the current architecture: one published package
    `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`, private `demo/`, `term:`
-   namespace `https://clinical-bpmn.org/terminology/v1`, terminology providers
+   namespace `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`, terminology providers
    and FHIR CodeSystem package discovery.
 4. Do not introduce removed legacy package, namespace, UI, or example concepts.
    FHIR terminology servers and FHIR `CodeSystem` resources are current and

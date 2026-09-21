@@ -28,7 +28,7 @@ classDiagram
 ```
 
 The descriptor is the source of truth for the serialized shape. The public
-namespace is `term:` → `https://clinical-bpmn.org/terminology/v1`. The helper
+namespace is `term:` → `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`. The helper
 and properties panel operate on moddle business objects, not on raw XML.
 
 ## Provider extension model

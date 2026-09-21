@@ -75,9 +75,10 @@ public surface is still moving. Three things are worth knowing before you adopt 
   ESM loader rejects, so a plain Node `import` of the barrel fails during module resolution. Under Vite,
   Rollup, webpack or esbuild it works; in a bare Node script it does not.
   [Compatibility](/compatibility/) has the detail.
-- **The namespace URI is an identifier, not a website.** `https://clinical-bpmn.org/terminology/v1`
-  identifies the extension in the XML; the domain does not currently resolve, and whether it should is an
-  open decision. See [the roadmap](/roadmap/).
+- **The namespace URI is a stable format identifier.**
+  `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`
+  identifies XML format v1 and resolves to its generated contract, descriptor and XSD.
+  See [Namespace v1](/ns/terminology/v1/).
 
 Known functional gaps — notably that undo does not currently cover adding or removing an annotation, and
 that a saved annotation cannot be edited in place — are described on

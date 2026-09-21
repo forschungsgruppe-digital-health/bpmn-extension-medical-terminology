@@ -11,7 +11,7 @@ proves the descriptor actually round-trips the example files losslessly).
 
 ## Inputs
 
-- `extension/src/moddle/clinical.json` (`term:` / `https://clinical-bpmn.org/terminology/v1`)
+- `extension/src/moddle/clinical.json` (`term:` / `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`)
 
 ## Checklist (verify each, cite the line)
 

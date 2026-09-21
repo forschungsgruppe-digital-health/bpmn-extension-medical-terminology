@@ -661,7 +661,7 @@ Terminology annotations are persisted as standard BPMN 2.0 extension elements:
 
 ```xml
 <bpmn2:dataObject id="DataObj_Befund" name="CT-Befundbericht"
-                  xmlns:term="https://clinical-bpmn.org/terminology/v1">
+                  xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1">
   <bpmn2:extensionElements>
     <term:annotations>
       <term:annotation id="term-ann-1"
@@ -682,7 +682,7 @@ Clinical data belongs only in `term:` elements under
 
 The interactive demo is deployed to GitHub Pages on pushes to `main`:
 
-[bpmn-extension-medical-terminology demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
+[bpmn-extension-medical-terminology demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/)
 
 Run it locally:
 
@@ -732,6 +732,7 @@ matrix, and it is rebuilt from this repository on every push to `main`. Build it
 | [Use cases](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/use-cases/) | Anyone evaluating the extension | The problem it solves and worked scenarios |
 | [Configuration](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/) | Integrators | Composition roots, providers, servers, authentication, language |
 | [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) | Integrators and modellers | The user-facing surface, its wiring contract and its current limits |
+| [Namespace v1](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1/) | XML/tooling integrators | Generated namespace contract, moddle descriptor and XSD |
 | [XML schema](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/schema/) | Tooling integrators | Namespace, content model, serialisation, forward compatibility |
 | [Compatibility](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/compatibility/) | Integrators | Supported versions, the bundler-only model, coexistence with other extensions |
 | [Extending](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/extending/) | Contributors | Writing a provider or a transport adapter |

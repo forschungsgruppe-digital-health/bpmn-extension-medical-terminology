@@ -245,18 +245,11 @@ Stated as narrowly as it can honestly be stated:
 
 ### Namespace authority
 
-The descriptor declares the namespace `https://clinical-bpmn.org/terminology/v1`.
-An XML namespace URI is an identifier and is not required to resolve: the Camunda
-and BPMN4CP namespace URIs both return HTTP 404, and that is normal.
-
-:::caution
-This one is a step further out. `clinical-bpmn.org` is not registered at all — it
-has no DNS records — so, unlike a held domain that merely returns 404, it could in
-principle be registered by a third party who would then be serving content under
-this project's namespace. Which authority the namespace should belong to is tracked
-on the [roadmap](/roadmap/) and should be settled before anyone relies on the URI
-in a citation or a long-lived file.
-:::
+The descriptor declares the namespace `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`.
+XML parsers use it as an identifier; people can resolve it to the generated contract,
+descriptor and XSD. The GitHub organization controls the authority, and
+[ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md)
+defines how `/v1` relates to package releases and future incompatible format changes.
 
 ## Sibling work in the same group
 
@@ -267,12 +260,13 @@ one.
 is the predecessor. It is a public Apache-2.0 monorepo containing two extension
 packages — a terminology layer and a FHIR-mapping layer — and it is superseded by
 the present package, which replaces its terminology half. The two are not
-interchangeable: the predecessor's content model differs (its `Annotation` carries
+interchangeable: the predecessor retains the old development namespace and its content model
+differs (its `Annotation` carries
 `aspect` and `mode` rather than `id`, and it adds a `clinicalDomain` attribute to
 `bpmn:FlowNode`, `bpmn:DataObjectReference`, `bpmn:DataStoreReference` and
-`bpmn:MessageFlow`), while using the same namespace URI and prefix. Resolving that
-collision is part of the namespace decision above. Treat the predecessor as
-historical context, not as an alternative to install.
+`bpmn:MessageFlow`). The new controlled URI removes the namespace collision. Both projects
+still use the conventional `term` prefix, so they must not be registered together in one
+modeler. Treat the predecessor as historical context, not as an alternative to install.
 
 `bpmn-extension-fhir-mapping` is the planned successor to the predecessor's other
 half: an extension that declares how a BPMN element maps onto FHIR resources —

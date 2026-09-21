@@ -118,7 +118,7 @@ describe('@forschungsgruppe-digital-health/bpmn-extension-medical-terminology â€
     const { default: descriptor } = await import('../src/moddle/clinical.json');
     expect(descriptor.name).toBe('ClinicalTerminology');
     expect(descriptor.prefix).toBe('term');
-    expect(descriptor.uri).toBe('https://clinical-bpmn.org/terminology/v1');
+    expect(descriptor.uri).toBe('https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1');
     expect(descriptor.types.map(type => type.name)).toEqual([
       'Annotations',
       'Annotation',

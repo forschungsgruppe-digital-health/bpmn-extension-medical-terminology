@@ -125,10 +125,10 @@ The software is by Marcel Susky and Jost Hickmann (TU Dresden, Forschungsgruppe 
 licensed MIT, and the work is funded by the German Federal Ministry of Research, Technology and
 Space under grant `01ZZ2506A` (MiHUB, 2026–2029).
 
-:::caution[There is no DOI yet, and the citation file's version has drifted]
-`CITATION.cff` carries no `doi:` field, and its `version` field still reads `0.1.0` while the
-released version has moved well past that; `codemeta.json` carries no version at all. Until that
-is fixed there is no archived, versioned identifier to cite.
+:::caution[There is no DOI yet]
+`CITATION.cff` and `codemeta.json` carry the synchronized software release version, but neither
+records a DOI. Until an archival integration is configured there is no persistent concept DOI
+or release DOI to cite.
 
 In the meantime, cite the repository together with the **specific release tag** you used, for
 example `terminology-v0.1.9`, and the date you retrieved it. A tag is at least resolvable and
