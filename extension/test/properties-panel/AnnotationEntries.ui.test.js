@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/preact';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BpmnModdle } from 'bpmn-moddle';
+import { createAnnotationCommandStack } from '../helpers/annotation-command-stack.js';
 
 const serviceState = vi.hoisted(() => ({
   current: {}
@@ -30,76 +31,95 @@ vi.mock('@bpmn-io/properties-panel/preact/hooks', () => ({
   useState
 }));
 
-vi.mock('@bpmn-io/properties-panel', () => ({
-  TextFieldEntry(props) {
-    const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
-    const error = props.validate ? props.validate(localValue) : null;
+vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
+  const { TooltipEntry } = await importOriginal();
+  const { createRequire } = await import('node:module');
+  const panelPreact = createRequire(import.meta.url)('@bpmn-io/properties-panel/preact');
 
-    useEffect(() => {
-      setLocalValue(props.getValue(props.element) || '');
-    }, [ props.element, props.getValue ]);
+  return {
+    // The panel bundles its own Preact runtime. Mount the real tooltip with that
+    // runtime while the existing field stubs use the test renderer's Preact.
+    TooltipEntry(props) {
+      const container = useRef(null);
+      useEffect(() => {
+        panelPreact.render(panelPreact.h(TooltipEntry, props), container.current);
+      });
+      useEffect(() => {
+        const node = container.current;
+        return () => panelPreact.render(null, node);
+      }, []);
+      return h('div', { ref: container });
+    },
+    TextFieldEntry(props) {
+      const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
+      const error = props.validate ? props.validate(localValue) : null;
 
-    return h('div', {
-      class: `bio-properties-panel-entry ${error ? 'has-error' : ''}`,
-      'data-entry-id': props.id
-    }, [
-      h('div', { class: 'bio-properties-panel-textfield' }, [
-        h('label', {
-          class: 'bio-properties-panel-label',
-          for: `bio-properties-panel-${props.id}`
-        }, props.label),
-        h('input', {
-          id: `bio-properties-panel-${props.id}`,
-          class: 'bio-properties-panel-input',
-          type: 'text',
-          value: localValue,
-          placeholder: props.placeholder,
-          onInput: (event) => {
-            const value = event.target.value;
-            setLocalValue(value);
-            props.setValue(value, props.validate ? props.validate(value) : null);
-          }
-        })
-      ]),
-      error ? h('div', { class: 'bio-properties-panel-error' }, error) : null,
-      props.description ? h('div', { class: 'bio-properties-panel-description' }, props.description) : null
-    ]);
-  },
-  TextAreaEntry(props) {
-    const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
-    const error = props.validate ? props.validate(localValue) : null;
+      useEffect(() => {
+        setLocalValue(props.getValue(props.element) || '');
+      }, [ props.element, props.getValue ]);
 
-    useEffect(() => {
-      setLocalValue(props.getValue(props.element) || '');
-    }, [ props.element, props.getValue ]);
+      return h('div', {
+        class: `bio-properties-panel-entry ${error ? 'has-error' : ''}`,
+        'data-entry-id': props.id
+      }, [
+        h('div', { class: 'bio-properties-panel-textfield' }, [
+          h('label', {
+            class: 'bio-properties-panel-label',
+            for: `bio-properties-panel-${props.id}`
+          }, props.label),
+          h('input', {
+            id: `bio-properties-panel-${props.id}`,
+            class: 'bio-properties-panel-input',
+            type: 'text',
+            value: localValue,
+            placeholder: props.placeholder,
+            onInput: (event) => {
+              const value = event.target.value;
+              setLocalValue(value);
+              props.setValue(value, props.validate ? props.validate(value) : null);
+            }
+          })
+        ]),
+        error ? h('div', { class: 'bio-properties-panel-error' }, error) : null,
+        props.description ? h('div', { class: 'bio-properties-panel-description' }, props.description) : null
+      ]);
+    },
+    TextAreaEntry(props) {
+      const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
+      const error = props.validate ? props.validate(localValue) : null;
 
-    return h('div', {
-      class: `bio-properties-panel-entry ${error ? 'has-error' : ''}`,
-      'data-entry-id': props.id
-    }, [
-      h('div', { class: 'bio-properties-panel-textarea' }, [
-        h('label', {
-          class: 'bio-properties-panel-label',
-          for: `bio-properties-panel-${props.id}`
-        }, props.label),
-        h('textarea', {
-          id: `bio-properties-panel-${props.id}`,
-          class: 'bio-properties-panel-input',
-          rows: props.rows || 2,
-          value: localValue,
-          placeholder: props.placeholder,
-          onInput: (event) => {
-            const value = event.target.value;
-            setLocalValue(value);
-            props.setValue(value, props.validate ? props.validate(value) : null);
-          }
-        })
-      ]),
-      error ? h('div', { class: 'bio-properties-panel-error' }, error) : null,
-      props.description ? h('div', { class: 'bio-properties-panel-description' }, props.description) : null
-    ]);
-  }
-}));
+      useEffect(() => {
+        setLocalValue(props.getValue(props.element) || '');
+      }, [ props.element, props.getValue ]);
+
+      return h('div', {
+        class: `bio-properties-panel-entry ${error ? 'has-error' : ''}`,
+        'data-entry-id': props.id
+      }, [
+        h('div', { class: 'bio-properties-panel-textarea' }, [
+          h('label', {
+            class: 'bio-properties-panel-label',
+            for: `bio-properties-panel-${props.id}`
+          }, props.label),
+          h('textarea', {
+            id: `bio-properties-panel-${props.id}`,
+            class: 'bio-properties-panel-input',
+            rows: props.rows || 2,
+            value: localValue,
+            placeholder: props.placeholder,
+            onInput: (event) => {
+              const value = event.target.value;
+              setLocalValue(value);
+              props.setValue(value, props.validate ? props.validate(value) : null);
+            }
+          })
+        ]),
+        error ? h('div', { class: 'bio-properties-panel-error' }, error) : null,
+        props.description ? h('div', { class: 'bio-properties-panel-description' }, props.description) : null
+      ]);
+    }
+  };
+});
 
 const PROVIDERS = [
   { id: 'snomed-ct', displayName: 'SNOMED CT', systemUri: 'http://snomed.info/sct' },
@@ -162,6 +182,156 @@ describe('terminology properties panel UI', () => {
   afterEach(() => {
     cleanup();
     serviceState.current = {};
+  });
+
+  it('adds and removes annotations through undo and redo, updating the panel', async () => {
+    const context = await createTestContext({ id: 'Task_Synthetic', type: 'bpmn:Task' });
+    setServices(context);
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(view.container, { id: 'synthetic-1', text: 'Synthetic undo', codings: [] });
+    const savedXml = await serializeXml(context.moddle, context.definitions);
+    context.commandStack.undo();
+    await waitFor(() => expect(view.container.querySelectorAll('.annotation-item')).toHaveLength(0));
+    expect(await serializeXml(context.moddle, context.definitions)).not.toContain('Synthetic undo');
+    context.commandStack.redo();
+    await waitFor(() => expect(view.container.querySelectorAll('.annotation-item')).toHaveLength(1));
+    fireEvent.click(screen.getByTitle('Remove'));
+    expect(view.container.querySelectorAll('.annotation-item')).toHaveLength(0);
+    context.commandStack.undo();
+    await waitFor(() => expect(view.container.querySelectorAll('.annotation-item')).toHaveLength(1));
+    expect(await serializeXml(context.moddle, context.definitions)).toBe(savedXml);
+    context.commandStack.redo();
+    await waitFor(() => expect(view.container.querySelectorAll('.annotation-item')).toHaveLength(0));
+  });
+
+  it('edits imported text and codings, cancels drafts and undoes saved changes', async () => {
+    const context = await createTestContext({ id: 'Task_Synthetic', type: 'bpmn:Task' });
+    const { rootElement: imported } = await context.moddle.fromXML(`
+      <bpmn:task xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Task_Synthetic">
+        <bpmn:extensionElements><term:annotations>
+          <term:annotation id="synthetic-1" text="Synthetic imported">
+            <term:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" />
+          </term:annotation>
+        </term:annotations></bpmn:extensionElements>
+      </bpmn:task>`, 'bpmn:Task');
+    context.element.businessObject = imported;
+    setServices(context);
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    const before = (await context.moddle.toXML(imported)).xml;
+    fireEvent.click(screen.getByRole('button', { name: 'Edit annotation synthetic-1' }));
+    expect(getControlByLabel(view.container, 'Free text').value).toBe('Synthetic imported');
+    expect(view.container.querySelectorAll('.selected-coding')).toHaveLength(1);
+    fireEvent.input(getControlByLabel(view.container, 'Free text'), { target: { value: 'Synthetic draft' } });
+    fireEvent.click(screen.getByText('Cancel'));
+    expect((await context.moddle.toXML(imported)).xml).toBe(before);
+    expect(context.commandStack.canUndo()).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit annotation synthetic-1' }));
+    fireEvent.input(getControlByLabel(view.container, 'Free text'), { target: { value: 'Synthetic edited' } });
+    // The annotation's own ID and coding must not count as duplicates.
+    fireEvent.click(screen.getByText('Save changes'));
+    expect(view.container.querySelector('.annotation-form')).toBeNull();
+    expect((await context.moddle.toXML(imported)).xml).toContain('Synthetic edited');
+    expect((await context.moddle.toXML(imported)).xml).toContain('version="1"');
+    context.commandStack.undo();
+    await waitFor(() => expect(view.container.querySelector('.annotation-item__text').textContent).toBe('Synthetic imported'));
+    expect((await context.moddle.toXML(imported)).xml).toBe(before);
+    context.commandStack.redo();
+    await waitFor(() => expect(view.container.querySelector('.annotation-item__text').textContent).toBe('Synthetic edited'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit annotation synthetic-1' }));
+    fireEvent.click(screen.getByTitle('Remove coding'));
+    fireEvent.input(getControlByLabel(view.container, 'ID'), { target: { value: 'synthetic-renamed' } });
+    fireEvent.click(screen.getByText('Save changes'));
+    expect((await context.moddle.toXML(imported)).xml).not.toContain('<term:coding');
+    expect((await context.moddle.toXML(imported)).xml).toContain('id="synthetic-renamed"');
+    context.commandStack.undo();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit annotation synthetic-1' })).toBeTruthy());
+    expect((await context.moddle.toXML(imported)).xml).toContain('version="1"');
+  });
+
+  it('rejects another annotation ID when editing and keeps invalid drafts out of XML', async () => {
+    const context = await createTestContext({ id: 'Task_Synthetic', type: 'bpmn:Task' });
+    setServices(context);
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    await createAnnotation(view.container, { id: 'synthetic-1', text: 'Synthetic first', codings: [] });
+    await createAnnotation(view.container, { id: 'synthetic-2', text: 'Synthetic second', codings: [] });
+    const before = await serializeXml(context.moddle, context.definitions);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit annotation synthetic-1' }));
+    fireEvent.input(getControlByLabel(view.container, 'ID'), { target: { value: 'synthetic-2' } });
+    fireEvent.click(screen.getByText('Save changes'));
+    expect(screen.getByText('ID must be unique across the diagram.')).toBeTruthy();
+    expect(await serializeXml(context.moddle, context.definitions)).toBe(before);
+    fireEvent.input(getControlByLabel(view.container, 'ID'), { target: { value: 'synthetic-1' } });
+    fireEvent.input(getControlByLabel(view.container, 'Free text'), { target: { value: '' } });
+    fireEvent.click(screen.getByText('Save changes'));
+    expect(screen.getByText('Please provide free text or at least one coding before saving.')).toBeTruthy();
+    expect(await serializeXml(context.moddle, context.definitions)).toBe(before);
+  });
+
+  it('replaces codings while editing and rejects codes used on another element', async () => {
+    const context = await createProcessContext([
+      { id: 'Task_A', type: 'bpmn:Task' }, { id: 'Task_B', type: 'bpmn:Task' }
+    ]);
+    const system = 'https://example.invalid/cs';
+    const terminologyRegistry = {
+      listProviders: () => [{ id: 'synthetic', displayName: 'Synthetic', systemUri: system }],
+      search: vi.fn(async term => ({ items: [{ system, code: term, display: `Synthetic ${term}`, version: '1' }] }))
+    };
+    setServices(context, { terminologyRegistry });
+    const view = render(h(AnnotationListEntry, { element: context.elements.Task_B }));
+    await createAnnotation(view.container, {
+      id: 'synthetic-b', text: 'Synthetic other',
+      codings: [{ providerId: 'synthetic', searchTerm: 'B', resultLabel: 'Synthetic B' }]
+    });
+    view.rerender(h(AnnotationListEntry, { element: context.elements.Task_A }));
+    await createAnnotation(view.container, {
+      id: 'synthetic-a', text: 'Synthetic first',
+      codings: [{ providerId: 'synthetic', searchTerm: 'A', resultLabel: 'Synthetic A' }]
+    });
+    const before = await serializeXml(context.moddle, context.definitions);
+    fireEvent.click(screen.getByRole('button', { name: 'Edit annotation synthetic-a' }));
+    fireEvent.click(screen.getByTitle('Remove coding'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), { target: { value: 'synthetic' } });
+    async function choose(code) {
+      const input = getControlByLabel(view.container, 'Search');
+      fireEvent.focus(input);
+      fireEvent.input(input, { target: { value: code } });
+      await waitFor(() => expect(view.container.querySelector('.search-suggestion__label')?.textContent).toBe(`Synthetic ${code}`));
+      fireEvent.mouseDown(view.container.querySelector('.search-suggestion'));
+    }
+    await choose('B');
+    fireEvent.click(screen.getByText('Save changes'));
+    expect(screen.getByText('A terminology code with the same system and code is already used in the diagram.')).toBeTruthy();
+    expect(await serializeXml(context.moddle, context.definitions)).toBe(before);
+    fireEvent.click(screen.getByTitle('Remove coding'));
+    await choose('C');
+    fireEvent.click(screen.getByText('Save changes'));
+    const after = await serializeXml(context.moddle, context.definitions);
+    expect(after).toContain('code="C"');
+    expect(after).not.toContain('code="A"');
+    context.commandStack.undo();
+    expect(await serializeXml(context.moddle, context.definitions)).toBe(before);
+    context.commandStack.redo();
+    expect(await serializeXml(context.moddle, context.definitions)).toBe(after);
+  });
+
+  it('discards an edit draft on element changes and undo', async () => {
+    const context = await createProcessContext([
+      { id: 'Task_A', type: 'bpmn:Task' }, { id: 'Task_B', type: 'bpmn:Task' }
+    ]);
+    setServices(context);
+    const view = render(h(AnnotationListEntry, { element: context.elements.Task_A }));
+    await createAnnotation(view.container, { id: 'synthetic-1', text: 'Synthetic first', codings: [] });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit annotation synthetic-1' }));
+    view.rerender(h(AnnotationListEntry, { element: context.elements.Task_B }));
+    await waitFor(() => expect(view.container.querySelector('.annotation-form')).toBeNull());
+    view.rerender(h(AnnotationListEntry, { element: context.elements.Task_A }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit annotation synthetic-1' }));
+    context.commandStack.undo();
+    await waitFor(() => expect(view.container.querySelector('.annotation-form')).toBeNull());
+    expect(view.container.querySelectorAll('.annotation-item')).toHaveLength(0);
   });
 
   it('recreates the staging task terminology annotation via the UI', async () => {
@@ -849,13 +1019,33 @@ describe('terminology properties panel UI', () => {
 
     expect(outdatedCoding).toBeTruthy();
     expect(warning).toBeTruthy();
-    expect(warning.textContent).toBe('Version unavailable');
-    expect(warning.getAttribute('title'))
-      .toBe('Saved CodeSystem version is not available locally');
+    expect(warning.textContent).toBe('⚠');
+    expect(warning.getAttribute('aria-label')).toBe('Version unavailable');
+    expect(screen.queryByRole('tooltip')).toBeNull();
+    const savedTooltipTrigger = outdatedCoding.querySelector('.bio-properties-panel-tooltip-wrapper');
+    fireEvent.mouseEnter(savedTooltipTrigger);
+    expect((await screen.findByRole('tooltip')).textContent)
+      .toBe('Version unavailable: "SNOMED CT 2024-09" is not installed.');
+    fireEvent.mouseLeave(savedTooltipTrigger);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
     expect(isCodeSystemVersionOutdated).toHaveBeenCalledWith(
       'http://snomed.info/sct',
       '2024-09'
     );
+
+    fireEvent.click(annotationView.container.querySelector('.annotation-item__edit'));
+
+    const selectedCoding = annotationView.container.querySelector('.selected-coding--outdated');
+    expect(selectedCoding).toBeTruthy();
+    expect(selectedCoding.querySelector('.coding-version-warning').textContent)
+      .toBe('⚠');
+    const selectedTooltipTrigger = selectedCoding.querySelector('.bio-properties-panel-tooltip-wrapper');
+    expect(selectedTooltipTrigger.getAttribute('tabindex')).toBe('0');
+    selectedTooltipTrigger.focus();
+    expect((await screen.findByRole('tooltip')).textContent)
+      .toBe('Version unavailable: "SNOMED CT 2024-09" is not installed.');
+    fireEvent.keyDown(selectedTooltipTrigger, { key: 'Escape', code: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
   });
 
   it('keeps saved Codings normal when their CodeSystem version remains available', async () => {
@@ -895,6 +1085,12 @@ describe('terminology properties panel UI', () => {
     expect(annotationView.container.querySelector(
       '.annotation-item__coding--outdated'
     )).toBeNull();
+
+    fireEvent.click(annotationView.container.querySelector('.annotation-item__edit'));
+
+    expect(annotationView.container.querySelector('.selected-coding')).toBeTruthy();
+    expect(annotationView.container.querySelector('.selected-coding--outdated')).toBeNull();
+    expect(annotationView.container.querySelector('.annotation-form .coding-version-warning')).toBeNull();
   });
 
   it('keeps CodeSystem versions distinct when selecting parallel package providers', async () => {
@@ -1452,17 +1648,14 @@ async function createProcessContext(elementDefinitions) {
     elements[definition.id] = { businessObject };
   }
 
-  const modeling = {
-    updateModdleProperties: vi.fn((element, bo, properties) => {
-      Object.entries(properties).forEach(([key, value]) => {
-        bo.set(key, value);
-      });
-    })
-  };
+  const { modeling, eventBus, commandStack } = createAnnotationCommandStack();
+  vi.spyOn(modeling, 'updateModdleProperties');
 
   return {
     definitions,
     elements,
+    eventBus,
+    commandStack,
     modeling,
     moddle
   };
@@ -1472,6 +1665,7 @@ function setServices(context, overrides = {}) {
   serviceState.current = {
     moddle: context.moddle,
     modeling: context.modeling,
+    eventBus: context.eventBus,
     elementRegistry: {
       forEach(callback) {
         Object.values(context.elements).forEach(callback);

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.9](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.8...terminology-v0.1.9) (2026-09-14)
+
+
+### Bug Fixes
+
+* **terminology:** harden provider discovery ([a32ce45](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/a32ce4599472e8bda7cfd24b0505f48241f91e5e))
+* **terminology:** support package dependency and KDL variants ([a4d34a5](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/a4d34a526f1788382283498a9eb36e07f3a80e4d))
+
 ## [0.1.8](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.7...terminology-v0.1.8) (2026-09-10)
 
 

@@ -87,6 +87,9 @@ jobs:
       - name: Package conventions
         run: npm run check:packages
 
+      - name: Release version consistency
+        run: npm run check:versions
+
       # Blocking gate: no high/critical CVEs in *production* (shipped) dependencies.
       # Dev-only advisories are tracked separately and do not block here. The
       # upstream npm package named hl7.fhir.r4.core is malicious (GHSA-qg8x-2hq5-hwf3),

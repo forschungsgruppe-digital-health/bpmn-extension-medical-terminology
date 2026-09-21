@@ -2,6 +2,7 @@
   "@context": "https://w3id.org/codemeta/3.0",
   "@type": "SoftwareSourceCode",
   "name": "bpmn-extension-medical-terminology",
+  "version": "0.1.9",
   "codeRepository": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology",
   "license": "https://spdx.org/licenses/MIT",
   "copyrightYear": 2026,
