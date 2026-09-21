@@ -18,10 +18,17 @@ on:
       - 'docs/**'
       - 'extension/src/**'
       - 'demo/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'extension/package.json'
       - 'tools/generate-config-defaults.mjs'
+      - 'tools/check-api-docs.mjs'
+      - 'tools/check-doc-types.mjs'
+      - 'tools/check-site-links.mjs'
       - 'typedoc.json'
       - 'tsconfig.docs.json'
       - '.github/workflows/docs-preview.yml'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -53,7 +60,8 @@ jobs:
         run: npm run docs:gate
 
       - name: Build documentation site
-        run: npm run docs:build
+        # docs:gate has already generated TypeDoc output for the sidebar.
+        run: npm --prefix docs-site run build
 
       - name: Build demo application
         env:
