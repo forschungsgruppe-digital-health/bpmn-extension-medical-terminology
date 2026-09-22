@@ -70,6 +70,9 @@ jobs:
       - name: Check API documentation coverage
         run: npm run docs:gate
 
+      - name: Stage namespace artifacts
+        run: npm run docs:namespace:stage
+
       - name: Build documentation site
         # docs:gate has already generated TypeDoc output for the sidebar.
         run: npm --prefix docs-site run build
