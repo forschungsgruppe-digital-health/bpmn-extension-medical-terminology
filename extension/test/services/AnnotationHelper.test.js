@@ -43,15 +43,15 @@ describe('AnnotationHelper', () => {
       expect(getAnnotationsContainer(bo)).toBeUndefined();
     });
 
-    it('should return undefined if no term:Annotations', () => {
+    it('should return undefined if no mt:Annotations', () => {
       const bo = createBusinessObject({
         values: [{ $type: 'other:Container' }]
       });
       expect(getAnnotationsContainer(bo)).toBeUndefined();
     });
 
-    it('should find and return term:Annotations', () => {
-      const container = { $type: 'term:Annotations', values: [] };
+    it('should find and return mt:Annotations', () => {
+      const container = { $type: 'mt:Annotations', values: [] };
       const bo = createBusinessObject({ values: [container] });
       expect(getAnnotationsContainer(bo)).toBe(container);
     });
@@ -65,14 +65,14 @@ describe('AnnotationHelper', () => {
     });
 
     it('should return annotations from container', () => {
-      const annotation1 = { $type: 'term:Annotation', id: 'term-ann-1' };
-      const annotation2 = { $type: 'term:Annotation', id: 'term-ann-2' };
-      const container = { $type: 'term:Annotations', values: [annotation1, annotation2] };
+      const annotation1 = { $type: 'mt:Annotation', id: 'mt-ann-1' };
+      const annotation2 = { $type: 'mt:Annotation', id: 'mt-ann-2' };
+      const container = { $type: 'mt:Annotations', values: [annotation1, annotation2] };
       const bo = createBusinessObject({ values: [container] });
 
       const result = getAnnotations(bo);
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('term-ann-1');
+      expect(result[0].id).toBe('mt-ann-1');
     });
   });
 
@@ -80,27 +80,27 @@ describe('AnnotationHelper', () => {
     it('should collect used IDs', () => {
       const bo = createBusinessObject({
         values: [{
-          $type: 'term:Annotations',
+          $type: 'mt:Annotations',
           values: [
-            { $type: 'term:Annotation', id: 'term-ann-1' },
-            { $type: 'term:Annotation', id: 'term-ann-2' },
-            { $type: 'term:Annotation' }
+            { $type: 'mt:Annotation', id: 'mt-ann-1' },
+            { $type: 'mt:Annotation', id: 'mt-ann-2' },
+            { $type: 'mt:Annotation' }
           ]
         }]
       });
 
-      expect(getUsedIds(bo)).toEqual(['term-ann-1', 'term-ann-2']);
+      expect(getUsedIds(bo)).toEqual(['mt-ann-1', 'mt-ann-2']);
     });
 
     it('should generate the next unique ID', () => {
-      expect(createId(['term-ann-1', 'term-ann-2'])).toBe('term-ann-3');
+      expect(createId(['mt-ann-1', 'mt-ann-2'])).toBe('mt-ann-3');
     });
 
     it('should validate ID format', () => {
-      expect(isValidId('term-ann-1')).toBe(true);
-      expect(isValidId('term-ann_1')).toBe(true);
-      expect(isValidId('-term-ann-')).toBe(true);
-      expect(isValidId('term-ann 1')).toBe(false);
+      expect(isValidId('mt-ann-1')).toBe(true);
+      expect(isValidId('mt-ann_1')).toBe(true);
+      expect(isValidId('-mt-ann-')).toBe(true);
+      expect(isValidId('mt-ann 1')).toBe(false);
     });
   });
 
@@ -108,19 +108,19 @@ describe('AnnotationHelper', () => {
     it('should collect used coding keys', () => {
       const bo = createBusinessObject({
         values: [{
-          $type: 'term:Annotations',
+          $type: 'mt:Annotations',
           values: [
             {
-              $type: 'term:Annotation',
-              id: 'term-ann-1',
+              $type: 'mt:Annotation',
+              id: 'mt-ann-1',
               codings: [
                 { system: 'http://snomed.info/sct', code: '123' },
                 { system: 'http://loinc.org', code: '456' }
               ]
             },
             {
-              $type: 'term:Annotation',
-              id: 'term-ann-2',
+              $type: 'mt:Annotation',
+              id: 'mt-ann-2',
               codings: [
                 { system: 'http://snomed.info/sct', code: '123' }
               ]
@@ -150,7 +150,7 @@ describe('AnnotationHelper', () => {
     });
 
     it('should return existing extensionElements', () => {
-      const existing = { $type: 'bpmn:ExtensionElements', values: [{ $type: 'term:Annotations' }] };
+      const existing = { $type: 'bpmn:ExtensionElements', values: [{ $type: 'mt:Annotations' }] };
       const bo = createBusinessObject(existing);
       const ext = ensureExtensionElements(bo, moddle);
       expect(ext).toBe(existing);
@@ -163,13 +163,13 @@ describe('AnnotationHelper', () => {
     it('should create extensionElements and Annotations container if none exist', () => {
       const bo = createBusinessObject();
       const container = ensureAnnotationsContainer(bo, moddle);
-      expect(container.$type).toBe('term:Annotations');
+      expect(container.$type).toBe('mt:Annotations');
       expect(container.values).toEqual([]);
       expect(bo.extensionElements.values).toContain(container);
     });
 
     it('should return existing Annotations container', () => {
-      const existingContainer = { $type: 'term:Annotations', values: [] };
+      const existingContainer = { $type: 'mt:Annotations', values: [] };
       const bo = createBusinessObject({ values: [existingContainer] });
       const container = ensureAnnotationsContainer(bo, moddle);
       expect(container).toBe(existingContainer);
@@ -185,16 +185,16 @@ describe('AnnotationHelper', () => {
         text: 'CT-Thorax mit Kontrastmittel'
       });
 
-      expect(annotation.$type).toBe('term:Annotation');
-      expect(annotation.id).toBe('term-ann-1');
+      expect(annotation.$type).toBe('mt:Annotation');
+      expect(annotation.id).toBe('mt-ann-1');
       expect(annotation.text).toBe('CT-Thorax mit Kontrastmittel');
       expect(getAnnotations(bo)).toHaveLength(1);
     });
 
-    it('should default the ID to term-ann-1', () => {
+    it('should default the ID to mt-ann-1', () => {
       const bo = createBusinessObject();
       const annotation = addAnnotation(bo, moddle, {});
-      expect(annotation.id).toBe('term-ann-1');
+      expect(annotation.id).toBe('mt-ann-1');
     });
 
     it('should keep a manually provided ID', () => {
@@ -216,7 +216,7 @@ describe('AnnotationHelper', () => {
       });
 
       expect(annotation.codings).toHaveLength(2);
-      expect(annotation.codings[0].$type).toBe('term:Coding');
+      expect(annotation.codings[0].$type).toBe('mt:Coding');
       expect(annotation.codings[0].code).toBe('169069000');
       expect(annotation.codings[0].system).toBe('http://snomed.info/sct');
       expect(annotation.codings[0].version).toBe('2024');
@@ -231,8 +231,8 @@ describe('AnnotationHelper', () => {
 
       const annotations = getAnnotations(bo);
       expect(annotations).toHaveLength(2);
-      expect(annotations[0].id).toBe('term-ann-1');
-      expect(annotations[1].id).toBe('term-ann-2');
+      expect(annotations[0].id).toBe('mt-ann-1');
+      expect(annotations[1].id).toBe('mt-ann-2');
     });
 
     it('should set $parent references correctly', () => {
@@ -241,7 +241,7 @@ describe('AnnotationHelper', () => {
         codings: [{ system: 'http://snomed.info/sct', code: '123' }]
       });
 
-      expect(annotation.$parent.$type).toBe('term:Annotations');
+      expect(annotation.$parent.$type).toBe('mt:Annotations');
       expect(annotation.codings[0].$parent).toBe(annotation);
     });
   });

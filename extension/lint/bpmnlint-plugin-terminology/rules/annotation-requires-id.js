@@ -11,12 +11,12 @@ module.exports = function () {
     }
 
     extensionElements.values.forEach(value => {
-      if (!is(value, 'term:Annotations') || !value.values) {
+      if (!is(value, 'mt:Annotations') || !value.values) {
         return;
       }
 
       value.values.forEach(annotation => {
-        if (!is(annotation, 'term:Annotation')) {
+        if (!is(annotation, 'mt:Annotation')) {
           return;
         }
 
@@ -25,7 +25,7 @@ module.exports = function () {
         if (!ANNOTATION_ID_PATTERN.test(id)) {
           reporter.report(
             node.id,
-            'term:Annotation requires a non-empty valid "id" attribute'
+            'mt:Annotation requires a non-empty valid "id" attribute'
           );
         }
       });

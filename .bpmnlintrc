@@ -5,6 +5,6 @@
     "plugin:terminology/recommended"
   ],
   "moddleExtensions": {
-    "term": "./extension/src/moddle/clinical.json"
+    "mt": "./extension/src/moddle/medical-terminology.json"
   }
 }

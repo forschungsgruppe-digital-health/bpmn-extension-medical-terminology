@@ -13,10 +13,10 @@
         },
         {
           "type": "json",
-          "path": "src/moddle/clinical.json",
+          "path": "src/moddle/medical-terminology.json",
           "jsonpath": "$.version"
         },
-        "/schema/clinical-semantics.xsd",
+        "/schema/medical-terminology.xsd",
         {
           "type": "yaml",
           "path": "/CITATION.cff",

@@ -1,42 +1,33 @@
-name: deploy-demo
+name: deploy-site
+
+# Publishes one GitHub Pages site containing three things that are built
+# separately and assembled into a single directory:
+#
+#   /        the documentation site (Astro + Starlight)
+#   /api/    the API reference, generated from the source by TypeDoc
+#   /demo/   the interactive bpmn-js demo
+#
+# GitHub Pages accepts exactly one artifact per deployment, so the assembly
+# step is not an optimisation — two upload-pages-artifact calls cannot both be
+# published.
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  SITE_BASE: /bpmn-extension-medical-terminology/
+
 jobs:
   test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [24]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
-
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
-
-      - name: Run tests
-        run: npm test
-
-  build:
-    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -51,19 +42,85 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Build demo app
+      - name: Ensure xmllint is available (for XSD core validation)
+        run: |
+          if command -v xmllint >/dev/null 2>&1; then
+            xmllint --version
+            exit 0
+          fi
+
+          # Keep this in sync with validate.yml: refresh only Ubuntu sources so
+          # an unrelated stale third-party mirror cannot block the deployment.
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=/dev/null \
+            -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends libxml2-utils
+
+      - name: Run repository verification
+        run: npm run verify
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install package dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install documentation site dependencies
+        run: npm ci --prefix docs-site
+
+      - name: Check documentation types
+        run: npm run docs:types
+
+      - name: Check API documentation coverage
+        run: npm run docs:gate
+
+      - name: Stage namespace artifacts
+        run: npm run docs:namespace:stage
+
+      - name: Build documentation site
+        # docs:gate has already generated TypeDoc output for the sidebar.
+        run: npm --prefix docs-site run build
+
+      - name: Build demo application
         env:
-          BASE_PATH: /bpmn-extension-medical-terminology/
+          BASE_PATH: ${{ env.SITE_BASE }}demo/
+          BUILD_SOURCEMAP: 'false'
         run: npm run build
+
+      - name: Assemble the published tree
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          cp -R docs-site/dist/. _site/
+          mkdir -p _site/demo
+          cp -R demo/dist/. _site/demo/
+          echo "Assembled $(find _site -type f | wc -l) files, $(du -sh _site | cut -f1)."
+
+      - name: Check internal links
+        run: npm run docs:links
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
         with:
-          path: demo/dist
+          path: _site
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

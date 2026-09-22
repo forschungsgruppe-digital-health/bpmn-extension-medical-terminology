@@ -10,9 +10,10 @@ ADRs.
 
 | ADR | Decision | Scope |
 |---|---|---|
-| [ADR-0001](../adr/0001-versioning-and-release-please.md) | Keep one release SemVer across extension artifacts while leaving the `term:` namespace URI stable | Release automation, descriptor compatibility, generated XSD |
+| [ADR-0001](../adr/0001-versioning-and-release-please.md) | Keep one release SemVer across extension artifacts while leaving the `mt:` namespace URI stable | Release automation, descriptor compatibility, generated XSD |
 | [ADR-0002](../adr/0002-bundled-terminology-defaults.md) | Bundle default FHIR terminology packages as runtime dependencies and expose their providers without mandatory consumer discovery setup | Default service configuration and package-backed CodeSystems |
 | [ADR-0003](../adr/0003-bound-automatic-package-discovery.md) | Limit automatic package discovery to the bundled HL7, IHE XDS, and KDL resources | Vite discovery, runtime package registries, and bundle size |
+| [ADR-0004](../adr/0004-namespace-authority-and-versioning.md) | Use resolvable, versioned GitHub Pages namespaces for the extension family | XML authority, format compatibility, generated namespace documentation |
 
 ## Decision log
 
@@ -21,8 +22,8 @@ their rationale is summarized in [chapter 4](04_solution_strategy.md).
 
 | ID | Decision | Evidence |
 |---|---|---|
-| D1 | Persist terminology annotations in standard BPMN `extensionElements` under `term:` | `AGENTS.md`; `extension/src/moddle/clinical.json` |
-| D2 | Keep the namespace URI `https://clinical-bpmn.org/terminology/v1` stable across ordinary package releases | `clinical.json`; ADR-0001 |
+| D1 | Persist terminology annotations in standard BPMN `extensionElements` under `mt:` | `AGENTS.md`; `extension/src/moddle/medical-terminology.json` |
+| D2 | Keep the namespace URI `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` stable across ordinary package releases | `medical-terminology.json`; ADR-0001; ADR-0004 |
 | D3 | Publish one raw-ESM package, with the demo and lint plugin as supporting workspaces | root and `extension/package.json`; `release-please-config.json` |
 | D4 | Separate provider contracts from protocol-specific adapters | `extension/src/core/`, `src/providers/`, `src/adapters/` |
 | D5 | Aggregate providers behind `TerminologyRegistry` | `extension/src/core/TerminologyRegistry.js` |

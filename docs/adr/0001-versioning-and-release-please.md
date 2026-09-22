@@ -3,6 +3,7 @@
 - **Status:** accepted
 - **Date:** 2026-06-27
 - **Deciders:** maintainers
+- **Amended by:** [ADR-0004](0004-namespace-authority-and-versioning.md)
 
 ## Context
 
@@ -12,14 +13,13 @@ single version so a consumer can tell which release a file came from:
 
 - the published package (`extension/package.json`),
 - the lint plugin (`extension/lint/bpmnlint-plugin-terminology/package.json`),
-- the moddle descriptor (`extension/src/moddle/clinical.json`),
-- the extension schema (`schema/clinical-semantics.xsd`).
+- the moddle descriptor (`extension/src/moddle/medical-terminology.json`),
+- the extension schema (`schema/medical-terminology.xsd`).
 
 The same release identity is also recorded in `CITATION.cff`, `codemeta.json`,
 and the extension/lint-plugin workspace entries in the root `package-lock.json`.
 
-There is a trap: the moddle descriptor's namespace `uri`
-(`https://clinical-bpmn.org/terminology/v1`) embeds a version, but that is the
+There is a trap: the moddle descriptor's namespace `uri` embeds a version, but that is the
 **data-format contract** version. Auto-bumping it on every release would change
 the XML namespace and break every diagram already in the wild (AGENTS.md lists
 changing the `uri` under "ask first"). So the release SemVer and the namespace

@@ -8,19 +8,22 @@
  *
  *   const results = await registry.search('pneumonia', 'snomed-ct');
  *   const concept = await registry.lookup('169069000', 'snomed-ct');
+ * @category Extensibility
  */
 export class TerminologyRegistry {
 
   constructor() {
-    /** @type {Map<string, import('./TerminologyProvider').TerminologyProvider>} */
+    /** @type {Map<string, import('./TerminologyProvider.js').TerminologyProvider>} */
+    /** @internal */
     this._providers = new Map();
     /** @type {Map<string, Set<Function>>} */
+    /** @internal */
     this._listeners = new Map();
   }
 
   /**
    * Register a terminology provider.
-   * @param {import('./TerminologyProvider').TerminologyProvider} provider
+   * @param {import('./TerminologyProvider.js').TerminologyProvider} provider
    */
   register(provider) {
     if (this._providers.has(provider.id)) {
@@ -42,7 +45,7 @@ export class TerminologyRegistry {
   /**
    * Get a specific provider.
    * @param {string} id
-   * @returns {import('./TerminologyProvider').TerminologyProvider}
+   * @returns {import('./TerminologyProvider.js').TerminologyProvider}
    */
   getProvider(id) {
     const provider = this._providers.get(id);
@@ -56,7 +59,7 @@ export class TerminologyRegistry {
   /**
    * Find a provider instance by its CodeSystem URI.
    * @param {string} systemUri
-   * @returns {import('./TerminologyProvider').TerminologyProvider | null}
+   * @returns {import('./TerminologyProvider.js').TerminologyProvider | null}
    */
   findProviderBySystem(systemUri) {
     if (!systemUri) return null;
@@ -150,8 +153,8 @@ export class TerminologyRegistry {
    * Search within a specific terminology system.
    * @param {string} term
    * @param {string} providerId
-   * @param {import('./types').SearchOptions} [options]
-   * @returns {Promise<import('./types').SearchResult>}
+   * @param {import('./types.js').SearchOptions} [options]
+   * @returns {Promise<import('./types.js').SearchResult>}
    */
   async search(term, providerId, options) {
     return this.getProvider(providerId).search(term, options);
@@ -161,7 +164,7 @@ export class TerminologyRegistry {
    * Look up a single concept.
    * @param {string} code
    * @param {string} providerId
-   * @returns {Promise<import('./types').Concept | null>}
+   * @returns {Promise<import('./types.js').Concept | null>}
    */
   async lookup(code, providerId) {
     return this.getProvider(providerId).lookup(code);
@@ -189,6 +192,13 @@ export class TerminologyRegistry {
     this._listeners.get(event).add(listener);
   }
 
+  /**
+   * Remove a previously registered registry-event listener.
+   *
+   * Calling this for an unknown event or listener is a no-op.
+   * @param {string} event - Event name passed to {@link on}.
+   * @param {Function} listener - The same function previously passed to {@link on}.
+   */
   off(event, listener) {
     this._listeners.get(event)?.delete(listener);
   }

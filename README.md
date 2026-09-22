@@ -5,14 +5,18 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A524-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` adds machine-readable medical
-terminology to BPMN process models. It provides a `term:`
+terminology to BPMN process models. It provides a `mt:`
 moddle extension for XML serialization, a bpmn-js properties-panel provider,
 terminology services, and a Vite plugin for discovering terminology packages.
 
 All annotations are stored as standard BPMN 2.0 `extensionElements`, so BPMN
 tools that do not understand the extension preserve the model unchanged.
 
-> **Live Demo:** [bpmn-extension-medical-terminology](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
+> **Documentation:** <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/>
+> — guides, the generated API reference, the XML schema and the compatibility matrix.
+>
+> **Live demo:** <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/>
+> — a bpmn-js modeler with the terminology properties-panel group enabled.
 
 ## Funding
 
@@ -64,7 +68,7 @@ type. This limits reliable clinical process automation and interoperability.
 
 This extension adds terminology annotations for systems such as SNOMED CT,
 LOINC, ICD-10-GM, OPS, IHE XDS, KDL, and other FHIR-hosted code systems.
-Terminology annotations are optional and remain isolated in the `term:`
+Terminology annotations are optional and remain isolated in the `mt:`
 namespace under BPMN `extensionElements`.
 
 ## Features
@@ -123,7 +127,7 @@ const modeler = new BpmnModeler({
     createDefaultTerminologyModule()
   ],
   moddleExtensions: {
-    term: TerminologyModdleDescriptor
+    mt: TerminologyModdleDescriptor
   }
 });
 ```
@@ -134,6 +138,11 @@ application as usual; the terminology styles inherit its fonts, colors, and
 CSS variables.
 
 ## Programmatic Usage
+
+> The documentation site carries an expanded version of this section, including the
+> [default values](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/defaults/) generated from the code and the
+> language options that are not described below:
+> <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/>
 
 ```js
 import {
@@ -164,7 +173,7 @@ const TerminologyServicesModule =
   createTerminologyModule(terminologyServices);
 
 addAnnotation(businessObject, moddle, {
-  id: 'term-ann-1',
+  id: 'mt-ann-1',
   text: 'CT-Thorax mit Kontrastmittel',
   codings: [{
     system: 'http://snomed.info/sct',
@@ -271,7 +280,7 @@ also keeps its existing ID and version behavior.
 The package version identifies the installed npm terminology package. It is
 not the FHIR CodeSystem version. Search concepts retain the selected
 CodeSystem's own `version`, and only that value is written to the existing
-`term:coding/@version` attribute in BPMN XML. The npm package version is
+`mt:coding/@version` attribute in BPMN XML. The npm package version is
 available as provider/package metadata and is never substituted into the
 Coding.
 
@@ -652,28 +661,28 @@ Terminology annotations are persisted as standard BPMN 2.0 extension elements:
 
 ```xml
 <bpmn2:dataObject id="DataObj_Befund" name="CT-Befundbericht"
-                  xmlns:term="https://clinical-bpmn.org/terminology/v1">
+                  xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-1"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-1"
                        text="CT-Befund Thorax mit KM">
-        <term:coding system="http://snomed.info/sct"
+        <mt:coding system="http://snomed.info/sct"
                      code="169069000"
                      display="CT of chest (procedure)"/>
-      </term:annotation>
-    </term:annotations>
+      </mt:annotation>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:dataObject>
 ```
 
-Clinical data belongs only in `term:` elements under
+Clinical data belongs only in `mt:` elements under
 `bpmn:extensionElements`. It must not change BPMN core or BPMN-DI structures.
 
 ## Demo
 
 The interactive demo is deployed to GitHub Pages on pushes to `main`:
 
-[bpmn-extension-medical-terminology demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
+[bpmn-extension-medical-terminology demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/)
 
 Run it locally:
 
@@ -712,6 +721,24 @@ the host application's `baseUrl`; that infrastructure is outside this
 package.
 
 ## Documentation
+
+The documentation site at <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/> is the place to start. It carries the guides,
+the API reference generated from the source, the XML schema reference and the compatibility
+matrix, and it is rebuilt from this repository on every push to `main`. Build it locally with
+`npm run docs:install` followed by `npm run docs:dev`.
+
+| Page | Audience | Content |
+|---|---|---|
+| [Use cases](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/use-cases/) | Anyone evaluating the extension | The problem it solves and worked scenarios |
+| [Configuration](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/) | Integrators | Composition roots, providers, servers, authentication, language |
+| [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) | Integrators and modellers | The user-facing surface, its wiring contract and its current limits |
+| [Namespace v1](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1/) | XML/tooling integrators | Generated namespace contract, moddle descriptor and XSD |
+| [XML schema](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/schema/) | Tooling integrators | Namespace, content model, serialisation, forward compatibility |
+| [Compatibility](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/compatibility/) | Integrators | Supported versions, the bundler-only model, coexistence with other extensions |
+| [Extending](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/extending/) | Contributors | Writing a provider or a transport adapter |
+| [API reference](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/api/) | Developers | Every export, generated from the source |
+
+The repository documents below remain the source for what they cover.
 
 | Document | Audience | Content |
 |---|---|---|

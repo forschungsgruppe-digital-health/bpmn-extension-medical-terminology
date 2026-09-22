@@ -1,31 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Definitions_1" targetNamespace="https://clinical-bpmn.org/demo">
+<bpmn2:definitions xmlns:bpmn2="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" id="Definitions_1" targetNamespace="https://example.invalid/bpmn/demo">
   <bpmn2:process id="Process_LungCaMin" name="Lung Cancer Treatment Decision" isExecutable="false">
     <bpmn2:startEvent id="StartEvent_1" name="Patient with suspected lung cancer">
       <bpmn2:outgoing>Flow_Start_Staging</bpmn2:outgoing>
     </bpmn2:startEvent>
     <bpmn2:dataObjectReference id="DataObj_MRI" name="MRI Scan Report" dataObjectRef="DataObject_0aq4k7t">
       <bpmn2:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-1" text="MRI scan report of the thorax as input document for TNM staging">
-            <term:coding system="http://loinc.org" version="2.82" code="18748-4" display="Diagnostische Bildgebung - Untersuchung" />
-            <term:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Ergebnisse bildgebender Diagnostik" />
-          </term:annotation>
-          <term:annotation id="term-ann-2">
-            <term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Befundberichte" />
-          </term:annotation>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-1" text="MRI scan report of the thorax as input document for TNM staging">
+            <mt:coding system="http://loinc.org" version="2.82" code="18748-4" display="Diagnostische Bildgebung - Untersuchung" />
+            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Ergebnisse bildgebender Diagnostik" />
+          </mt:annotation>
+          <mt:annotation id="mt-ann-2">
+            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Befundberichte" />
+          </mt:annotation>
+        </mt:annotations>
       </bpmn2:extensionElements>
     </bpmn2:dataObjectReference>
     <bpmn2:dataObject id="DataObject_0aq4k7t" />
     <bpmn2:task id="Task_Staging" name="Perform TNM Staging">
       <bpmn2:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-3" text="Clinical TNM staging to determine tumor stage">
-            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="254292007" display="Tumour staging" />
-            <term:coding system="http://loinc.org" version="2.82" code="21908-9" display="Stage group.clinical Cancer" />
-          </term:annotation>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-3" text="Clinical TNM staging to determine tumor stage">
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="254292007" display="Tumour staging" />
+            <mt:coding system="http://loinc.org" version="2.82" code="21908-9" display="Stage group.clinical Cancer" />
+          </mt:annotation>
+        </mt:annotations>
       </bpmn2:extensionElements>
       <bpmn2:incoming>Flow_Start_Staging</bpmn2:incoming>
       <bpmn2:outgoing>Flow_Staging_GwSplit</bpmn2:outgoing>
@@ -44,12 +44,12 @@
     <bpmn2:sequenceFlow id="Flow_Staging_GwSplit" sourceRef="Task_Staging" targetRef="Gateway_Split" />
     <bpmn2:task id="Task_Surgery" name="Surgical Resection">
       <bpmn2:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-4" text="Lobectomy or pneumonectomy for operable lung cancer Stage I-II">
-            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="359615001" display="Partial lobectomy of lung" />
-            <term:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Einfache Lobektomie und Bilobektomie der Lunge" />
-          </term:annotation>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-4" text="Lobectomy or pneumonectomy for operable lung cancer Stage I-II">
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="359615001" display="Partial lobectomy of lung" />
+            <mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Einfache Lobektomie und Bilobektomie der Lunge" />
+          </mt:annotation>
+        </mt:annotations>
       </bpmn2:extensionElements>
       <bpmn2:incoming>Flow_GwSplit_Surgery</bpmn2:incoming>
       <bpmn2:outgoing>Flow_Surgery_GwJoin</bpmn2:outgoing>
@@ -57,12 +57,12 @@
     <bpmn2:sequenceFlow id="Flow_GwSplit_Surgery" sourceRef="Gateway_Split" targetRef="Task_Surgery" />
     <bpmn2:task id="Task_Chemo" name="Systemic Chemotherapy">
       <bpmn2:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-5" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">
-            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="367336001" display="Chemotherapy" />
-            <term:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="cisplatin" />
-          </term:annotation>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-5" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="367336001" display="Chemotherapy" />
+            <mt:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="cisplatin" />
+          </mt:annotation>
+        </mt:annotations>
       </bpmn2:extensionElements>
       <bpmn2:incoming>Flow_GwSplit_Chemo</bpmn2:incoming>
       <bpmn2:outgoing>Flow_Chemo_GwJoin</bpmn2:outgoing>
@@ -77,26 +77,26 @@
     <bpmn2:sequenceFlow id="Flow_Surgery_GwJoin" sourceRef="Task_Surgery" targetRef="Gateway_Join" />
     <bpmn2:dataObjectReference id="DataObj_DischargeLetter" name="Discharge Letter" dataObjectRef="DataObject_0228dri">
       <bpmn2:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-6" text="Medical discharge report upon completion of follow-up">
-            <term:coding system="http://loinc.org" version="2.82" code="18842-5" display="Discharge summary" />
-            <term:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Arztbrief" />
-          </term:annotation>
-          <term:annotation id="term-ann-7">
-            <term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Briefe" />
-          </term:annotation>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-6" text="Medical discharge report upon completion of follow-up">
+            <mt:coding system="http://loinc.org" version="2.82" code="18842-5" display="Discharge summary" />
+            <mt:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Arztbrief" />
+          </mt:annotation>
+          <mt:annotation id="mt-ann-7">
+            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Briefe" />
+          </mt:annotation>
+        </mt:annotations>
       </bpmn2:extensionElements>
     </bpmn2:dataObjectReference>
     <bpmn2:dataObject id="DataObject_0228dri" />
     <bpmn2:task id="Task_Followup" name="Follow-up Assessment">
       <bpmn2:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-8" text="Structured follow-up assessment with imaging surveillance and lab monitoring">
-            <term:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="390906007" display="Follow-up encounter" />
-            <term:coding system="http://loinc.org" version="2.82" code="18776-5" display="Behandlungsplan - Dokumentation" />
-          </term:annotation>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-8" text="Structured follow-up assessment with imaging surveillance and lab monitoring">
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="390906007" display="Follow-up encounter" />
+            <mt:coding system="http://loinc.org" version="2.82" code="18776-5" display="Behandlungsplan - Dokumentation" />
+          </mt:annotation>
+        </mt:annotations>
       </bpmn2:extensionElements>
       <bpmn2:incoming>Flow_GwJoin_Followup</bpmn2:incoming>
       <bpmn2:outgoing>Flow_Followup_End</bpmn2:outgoing>

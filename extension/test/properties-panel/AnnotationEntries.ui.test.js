@@ -208,12 +208,12 @@ describe('terminology properties panel UI', () => {
     const context = await createTestContext({ id: 'Task_Synthetic', type: 'bpmn:Task' });
     const { rootElement: imported } = await context.moddle.fromXML(`
       <bpmn:task xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Task_Synthetic">
-        <bpmn:extensionElements><term:annotations>
-          <term:annotation id="synthetic-1" text="Synthetic imported">
-            <term:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" />
-          </term:annotation>
-        </term:annotations></bpmn:extensionElements>
+        xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" id="Task_Synthetic">
+        <bpmn:extensionElements><mt:annotations>
+          <mt:annotation id="synthetic-1" text="Synthetic imported">
+            <mt:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" />
+          </mt:annotation>
+        </mt:annotations></bpmn:extensionElements>
       </bpmn:task>`, 'bpmn:Task');
     context.element.businessObject = imported;
     setServices(context);
@@ -244,7 +244,7 @@ describe('terminology properties panel UI', () => {
     fireEvent.click(screen.getByTitle('Remove coding'));
     fireEvent.input(getControlByLabel(view.container, 'ID'), { target: { value: 'synthetic-renamed' } });
     fireEvent.click(screen.getByText('Save changes'));
-    expect((await context.moddle.toXML(imported)).xml).not.toContain('<term:coding');
+    expect((await context.moddle.toXML(imported)).xml).not.toContain('<mt:coding');
     expect((await context.moddle.toXML(imported)).xml).toContain('id="synthetic-renamed"');
     context.commandStack.undo();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Edit annotation synthetic-1' })).toBeTruthy());
@@ -364,9 +364,9 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('Task_Staging', xml);
 
     expect(xml).toContain('id="Task_Staging"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="Clinical TNM staging to determine tumor stage">');
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" code="254292007" display="Tumor staging (tumor staging)"');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="21908-9" display="Stage group.clinical Cancer"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Clinical TNM staging to determine tumor stage">');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" code="254292007" display="Tumor staging (tumor staging)"');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="21908-9" display="Stage group.clinical Cancer"');
   });
 
   it('sorts the terminology dropdown alphabetically when providers change at runtime', async () => {
@@ -932,7 +932,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:annotation id="thorax-report-type" text="Thorax report" />');
+    expect(xml).toContain('<mt:annotation id="thorax-report-type" text="Thorax report" />');
   });
 
   it('persists the terminology code system version in XML', async () => {
@@ -972,7 +972,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
   });
 
   it('marks saved Codings yellow when their CodeSystem version is unavailable', async () => {
@@ -1151,8 +1151,8 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="https://example.org/CodeSystem/acme" version="2024.1" code="OLD" display="Legacy concept"');
-    expect(xml).toContain('<term:coding system="https://example.org/CodeSystem/acme" version="2025.1" code="NEW" display="Current concept"');
+    expect(xml).toContain('<mt:coding system="https://example.org/CodeSystem/acme" version="2024.1" code="OLD" display="Legacy concept"');
+    expect(xml).toContain('<mt:coding system="https://example.org/CodeSystem/acme" version="2025.1" code="NEW" display="Current concept"');
     expect(xml).not.toContain('version="6.0.2"');
     expect(xml).not.toContain('version="7.1.0"');
   });
@@ -1194,7 +1194,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="20240901" code="233604007" display="Pneumonia"');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" version="20240901" code="233604007" display="Pneumonia"');
   });
 
   it('uses the selected provider version when a search result omits one', async () => {
@@ -1235,7 +1235,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
   });
 
   it('blocks duplicate terminology codes with the same system', async () => {
@@ -1288,7 +1288,7 @@ describe('terminology properties panel UI', () => {
     expect(screen.getByText('A terminology code with the same system and code is already used in the diagram.')).toBeTruthy();
 
     const xml = await serializeXml(context.moddle, context.definitions);
-    expect((xml.match(/<term:annotation\b/g) || [])).toHaveLength(1);
+    expect((xml.match(/<mt:annotation\b/g) || [])).toHaveLength(1);
   });
 
   it('marks the ID field and shows its error below the field', async () => {
@@ -1345,9 +1345,9 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('Task_Chemo', xml);
 
     expect(xml).toContain('id="Task_Chemo"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
-    expect(xml).toContain('<term:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
+    expect(xml).toContain('<mt:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
   });
 
   it('recreates the discharge letter data object annotations via the UI', async () => {
@@ -1391,11 +1391,11 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('DataObj_DischargeLetter', xml);
 
     expect(xml).toContain('id="DataObj_DischargeLetter"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="Medical discharge report upon completion of follow-up">');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="18842-5" display="Discharge summary"');
-    expect(xml).toContain('<term:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Medical discharge report"');
-    expect(xml).toContain('<term:annotation id="term-ann-2">');
-    expect(xml).toContain('<term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Physician letters"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Medical discharge report upon completion of follow-up">');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="18842-5" display="Discharge summary"');
+    expect(xml).toContain('<mt:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Medical discharge report"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-2">');
+    expect(xml).toContain('<mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Physician letters"');
   });
 
   it('recreates the MRI data object annotations via the UI', async () => {
@@ -1439,10 +1439,10 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('DataObj_MRI', xml);
 
     expect(xml).toContain('id="DataObj_MRI"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="MRI scan report of the thorax as input document for TNM staging">');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="18748-4" display="Diagnostic imaging study"');
-    expect(xml).toContain('<term:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"');
-    expect(xml).toContain('<term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Clinical reports"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="MRI scan report of the thorax as input document for TNM staging">');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="18748-4" display="Diagnostic imaging study"');
+    expect(xml).toContain('<mt:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"');
+    expect(xml).toContain('<mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Clinical reports"');
   });
 
   it('recreates the terminology-only reference cross section via the UI', async () => {
@@ -1585,9 +1585,9 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('id="Gateway_Split"');
     expect(xml).toContain('Treatment decision based on TNM stage: Stage I-II (operable) vs. Stage III-IV (inoperable)');
     expect(xml).toContain('id="Task_Surgery"');
-    expect(xml).toContain('<term:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
+    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
     expect(xml).toContain('id="Task_Followup"');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="18776-5" display="Plan of care note"');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="18776-5" display="Plan of care note"');
   });
 });
 
@@ -1603,8 +1603,8 @@ async function createTestContext({ id, type, name }) {
 }
 
 async function createProcessContext(elementDefinitions) {
-  const { default: descriptor } = await import('../../src/moddle/clinical.json');
-  const moddle = new BpmnModdle({ term: descriptor });
+  const { default: descriptor } = await import('../../src/moddle/medical-terminology.json');
+  const moddle = new BpmnModdle({ mt: descriptor });
   const process = moddle.create('bpmn:Process', {
     id: 'Process_1',
     isExecutable: false,

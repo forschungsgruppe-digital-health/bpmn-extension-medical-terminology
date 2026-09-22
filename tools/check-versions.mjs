@@ -26,7 +26,7 @@ export function checkVersions(root = repoRoot, { tag } = {}) {
 
   compare('.release-please-manifest.json: extension', json('.release-please-manifest.json').extension);
   compare(`${lintPath}/package.json: version`, json(`${lintPath}/package.json`).version);
-  compare('extension/src/moddle/clinical.json: version', json('extension/src/moddle/clinical.json').version);
+  compare('extension/src/moddle/medical-terminology.json: version', json('extension/src/moddle/medical-terminology.json').version);
   compare('codemeta.json: version', json('codemeta.json').version);
   compare('package-lock.json: packages.extension.version', lock.packages?.extension?.version);
   compare(`package-lock.json: packages[${lintPath}].version`, lock.packages?.[lintPath]?.version);
@@ -42,10 +42,10 @@ export function checkVersions(root = repoRoot, { tag } = {}) {
     : undefined;
   compare('CITATION.cff: version (one top-level scalar required)', citationVersion);
 
-  const schemaVersions = [...text('schema/clinical-semantics.xsd').matchAll(
+  const schemaVersions = [...text('schema/medical-terminology.xsd').matchAll(
     /<!-- extension version (\S+) \(kept in sync by Release Please\) x-release-please-version -->/g
   )];
-  compare('schema/clinical-semantics.xsd: extension version',
+  compare('schema/medical-terminology.xsd: extension version',
     schemaVersions.length === 1 ? schemaVersions[0][1] : undefined);
 
   // The private demo keeps its own version, but its lock entry must agree.

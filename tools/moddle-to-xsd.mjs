@@ -181,13 +181,13 @@ if (isMain) {
   const descriptorPath =
     dIdx >= 0 && args[dIdx + 1]
       ? args[dIdx + 1]
-      : fileURLToPath(new URL('../extension/src/moddle/clinical.json', import.meta.url));
+      : fileURLToPath(new URL('../extension/src/moddle/medical-terminology.json', import.meta.url));
   const outPath =
     oIdx >= 0 && args[oIdx + 1]
       ? args[oIdx + 1]
       : dIdx >= 0
         ? descriptorPath.replace(/\.json$/, '.xsd')
-        : fileURLToPath(new URL('../schema/clinical-semantics.xsd', import.meta.url));
+        : fileURLToPath(new URL('../schema/medical-terminology.xsd', import.meta.url));
 
   const descriptor = JSON.parse(readFileSync(descriptorPath, 'utf8'));
   const { xsd, warnings } = generateXsd(descriptor);

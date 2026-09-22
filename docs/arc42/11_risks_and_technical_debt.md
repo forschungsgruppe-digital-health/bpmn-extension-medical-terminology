@@ -7,7 +7,7 @@ prioritization require maintainer review._
 
 | ID | Item | Evidence / consequence | Suggested follow-up |
 |---|---|---|---|
-| R-1 | Renaming or removing a moddle type/property silently breaks consumers | `AGENTS.md`; serialized `term:` data depends on `clinical.json` | Require human sign-off, an ADR, and a MAJOR release; consider an automated descriptor diff |
+| R-1 | Renaming or removing a moddle type/property silently breaks consumers | `AGENTS.md`; serialized `mt:` data depends on `medical-terminology.json` | Require human sign-off, an ADR, and a MAJOR release; consider an automated descriptor diff |
 | R-2 | The core BPMN XSD gate is informational by default | `tools/validate-xsd.sh`; standard XSD permits foreign extension content | Keep extension validation and moddle roundtrip as the authoritative extension checks; decide whether strict core validation should gate releases |
 | R-3 | Unknown extension content is warning-level in normal roundtrip mode | `tools/moddle-roundtrip.mjs` | Run strict mode when validating an externally supplied descriptor or fixture |
 

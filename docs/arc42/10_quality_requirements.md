@@ -8,7 +8,7 @@ the current repository._
 | ID | Goal | Evidence | Blocking behavior |
 |---|---|---|---|
 | Q1 | BPMN structural and terminology conformance | `npm run lint:bpmn`, `.bpmnlintrc`, `tools/lint-bpmn.mjs` | Fails on lint errors |
-| Q2 | Lossless, stable `term:` serialization | `tools/moddle-roundtrip.mjs` | Fails on non-idempotence or dropped extension elements |
+| Q2 | Lossless, stable `mt:` serialization | `tools/moddle-roundtrip.mjs` | Fails on non-idempotence or dropped extension elements |
 | Q3 | Generated schema consistency | `npm run xsd:gen:check` | Fails when generated XSD differs |
 | Q4 | Extension-schema validity | `npm run xsd:ext` | Fails on extension schema errors |
 | Q5 | BPMN core XSD compatibility | `npm run check:xsd` | Informational by default; strict mode is available |
@@ -24,7 +24,7 @@ npm run verify
 ```
 
 The standard BPMN XSD accepts arbitrary content in `extensionElements`, so a
-successful core-XSD result does not validate `term:` semantics. Moddle
+successful core-XSD result does not validate `mt:` semantics. Moddle
 roundtrip and the generated extension XSD provide that extension-specific
 coverage.
 
@@ -59,15 +59,15 @@ for structural or configured terminology errors.
 
 ### Q2 — Unstable or lossy serialization
 
-When a `.bpmn` file containing `term:` elements is round-tripped, the tool
+When a `.bpmn` file containing `mt:` elements is round-tripped, the tool
 requires serialization A to equal serialization B and requires the number of
-`term:` elements not to decrease. Instability or loss is blocking; parse
+`mt:` elements not to decrease. Instability or loss is blocking; parse
 warnings are non-fatal unless `--strict` is used.
 
 ### Q3 — Descriptor or generated-schema drift
 
 When the moddle descriptor changes, `xsd:gen:check` compares the generated
-schema with the committed `schema/clinical-semantics.xsd`. Drift fails the
+schema with the committed `schema/medical-terminology.xsd`. Drift fails the
 conformance command.
 
 ### Q4 — Package convention regression

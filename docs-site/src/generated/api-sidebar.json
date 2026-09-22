@@ -1,0 +1,350 @@
+[
+  {
+    "label": "API reference",
+    "collapsed": true,
+    "items": [
+      {
+        "label": "Overview",
+        "link": "/api/"
+      },
+      {
+        "label": "Getting started",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "createPackageCollectionProvider",
+            "link": "/api/functions/createpackagecollectionprovider/"
+          },
+          {
+            "label": "createPackageFallbackProvider",
+            "link": "/api/functions/createpackagefallbackprovider/"
+          },
+          {
+            "label": "createPackageTerminologyProvider",
+            "link": "/api/functions/createpackageterminologyprovider/"
+          },
+          {
+            "label": "createTerminologyModule",
+            "link": "/api/functions/createterminologymodule/"
+          },
+          {
+            "label": "createTerminologyServices",
+            "link": "/api/functions/createterminologyservices/"
+          }
+        ]
+      },
+      {
+        "label": "Configuration",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "ACTIVE\\_FHIR\\_VERSION",
+            "link": "/api/variables/active_fhir_version/"
+          },
+          {
+            "label": "FHIR\\_MIME\\_TYPE",
+            "link": "/api/variables/fhir_mime_type/"
+          },
+          {
+            "label": "FHIR\\_R4",
+            "link": "/api/variables/fhir_r4/"
+          },
+          {
+            "label": "FHIR\\_R5",
+            "link": "/api/variables/fhir_r5/"
+          },
+          {
+            "label": "createDefaultFhirProviderConfigs",
+            "link": "/api/functions/createdefaultfhirproviderconfigs/"
+          },
+          {
+            "label": "createDefaultPackageProviders",
+            "link": "/api/functions/createdefaultpackageproviders/"
+          },
+          {
+            "label": "createDefaultServerConfig",
+            "link": "/api/functions/createdefaultserverconfig/"
+          },
+          {
+            "label": "createDefaultTerminologyConfig",
+            "link": "/api/functions/createdefaultterminologyconfig/"
+          },
+          {
+            "label": "createDefaultTerminologyModule",
+            "link": "/api/functions/createdefaultterminologymodule/"
+          },
+          {
+            "label": "createDefaultTerminologyServices",
+            "link": "/api/functions/createdefaultterminologyservices/"
+          }
+        ]
+      },
+      {
+        "label": "Providers",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "FallbackProvider",
+            "link": "/api/classes/fallbackprovider/"
+          },
+          {
+            "label": "FhirProvider",
+            "link": "/api/classes/fhirprovider/"
+          },
+          {
+            "label": "SnomedCtProvider",
+            "link": "/api/classes/snomedctprovider/"
+          },
+          {
+            "label": "StaticProvider",
+            "link": "/api/classes/staticprovider/"
+          },
+          {
+            "label": "DEFAULT\\_PACKAGE\\_PROVIDER\\_IDS",
+            "link": "/api/variables/default_package_provider_ids/"
+          },
+          {
+            "label": "createHl7TerminologyR4PackageProvider",
+            "link": "/api/functions/createhl7terminologyr4packageprovider/"
+          },
+          {
+            "label": "createIheXdsClassCodeProvider",
+            "link": "/api/functions/createihexdsclasscodeprovider/"
+          },
+          {
+            "label": "createIheXdsTypeCodeProvider",
+            "link": "/api/functions/createihexdstypecodeprovider/"
+          },
+          {
+            "label": "createKdlProvider",
+            "link": "/api/functions/createkdlprovider/"
+          },
+          {
+            "label": "createPackagePresetProvider",
+            "link": "/api/functions/createpackagepresetprovider/"
+          },
+          {
+            "label": "createStaticProviderFromCodeSystem",
+            "link": "/api/functions/createstaticproviderfromcodesystem/"
+          },
+          {
+            "label": "loadCodeSystemFromFhir",
+            "link": "/api/functions/loadcodesystemfromfhir/"
+          }
+        ]
+      },
+      {
+        "label": "Extensibility",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "FhirTerminologyAdapter",
+            "link": "/api/classes/fhirterminologyadapter/"
+          },
+          {
+            "label": "SnowstormAdapter",
+            "link": "/api/classes/snowstormadapter/"
+          },
+          {
+            "label": "TerminologyProvider",
+            "link": "/api/classes/terminologyprovider/"
+          },
+          {
+            "label": "TerminologyRegistry",
+            "link": "/api/classes/terminologyregistry/"
+          },
+          {
+            "label": "createFhirTerminologyProviderLoader",
+            "link": "/api/functions/createfhirterminologyproviderloader/"
+          }
+        ]
+      },
+      {
+        "label": "Annotations",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "addAnnotation",
+            "link": "/api/functions/addannotation/"
+          },
+          {
+            "label": "createId",
+            "link": "/api/functions/createid/"
+          },
+          {
+            "label": "ensureAnnotationsContainer",
+            "link": "/api/functions/ensureannotationscontainer/"
+          },
+          {
+            "label": "ensureExtensionElements",
+            "link": "/api/functions/ensureextensionelements/"
+          },
+          {
+            "label": "getAnnotations",
+            "link": "/api/functions/getannotations/"
+          },
+          {
+            "label": "getAnnotationsContainer",
+            "link": "/api/functions/getannotationscontainer/"
+          },
+          {
+            "label": "getCodingKey",
+            "link": "/api/functions/getcodingkey/"
+          },
+          {
+            "label": "getUsedCodingKeys",
+            "link": "/api/functions/getusedcodingkeys/"
+          },
+          {
+            "label": "getUsedIds",
+            "link": "/api/functions/getusedids/"
+          },
+          {
+            "label": "isValidId",
+            "link": "/api/functions/isvalidid/"
+          },
+          {
+            "label": "removeAnnotation",
+            "link": "/api/functions/removeannotation/"
+          }
+        ]
+      },
+      {
+        "label": "Properties panel",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "DEFAULT\\_TERMINOLOGY\\_PROPERTIES\\_CONFIG",
+            "link": "/api/variables/default_terminology_properties_config/"
+          },
+          {
+            "label": "createTerminologyPropertiesPanelModule",
+            "link": "/api/functions/createterminologypropertiespanelmodule/"
+          }
+        ]
+      },
+      {
+        "label": "Core types",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "Concept",
+            "link": "/api/interfaces/concept/"
+          },
+          {
+            "label": "ConnectionConfig",
+            "link": "/api/interfaces/connectionconfig/"
+          },
+          {
+            "label": "FhirVersionConfig",
+            "link": "/api/interfaces/fhirversionconfig/"
+          },
+          {
+            "label": "Moddle",
+            "link": "/api/interfaces/moddle/"
+          },
+          {
+            "label": "ModdleElement",
+            "link": "/api/interfaces/moddleelement/"
+          },
+          {
+            "label": "SearchOptions",
+            "link": "/api/interfaces/searchoptions/"
+          },
+          {
+            "label": "SearchResult",
+            "link": "/api/interfaces/searchresult/"
+          },
+          {
+            "label": "TerminologyCapabilities",
+            "link": "/api/interfaces/terminologycapabilities/"
+          },
+          {
+            "label": "TerminologyCoding",
+            "link": "/api/interfaces/terminologycoding/"
+          },
+          {
+            "label": "TerminologyPropertiesPanelModuleDefinition",
+            "link": "/api/interfaces/terminologypropertiespanelmoduledefinition/"
+          },
+          {
+            "label": "TerminologyProviderLoader",
+            "link": "/api/interfaces/terminologyproviderloader/"
+          },
+          {
+            "label": "TerminologyServices",
+            "link": "/api/interfaces/terminologyservices/"
+          },
+          {
+            "label": "FhirValueSetExpansionContains",
+            "link": "/api/type-aliases/fhirvaluesetexpansioncontains/"
+          },
+          {
+            "label": "FhirVersionCode",
+            "link": "/api/type-aliases/fhirversioncode/"
+          },
+          {
+            "label": "TerminologyPropertiesPanelModule",
+            "link": "/api/variables/terminologypropertiespanelmodule/"
+          }
+        ]
+      },
+      {
+        "label": "Discovery",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "DEFAULT\\_DISCOVERY\\_EXCLUDE",
+            "link": "/api/variables/default_discovery_exclude/"
+          },
+          {
+            "label": "DEFAULT\\_DISCOVERY\\_INCLUDE",
+            "link": "/api/variables/default_discovery_include/"
+          },
+          {
+            "label": "collectPackageCodeSystemsFromGlob",
+            "link": "/api/functions/collectpackagecodesystemsfromglob/"
+          },
+          {
+            "label": "collectPackageCodeSystemsFromModules",
+            "link": "/api/functions/collectpackagecodesystemsfrommodules/"
+          },
+          {
+            "label": "discoverPackageProviders",
+            "link": "/api/functions/discoverpackageproviders/"
+          },
+          {
+            "label": "formatPackageDisplayName",
+            "link": "/api/functions/formatpackagedisplayname/"
+          },
+          {
+            "label": "formatPackageProviderDisplayName",
+            "link": "/api/functions/formatpackageproviderdisplayname/"
+          }
+        ]
+      },
+      {
+        "label": "Internal helpers",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "createId",
+            "link": "/api/functions/createid/"
+          },
+          {
+            "label": "ensureExtensionElements",
+            "link": "/api/functions/ensureextensionelements/"
+          },
+          {
+            "label": "getCodingKey",
+            "link": "/api/functions/getcodingkey/"
+          },
+          {
+            "label": "isValidId",
+            "link": "/api/functions/isvalidid/"
+          }
+        ]
+      }
+    ]
+  }
+]
