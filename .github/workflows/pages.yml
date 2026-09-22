@@ -42,6 +42,21 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      - name: Ensure xmllint is available (for XSD core validation)
+        run: |
+          if command -v xmllint >/dev/null 2>&1; then
+            xmllint --version
+            exit 0
+          fi
+
+          # Keep this in sync with validate.yml: refresh only Ubuntu sources so
+          # an unrelated stale third-party mirror cannot block the deployment.
+          sudo apt-get update \
+            -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+            -o Dir::Etc::sourceparts=/dev/null \
+            -o Acquire::Retries=3
+          sudo apt-get install -y --no-install-recommends libxml2-utils
+
       - name: Run repository verification
         run: npm run verify
 
