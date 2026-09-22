@@ -46,7 +46,7 @@ reproducible; the rest usually decide whether it can be diagnosed at all.
 - **Your bundler and its version.** Vite, webpack, Rollup or esbuild, and whether you use the
   package's Vite plugin or the discovery CLI. See [discovery](/configuration/discovery/).
 - **What you expected and what happened.** Separately, in that order.
-- **A minimal reproduction.** The smallest BPMN XML that shows the problem, with the `term:`
+- **A minimal reproduction.** The smallest BPMN XML that shows the problem, with the `mt:`
   content included, and the smallest module and provider configuration that still reproduces it.
 - **Your provider configuration**, with any base URLs, credentials or internal hostnames removed.
   Say *that* you use a FHIR server or a SNOMED CT server rather than *which* one, if the address

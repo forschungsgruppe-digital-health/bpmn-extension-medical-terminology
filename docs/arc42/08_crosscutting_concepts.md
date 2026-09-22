@@ -8,15 +8,15 @@ blocks._
 ```mermaid
 classDiagram
     class "BPMN element" as BPMN
-    class "term:Annotations" as Annotations {
+    class "mt:Annotations" as Annotations {
         +values: Annotation[0..*]
     }
-    class "term:Annotation" as Annotation {
+    class "mt:Annotation" as Annotation {
         +id: string
         +text?: string
         +codings: Coding[0..*]
     }
-    class "term:Coding" as Coding {
+    class "mt:Coding" as Coding {
         +system: string
         +version?: string
         +code: string
@@ -28,7 +28,7 @@ classDiagram
 ```
 
 The descriptor is the source of truth for the serialized shape. The public
-namespace is `term:` → `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`. The helper
+namespace is `mt:` → `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`. The helper
 and properties panel operate on moddle business objects, not on raw XML.
 
 ## Provider extension model
@@ -81,12 +81,12 @@ reserved for additional packages.
 | Open/closed | New providers and package resources are registered/configured without modifying the registry |
 | Liskov substitution | SNOMED, FHIR, static, fallback, and package providers share the provider contract |
 | Dependency inversion | UI code depends on the registry and bpmn-js services, not on one remote server |
-| Separation of persistence and lookup | `term:` XML stores annotations; provider/adapters resolve terminology separately |
+| Separation of persistence and lookup | `mt:` XML stores annotations; provider/adapters resolve terminology separately |
 | Stable public data contract | Descriptor types, properties, namespace URI, and package exports are reviewed as compatibility surfaces |
 
 ## Namespace and preservation rule
 
-Clinical semantics must be represented by `term:` values under
+Clinical semantics must be represented by `mt:` values under
 `bpmn:extensionElements`; BPMN core and BPMN-DI structures remain untouched.
 The descriptor extends supported BPMN types for the optional attribute and uses
 `Element` subclasses for nested annotation data. This is the central

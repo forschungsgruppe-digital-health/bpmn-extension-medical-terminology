@@ -2,7 +2,7 @@
 
 Medical terminology for bpmn-js.
 
-The package exports the `term:` moddle descriptor, a bpmn-js properties-panel
+The package exports the `mt:` moddle descriptor, a bpmn-js properties-panel
 module, terminology providers, default service factories, and a Vite
 package-discovery plugin. See the
 [repository README](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology#readme)
@@ -24,7 +24,7 @@ The package resolves its FHIR terminology dependencies directly from Simplifier;
 no additional npm registry configuration is required for those dependencies.
 
 Medical terminology data is stored only in `bpmn:extensionElements` under the
-`term:` namespace.
+`mt:` namespace.
 
 
 ## Funding

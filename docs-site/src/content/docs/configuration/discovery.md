@@ -118,7 +118,7 @@ CodeSystems already covered by an enabled preset are subtracted from discovered 
 The same message appears for a package whose CodeSystems only declare a `url` and no `concept` array — a legitimate situation for code systems that are meant to be expanded by a terminology server rather than enumerated.
 
 :::note[Package version is not CodeSystem version]
-The npm package version identifies the installed artefact. A selected concept keeps its own `CodeSystem.version`, and only that value is written to `term:coding/@version` in the BPMN XML. The package version is provider metadata and is never substituted into a coding.
+The npm package version identifies the installed artefact. A selected concept keeps its own `CodeSystem.version`, and only that value is written to `mt:coding/@version` in the BPMN XML. The package version is provider metadata and is never substituted into a coding.
 :::
 
 ### Labels

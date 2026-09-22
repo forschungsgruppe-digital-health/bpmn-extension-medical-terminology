@@ -17,14 +17,15 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  rmSync,
   writeFileSync
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const descriptorPath = join(repoRoot, 'extension/src/moddle/clinical.json');
-const schemaPath = join(repoRoot, 'schema/clinical-semantics.xsd');
+const descriptorPath = join(repoRoot, 'extension/src/moddle/medical-terminology.json');
+const schemaPath = join(repoRoot, 'schema/medical-terminology.xsd');
 const siteRoot = new URL(
   'https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/'
 );
@@ -79,7 +80,7 @@ export function renderNamespacePage(descriptor) {
     '---',
     '',
     ':::note[Generated reference]',
-    'This page is generated from `extension/src/moddle/clinical.json` by',
+    'This page is generated from `extension/src/moddle/medical-terminology.json` by',
     '`tools/generate-namespace-docs.mjs`. CI rejects changes when the descriptor,',
     'generated XSD and this reference disagree.',
     ':::',
@@ -104,8 +105,8 @@ export function renderNamespacePage(descriptor) {
     '',
     'Machine-readable artifacts:',
     '',
-    `- [Moddle descriptor](${descriptor.uri}/clinical.json)`,
-    `- [XML Schema](${descriptor.uri}/clinical-semantics.xsd)`,
+    `- [Moddle descriptor](${descriptor.uri}/medical-terminology.json)`,
+    `- [XML Schema](${descriptor.uri}/medical-terminology.xsd)`,
     '',
     '## Content model',
     ''
@@ -142,19 +143,9 @@ export function renderNamespacePage(descriptor) {
   lines.push('');
   lines.push('The extension family follows the pattern');
   lines.push('`https://forschungsgruppe-digital-health.github.io/<repository>/ns/<extension>/v<format-major>`.');
-  lines.push('The companion FHIR-mapping extension therefore owns its namespace below its own');
-  lines.push('GitHub Pages repository rather than reusing this terminology namespace.');
-  lines.push('');
-  lines.push('## Previous development namespace');
-  lines.push('');
-  lines.push('Development versions used `https://clinical-bpmn.org/terminology/v1`, which was also');
-  lines.push('used by the incompatible public predecessor `bpmn-js-clinical-semantics`. This project');
-  lines.push('had no users or external BPMN files when the authority changed, so repository fixtures');
-  lines.push('were updated in place and no legacy reader or migration tool is provided. Files from');
-  lines.push('the predecessor must not be relabelled: its annotation model is structurally different.');
   lines.push('');
   lines.push('See [ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md)');
-  lines.push('for the authority, compatibility and family-wide naming decision.');
+  lines.push('for the authority and versioning decision.');
   lines.push('');
 
   return lines.join('\n');
@@ -174,7 +165,7 @@ function writePage(descriptor) {
 function checkPage(descriptor) {
   const { markdownPath } = namespaceLocation(descriptor);
   if (!existsSync(markdownPath) || readFileSync(markdownPath, 'utf8') !== renderNamespacePage(descriptor)) {
-    console.error(`${markdownPath} is out of date with extension/src/moddle/clinical.json.`);
+    console.error(`${markdownPath} is out of date with extension/src/moddle/medical-terminology.json.`);
     console.error('Run `npm run docs:namespace` and commit the result.');
     process.exitCode = 1;
     return;
@@ -184,9 +175,10 @@ function checkPage(descriptor) {
 
 function stageArtifacts(descriptor) {
   const { publicPath } = namespaceLocation(descriptor);
+  rmSync(publicPath, { recursive: true, force: true });
   mkdirSync(publicPath, { recursive: true });
-  copyFileSync(descriptorPath, join(publicPath, 'clinical.json'));
-  copyFileSync(schemaPath, join(publicPath, 'clinical-semantics.xsd'));
+  copyFileSync(descriptorPath, join(publicPath, 'medical-terminology.json'));
+  copyFileSync(schemaPath, join(publicPath, 'medical-terminology.xsd'));
   console.log(`Staged namespace artifacts in ${publicPath}`);
 }
 

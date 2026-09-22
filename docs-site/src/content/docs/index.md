@@ -13,7 +13,7 @@ changing BPMN itself.
 This package adds an optional terminology layer to [bpmn-js](https://bpmn.io): a BPMN element can carry
 one or more annotations, and each annotation can carry any number of codings — a code system URI, a code,
 a display text and a version. Everything is persisted as ordinary BPMN 2.0 `extensionElements` in a
-separate `term:` namespace, so the extension never touches BPMN core structures or the diagram layout.
+separate `mt:` namespace, so the extension never touches BPMN core structures or the diagram layout.
 
 Alongside the data model it ships the pieces you need to actually produce that data: a moddle descriptor,
 a bpmn-js properties-panel group with concept search, terminology providers for SNOMED CT and for
@@ -38,7 +38,7 @@ const modeler = new BpmnModeler({
     createDefaultTerminologyModule()
   ],
   moddleExtensions: {
-    term: TerminologyModdleDescriptor
+    mt: TerminologyModdleDescriptor
   }
 });
 ```
@@ -46,7 +46,7 @@ const modeler = new BpmnModeler({
 Three things have to line up, and all three are in the snippet above:
 `TerminologyPropertiesPanelModule` draws the **Medical terminology** group in the properties panel,
 `createDefaultTerminologyModule()` supplies the providers that group searches, and the
-`moddleExtensions` entry is what lets bpmn-js read and write the `term:` elements at all.
+`moddleExtensions` entry is what lets bpmn-js read and write the `mt:` elements at all.
 
 :::caution[The most common mistake]
 Registering `TerminologyPropertiesPanelModule` *without* a terminology module is the mistake almost

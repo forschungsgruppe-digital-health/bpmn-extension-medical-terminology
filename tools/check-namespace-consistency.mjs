@@ -22,19 +22,19 @@ function walkBpmn(root, directory, files = []) {
 
 export function checkNamespaceConsistency(root = repoRoot) {
   const read = path => readFileSync(join(root, path), 'utf8');
-  const descriptor = JSON.parse(read('extension/src/moddle/clinical.json'));
+  const descriptor = JSON.parse(read('extension/src/moddle/medical-terminology.json'));
   const { uri, prefix } = descriptor;
   const errors = [];
 
-  if (typeof uri !== 'string' || !uri || prefix !== 'term') {
-    errors.push('extension/src/moddle/clinical.json: expected a non-empty uri and prefix "term"');
+  if (typeof uri !== 'string' || !uri || prefix !== 'mt') {
+    errors.push('extension/src/moddle/medical-terminology.json: expected a non-empty uri and prefix "mt"');
     return { uri, errors };
   }
 
-  const xsd = read('schema/clinical-semantics.xsd');
+  const xsd = read('schema/medical-terminology.xsd');
   const targetNamespaces = [...xsd.matchAll(/\btargetNamespace="([^"]+)"/g)].map(match => match[1]);
   if (targetNamespaces.length !== 1 || targetNamespaces[0] !== uri) {
-    errors.push(`schema/clinical-semantics.xsd: targetNamespace must equal ${uri}`);
+    errors.push(`schema/medical-terminology.xsd: targetNamespace must equal ${uri}`);
   }
 
   const bpmnFiles = [
@@ -43,11 +43,11 @@ export function checkNamespaceConsistency(root = repoRoot) {
   ];
   for (const file of bpmnFiles) {
     const xml = read(file);
-    const declaration = xml.match(/\bxmlns:term="([^"]+)"/);
-    if (xml.includes('<term:') && !declaration) {
-      errors.push(`${file}: uses term elements without an xmlns:term declaration`);
+    const declaration = xml.match(/\bxmlns:mt="([^"]+)"/);
+    if (xml.includes('<mt:') && !declaration) {
+      errors.push(`${file}: uses terminology elements without an xmlns:mt declaration`);
     } else if (declaration && declaration[1] !== uri) {
-      errors.push(`${file}: xmlns:term must equal ${uri}`);
+      errors.push(`${file}: xmlns:mt must equal ${uri}`);
     }
   }
 

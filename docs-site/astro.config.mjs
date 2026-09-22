@@ -82,7 +82,7 @@ export default defineConfig({
             entryFileName: 'index.md',
             excludeInternal: true,
             excludePrivate: true,
-            exclude: ['**/moddle/clinical.json'],
+            exclude: ['**/moddle/medical-terminology.json'],
             readme: 'none',
             useCodeBlocks: true,
             expandObjects: true,

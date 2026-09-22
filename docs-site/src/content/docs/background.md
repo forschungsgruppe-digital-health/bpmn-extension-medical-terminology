@@ -75,7 +75,7 @@ The honest relationship is therefore one of complementary layers. BPMN4CP models
 the *structure* of a clinical pathway and the quality indicators measured on it.
 This extension binds *codes* to elements. They answer different questions, they use
 different namespaces, and there is no reason a single `.bpmn` file could not carry
-both — `cp:` for the pathway perspective and `term:` for the terminology
+both — `cp:` for the pathway perspective and `mt:` for the terminology
 perspective. Nothing in either design forbids it, and nothing in this repository
 has yet demonstrated it.
 
@@ -151,11 +151,11 @@ Clinical Pathways* documents how BPMN and CMMN models relate to that FHIR
 representation.
 
 The relationship to this extension is one of sequence rather than competition. A
-BPMN element that carries a `term:coding` is a better input to any of these
+BPMN element that carries a `mt:coding` is a better input to any of these
 transformations than one that carries only a label, because the code it must map
 into the target resource is already present and already versioned. Mapping BPMN
 models onto FHIR resources is explicitly out of scope here; it belongs to a
-separate extension (see [Sibling work](#sibling-work-in-the-same-group)).
+separate extension.
 
 ## BPMN extension methodology
 
@@ -186,7 +186,7 @@ That is the gap this repository sits in. The extension ships:
   BPMN-core-only pass is informational by design, because the standard schema
   admits foreign content through a lax wildcard without checking it;
 - a bpmnlint plugin carrying the one semantic rule the XSD deliberately does not
-  express — every `term:annotation` needs a valid `id` — with a negative fixture
+  express — every `mt:annotation` needs a valid `id` — with a negative fixture
   that continuous integration requires to fail lint.
 
 The [compatibility page](/compatibility/) describes each of these checks and what it
@@ -237,7 +237,7 @@ Stated as narrowly as it can honestly be stated:
   which is fetched from a terminology server at runtime is set out on the
   [configuration page](/configuration/), and the licence position follows from that
   split.
-- **No standardisation status.** The `term:` namespace is a project namespace. It
+- **No standardisation status.** The `mt:` namespace is a project namespace. It
   has not been submitted to, endorsed by, or harmonised with OMG, HL7, IHE or the
   Medical Informatics Initiative.
 - **One research group, pre-1.0.** The descriptor, the API and the namespace may
@@ -250,32 +250,6 @@ XML parsers use it as an identifier; people can resolve it to the generated cont
 descriptor and XSD. The GitHub organization controls the authority, and
 [ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md)
 defines how `/v1` relates to package releases and future incompatible format changes.
-
-## Sibling work in the same group
-
-Two neighbouring repositories in the same organisation are easy to mistake for this
-one.
-
-[`bpmn-js-clinical-semantics`](https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics)
-is the predecessor. It is a public Apache-2.0 monorepo containing two extension
-packages — a terminology layer and a FHIR-mapping layer — and it is superseded by
-the present package, which replaces its terminology half. The two are not
-interchangeable: the predecessor retains the old development namespace and its content model
-differs (its `Annotation` carries
-`aspect` and `mode` rather than `id`, and it adds a `clinicalDomain` attribute to
-`bpmn:FlowNode`, `bpmn:DataObjectReference`, `bpmn:DataStoreReference` and
-`bpmn:MessageFlow`). The new controlled URI removes the namespace collision. Both projects
-still use the conventional `term` prefix, so they must not be registered together in one
-modeler. Treat the predecessor as historical context, not as an alternative to install.
-
-`bpmn-extension-fhir-mapping` is the planned successor to the predecessor's other
-half: an extension that declares how a BPMN element maps onto FHIR resources —
-resource type, profile, interaction, and key elements — so that a model can be
-transformed towards `PlanDefinition` and friends. It is designed to be combinable
-with this extension in the same file, through a second namespace. As of September
-2026 that repository is not public and still holds the unmodified scaffold of the
-group's BPMN extension template; the mapping extension itself is not yet
-implemented. Nothing on this documentation site depends on it.
 
 ## References
 
@@ -379,7 +353,7 @@ particularly those marked unverified.
 ## Where to go next
 
 - [Use cases](/use-cases/) — what the extension is for, concretely.
-- [Schema](/schema/) — the `term:` data model and its XML form.
+- [Schema](/schema/) — the `mt:` data model and its XML form.
 - [Compatibility](/compatibility/) — what round-tripping guarantees and what it
   does not.
 - [Architecture decisions](/architecture/09_architecture_decisions/) — the arc42

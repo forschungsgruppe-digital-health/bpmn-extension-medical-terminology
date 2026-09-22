@@ -374,7 +374,7 @@ The `_withDefaults` step is not optional bookkeeping. `$expand` returns concepts
 whose `system` may be the ValueSet's, and a coding persisted into BPMN XML must
 carry the **CodeSystem** URI; `FhirProvider` does the same thing for the same
 reason. The version fallback is the second half of it: without it, a server that
-omits the expansion version writes a `term:coding` with no `@version`, which
+omits the expansion version writes a `mt:coding` with no `@version`, which
 takes that coding out of the version-drift check entirely.
 
 ## Related

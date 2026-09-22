@@ -113,7 +113,7 @@ for the moddle descriptor:
 
 ```js
 export { default as TerminologyModdleDescriptor }
-  from './moddle/clinical.json' with { type: 'json' };
+  from './moddle/medical-terminology.json' with { type: 'json' };
 ```
 
 So whichever toolchain consumes the package — Node for the CLI, a bundler for the browser
@@ -183,12 +183,12 @@ either. Registering two packages that share a prefix or a URI throws at modeller
 construction:
 
 ```text
-Error: package with prefix <term> already defined
+Error: package with prefix <mt> already defined
 Error: package with uri <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1> already defined
 ```
 
 In practice: you may load as many extensions as you like as long as each brings its own
-prefix and its own URI. Camunda (`camunda`), Zeebe (`zeebe`) and this extension (`term`) sit
+prefix and its own URI. Camunda (`camunda`), Zeebe (`zeebe`) and this extension (`mt`) sit
 side by side without interacting. The one real-world collision is the sibling library
 described below.
 
@@ -201,7 +201,7 @@ const modeler = new BpmnModeler({
   container: '#canvas',
   additionalModules: [ /* … */ ],
   moddleExtensions: {
-    term: TerminologyModdleDescriptor
+    mt: TerminologyModdleDescriptor
   }
 });
 ```
@@ -226,7 +226,7 @@ groups.
 
 So registering at the same 500 as Camunda or Zeebe is the intended arrangement, not a
 conflict: the core BPMN groups appear first, then the vendor groups, then (or interleaved by
-registration order) the `clinical-terminology` group. The only thing that changes if another
+registration order) the `medical-terminology` group. The only thing that changes if another
 extension also registers at 500 is the vertical order of the groups in the panel.
 
 ### Styles
@@ -256,7 +256,7 @@ does not know the extension is not required to do anything about them.
   namespaces are skipped rather than rejected.
 - **bpmn.io-based tools preserve them.** Measured: parsing an annotated fixture with a
   `BpmnModdle` that has no `term` descriptor registered produces no warnings, and
-  re-serialising reproduces the `term:` elements and the `xmlns:term` declaration unchanged.
+  re-serialising reproduces the `mt:` elements and the `xmlns:mt` declaration unchanged.
   bpmn-moddle keeps unrecognised extension content as generic elements. Any bpmn.io viewer or
   modeller therefore round-trips annotated files even without this package.
 - **Other vendors' tools are untested here.** A tool that imports BPMN into its own internal
@@ -268,43 +268,11 @@ does not know the extension is not required to do anything about them.
 The details, including what happens with partially-recognised content, are on the
 [schema page](/schema/).
 
-## The sibling repository `bpmn-js-clinical-semantics`
-
-:::danger[Do not load both libraries into the same modeller]
-[`bpmn-js-clinical-semantics`](https://github.com/forschungsgruppe-digital-health/bpmn-js-clinical-semantics)
-is an earlier project from the same research group. Its terminology package retains the old
-development namespace `https://clinical-bpmn.org/terminology/v1` and uses the same `term`
-prefix with an incompatible annotation shape. The new namespace removes the URI collision,
-but registering both descriptors in one `BpmnModdle` still throws
-`package with prefix <term> already defined`.
-:::
-
-The two models differ where it counts:
-
-| | This extension | `bpmn-js-clinical-semantics` |
-|---|---|---|
-| Namespace | `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` | `https://clinical-bpmn.org/terminology/v1` |
-| `term:Annotation` attributes | `id`, `text` | `aspect`, `mode`, `text` — no `id` |
-| Attributes on BPMN elements | none | `term:clinicalDomain`, via an `Annotatable` type that `extends` `bpmn:FlowNode`, `bpmn:DataObjectReference`, `bpmn:DataStoreReference` and `bpmn:MessageFlow` |
-| `term:Coding` attributes | `system`, `version`, `code`, `display` | the same four |
-| Second namespace | none | `fhirmap:` → `https://clinical-bpmn.org/fhir-mapping/v1` |
-| Licence | MIT | Apache-2.0 |
-
-The distinct URIs now make files unambiguous. A file written by the predecessor is unknown
-foreign extension content to this descriptor and is not exposed as this package's
-`term:Annotation` model. Replacing only its URI would be incorrect because `aspect`, `mode`
-and `clinicalDomain` have no equivalent in the new structure.
-
-This extension supersedes the sibling library's terminology package. There were no consumers
-or external BPMN files when the namespace changed, so no legacy reader or migration command
-is shipped. Treat predecessor files as requiring a deliberate semantic conversion, not a
-namespace search-and-replace.
-
 ## The bpmnlint plugin
 
 The repository ships a bpmnlint plugin, `bpmnlint-plugin-terminology`, with one rule —
 [`annotation-requires-id`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/lint/bpmnlint-plugin-terminology/rules/annotation-requires-id.js),
-which reports any `term:Annotation` whose `id` is missing or does not match
+which reports any `mt:Annotation` whose `id` is missing or does not match
 `^[A-Za-z0-9._-]+$`. It is what makes `id` effectively required, since the XSD cannot express
 it.
 
@@ -326,7 +294,7 @@ The repository's own configuration, for reference:
     "plugin:terminology/recommended"
   ],
   "moddleExtensions": {
-    "term": "./extension/src/moddle/clinical.json"
+    "mt": "./extension/src/moddle/medical-terminology.json"
   }
 }
 ```

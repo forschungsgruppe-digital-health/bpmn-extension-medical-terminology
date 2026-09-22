@@ -13,7 +13,7 @@ change belongs to is most of the work; the rest is a small amount of wiring.
   ├───────────────────────────────────────────────────────────────┤
   │ Terminology access   registry → providers → transport adapters │
   ├───────────────────────────────────────────────────────────────┤
-  │ Data model           term: moddle descriptor → BPMN XML        │
+  │ Data model           mt: moddle descriptor → BPMN XML        │
   ├───────────────────────────────────────────────────────────────┤
   │ Build time           package discovery (Vite plugin, CLI)      │
   └───────────────────────────────────────────────────────────────┘
@@ -34,7 +34,7 @@ validates, and still carries the same codings.
 | Turn the annotation group off, or scope the panel | `createTerminologyPropertiesPanelModule({ showAnnotations })` | Editor UI | [properties panel](/properties-panel/) |
 | Bundle terminology content that is installed as an npm package | The `./vite` plugin or the `fdh-terminology-discover` CLI | Build time | [discovery](/configuration/discovery/) |
 | Read or write annotations from your own code | The annotation helpers exported from the barrel | Data model | [API reference](/api/) |
-| Add a `term:` type or attribute | The moddle descriptor — a breaking change, see below | Data model | this repository |
+| Add a `mt:` type or attribute | The moddle descriptor — a breaking change, see below | Data model | this repository |
 
 ## How the layers are wired
 
@@ -83,7 +83,7 @@ const modeler = new BpmnModeler({
     createTerminologyModule(terminologyServices)
   ],
   moddleExtensions: {
-    term: TerminologyModdleDescriptor
+    mt: TerminologyModdleDescriptor
   }
 });
 ```
@@ -132,8 +132,8 @@ already taken throws. Use `unregister(id)` first if you are replacing one.
 
 ## What is deliberately *not* an extension point
 
-**The moddle descriptor.** `extension/src/moddle/clinical.json` defines the
-`term:` vocabulary — `Annotations`, `Annotation`, `Coding` — and it is shared
+**The moddle descriptor.** `extension/src/moddle/medical-terminology.json` defines the
+`mt:` vocabulary — `Annotations`, `Annotation`, `Coding` — and it is shared
 vocabulary, not per-application configuration. Two applications that both claim
 the `term` prefix but disagree about its types produce files that only one of
 them can read. Adding a type or property is a repository change with a
@@ -188,6 +188,6 @@ properties panel reads but consumers cannot import.
 - [Architecture](/architecture/) — the arc42 chapters, including the building
   block view and the cross-cutting concepts behind these seams.
 - [Compatibility](/compatibility/) — peer-dependency ranges and what other BPMN
-  tools do with a `term:`-annotated file.
+  tools do with a `mt:`-annotated file.
 - [Configuration](/configuration/) — everything you can change without writing
   a provider at all, which is more than most integrations need.

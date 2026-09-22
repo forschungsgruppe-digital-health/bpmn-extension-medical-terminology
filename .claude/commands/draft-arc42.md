@@ -12,10 +12,10 @@ Generate or refresh the one-file-per-section arc42 documentation under
    `docs/arc42/NN_*.md`, the accepted ADRs in `docs/adr/`, and the current
    package/source evidence before drafting.
 2. Use only current evidence from `extension/`, `demo/`, `tools/`,
-   `extension/src/moddle/clinical.json`, `schema/`, `examples/`, manifests,
+   `extension/src/moddle/medical-terminology.json`, `schema/`, `examples/`, manifests,
    hooks, and workflows.
 3. Reflect the current architecture: one published package
-   `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`, private `demo/`, `term:`
+   `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`, private `demo/`, `mt:`
    namespace `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`, terminology providers
    and FHIR CodeSystem package discovery.
 4. Do not introduce removed legacy package, namespace, UI, or example concepts.

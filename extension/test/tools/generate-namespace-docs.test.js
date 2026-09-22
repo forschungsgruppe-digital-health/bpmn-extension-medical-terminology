@@ -7,7 +7,7 @@ import {
 } from '../../../tools/generate-namespace-docs.mjs';
 
 const descriptor = JSON.parse(readFileSync(
-  fileURLToPath(new URL('../../src/moddle/clinical.json', import.meta.url)),
+  fileURLToPath(new URL('../../src/moddle/medical-terminology.json', import.meta.url)),
   'utf8'
 ));
 
@@ -24,12 +24,13 @@ describe('namespace documentation generator', () => {
     const page = renderNamespacePage(descriptor);
 
     for (const type of descriptor.types) {
-      expect(page).toContain(`\`term:${type.name.charAt(0).toLowerCase()}${type.name.slice(1)}\``);
+      expect(page).toContain(`\`mt:${type.name.charAt(0).toLowerCase()}${type.name.slice(1)}\``);
       for (const property of type.properties || []) {
         expect(page).toContain(`\`${property.name}\``);
       }
     }
-    expect(page).toContain(`${descriptor.uri}/clinical-semantics.xsd`);
+    expect(page).toContain(`${descriptor.uri}/medical-terminology.json`);
+    expect(page).toContain(`${descriptor.uri}/medical-terminology.xsd`);
   });
 
   it('rejects namespace authorities and routes outside the documented family contract', () => {

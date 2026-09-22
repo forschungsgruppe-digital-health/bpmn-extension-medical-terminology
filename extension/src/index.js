@@ -1,7 +1,7 @@
 /**
  * Medical terminology for BPMN process models.
  *
- * This package is a bpmn.io extension. It adds a `term:` namespace to the BPMN
+ * This package is a bpmn.io extension. It adds a `mt:` namespace to the BPMN
  * model so that coded concepts from clinical code systems can be bound to BPMN
  * elements, and it ships a properties-panel group for doing so interactively.
  *
@@ -40,7 +40,7 @@
  * and the lazy provider loader.
  *
  * @categoryDescription Annotations
- * Reading and writing `term:Annotations` on a BPMN business object.
+ * Reading and writing `mt:Annotations` on a BPMN business object.
  *
  * @categoryDescription Properties panel
  * The bpmn-js properties-panel integration and its configuration.
@@ -166,7 +166,7 @@ export { StaticProvider } from './providers/StaticProvider.js';
 export { FallbackProvider } from './providers/FallbackProvider.js';
 
 /** @category XML schema */
-export { default as TerminologyModdleDescriptor } from './moddle/clinical.json' with { type: 'json' };
+export { default as TerminologyModdleDescriptor } from './moddle/medical-terminology.json' with { type: 'json' };
 
 /** @category Properties panel */
 export { default as TerminologyPropertiesPanelModule } from './properties-panel/index.js';

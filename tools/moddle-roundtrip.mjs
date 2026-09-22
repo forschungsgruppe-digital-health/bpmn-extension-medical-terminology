@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 /**
  * Lossless / stability roundtrip check for BPMN files carrying the clinical
- * `term:` extensions (BLOCKING on instability).
+ * `mt:` extensions (BLOCKING on instability).
  *
  * The standard BPMN20.xsd cannot validate extension content (it passes via the
  * schema's `processContents="lax"` rule), so the *extension* correctness is
  * checked here instead, with the real moddle metamodel registered.
  *
  * For each file:
- *   1. parse (fromXML) with the `term:` moddle extension registered
+ *   1. parse (fromXML) with the `mt:` moddle extension registered
  *   2. serialize (toXML, formatted)        -> A
  *   3. re-parse A and re-serialize          -> B
  *   4. assert A === B                        (stable / idempotent serialization)
@@ -32,7 +32,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 // Load the shipped moddle descriptors via fs (portable across Node 18/20/22 —
 // avoids JSON import-attribute syntax differences).
-const term = JSON.parse(readFileSync(join(here, '../extension/src/moddle/clinical.json'), 'utf8'));
+const mt = JSON.parse(readFileSync(join(here, '../extension/src/moddle/medical-terminology.json'), 'utf8'));
 
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
@@ -43,8 +43,8 @@ if (!files.length) {
   process.exit(0);
 }
 
-/** Count `<term:*>` element openings in a serialized document. */
-const extCount = (xml) => (xml.match(/<term:[A-Za-z]/g) || []).length;
+/** Count `<mt:*>` element openings in a serialized document. */
+const extCount = (xml) => (xml.match(/<mt:[A-Za-z]/g) || []).length;
 
 let failures = 0;
 let warningsTotal = 0;
@@ -53,7 +53,7 @@ console.log(`roundtrip: checking ${files.length} file(s)${strict ? ' (strict)' :
 
 for (const file of files) {
   const xml = readFileSync(file, 'utf8');
-  const moddle = new BpmnModdle({ term });
+  const moddle = new BpmnModdle({ mt });
 
   let rootElement;
   let warnings = [];

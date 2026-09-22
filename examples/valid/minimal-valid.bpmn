@@ -3,7 +3,7 @@
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
+                  xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
                   id="Definitions_valid"
                   targetNamespace="http://example.com/bpmn">
   <bpmn:process id="Process_1" isExecutable="false">
@@ -12,9 +12,9 @@
     </bpmn:startEvent>
     <bpmn:task id="Task_1" name="Reviewed task">
       <bpmn:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-1" text="Synthetic reviewed task"/>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-1" text="Synthetic reviewed task"/>
+        </mt:annotations>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>

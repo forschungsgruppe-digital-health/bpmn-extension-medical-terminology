@@ -11,7 +11,7 @@ terminology lint plugin as private/supporting workspaces. This keeps the
 consumer-facing API focused on one package:
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`.
 
-**A stable, dedicated XML namespace.** The descriptor uses the `term:` prefix
+**A stable, dedicated XML namespace.** The descriptor uses the `mt:` prefix
 and URI `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`. The namespace is a format
 contract, not a release counter. Ordinary package releases must not silently
 change it because existing diagrams depend on the URI.

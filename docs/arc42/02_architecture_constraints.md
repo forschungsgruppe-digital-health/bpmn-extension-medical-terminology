@@ -7,11 +7,11 @@ architectural freedom._
 
 | Constraint | Evidence | Architectural consequence |
 |---|---|---|
-| Clinical semantics belong only in BPMN 2.0 `extensionElements` under a custom namespace; BPMN core and BPMN-DI must not be changed | `AGENTS.md`; `extension/src/moddle/clinical.json` | The extension augments standard BPMN elements instead of replacing them or introducing a sidecar format |
-| The public namespace is `term:` → `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` | `extension/src/moddle/clinical.json`; `schema/clinical-semantics.xsd` | The prefix and URI are serialized-data contracts and must remain stable |
+| Clinical semantics belong only in BPMN 2.0 `extensionElements` under a custom namespace; BPMN core and BPMN-DI must not be changed | `AGENTS.md`; `extension/src/moddle/medical-terminology.json` | The extension augments standard BPMN elements instead of replacing them or introducing a sidecar format |
+| The public namespace is `mt:` → `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` | `extension/src/moddle/medical-terminology.json`; `schema/medical-terminology.xsd` | The prefix and URI are serialized-data contracts and must remain stable |
 | Renaming or removing a moddle type or property is a breaking MAJOR change and requires human sign-off | `AGENTS.md`; `skills/moddle-extension-review/SKILL.md` | Descriptor changes are reviewed as public API changes |
 | The package integrates with bpmn-js and the bpmn-js properties panel | `extension/package.json` peer dependencies; `demo/src/app.js` | The published artifact is an extension module, not a standalone editor |
-| FHIR terminology is an integration boundary, not a second BPMN mapping model | `FhirProvider`, `FhirTerminologyAdapter`, package discovery services | FHIR resources are queried or loaded as terminology data; BPMN persistence remains `term:` only |
+| FHIR terminology is an integration boundary, not a second BPMN mapping model | `FhirProvider`, `FhirTerminologyAdapter`, package discovery services | FHIR resources are queried or loaded as terminology data; BPMN persistence remains `mt:` only |
 
 ### Language, runtime, and topology
 

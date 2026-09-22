@@ -6,7 +6,7 @@
     xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
     id="Definitions_Minimal"
     targetNamespace="https://example.invalid/bpmn/terminology"
-    exporter="clinical-bpmn-demo"
+    exporter="bpmn-medical-terminology-demo"
     exporterVersion="0.1.0">
 
   <!-- ============================================================

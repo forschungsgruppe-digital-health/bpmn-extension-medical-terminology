@@ -8,7 +8,7 @@ components._
 ```mermaid
 graph TB
     EXT["@forschungsgruppe-digital-health/bpmn-extension-medical-terminology<br/>extension/<br/>published raw ESM"]
-    DEMO["clinical-bpmn-demo<br/>demo/<br/>private bpmn-js integration"]
+    DEMO["bpmn-medical-terminology-demo<br/>demo/<br/>private bpmn-js integration"]
     LINT["bpmnlint-plugin-terminology<br/>extension/lint/<br/>workspace plugin"]
     FIX["examples/valid<br/>examples/invalid"]
     TOOLS["tools/<br/>deterministic conformance and package checks"]
@@ -110,7 +110,7 @@ extension/
 │   ├── FallbackProvider.js
 │   └── presets/index.js                  bundled package presets
 ├── src/services/
-│   ├── AnnotationHelper.js               term: object CRUD
+│   ├── AnnotationHelper.js               mt: object CRUD
 │   ├── TerminologyServices.js             service/module factories
 │   ├── FhirCodeSystemLoader.js            FHIR CodeSystem loading
 │   ├── CodeSystemProviderFactory.js       CodeSystem → provider
@@ -118,14 +118,14 @@ extension/
 │   ├── TerminologyProviderLoader.js        lazy FHIR provider loading
 │   └── PackageMetadata.js                 provider labels and metadata
 ├── src/config/terminology-config.js       defaults and overrides
-├── src/moddle/clinical.json               term: descriptor
+├── src/moddle/medical-terminology.json               mt: descriptor
 ├── src/properties-panel/                  bpmn-js editing provider and entries
 └── src/vite/                              package discovery plugin
 ```
 
-### `term:` moddle building block
+### `mt:` moddle building block
 
-`extension/src/moddle/clinical.json` declares:
+`extension/src/moddle/medical-terminology.json` declares:
 
 - `Annotations`, an `Element` container with many `Annotation` values.
 - `Annotation`, an `Element` with `id`, optional `text`, and many `Coding`
@@ -134,14 +134,14 @@ extension/
   optional `display` attributes.
 
 The descriptor uses lower-case XML tag aliases. The schema counterpart is
-`schema/clinical-semantics.xsd`.
+`schema/medical-terminology.xsd`.
 
 ### Properties-panel building block
 
 `TerminologyPropertiesProvider` registers at low priority and contributes the
 “Medical terminology” group for supported tasks, subprocesses, gateways,
 events, data references, and other `TARGET_TYPES`. `AnnotationListEntry` edits
-`term:Annotations` and `term:Coding` values. `AnnotationHelper` lazily creates
+`mt:Annotations` and `mt:Coding` values. `AnnotationHelper` lazily creates
 `bpmn:ExtensionElements` and wires `$parent` links before bpmn-js commits the
 change through `modeling.updateModdleProperties`.
 

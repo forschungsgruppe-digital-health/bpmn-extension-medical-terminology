@@ -31,25 +31,25 @@ terminology to a BPMN element, and it stores those codes in the BPMN file itself
 ```xml title="The essential shape"
 <bpmn2:task id="Task_Staging" name="Perform TNM Staging">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-3" text="Clinical TNM staging to determine tumor stage">
-        <term:coding system="http://snomed.info/sct"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-3" text="Clinical TNM staging to determine tumor stage">
+        <mt:coding system="http://snomed.info/sct"
                      version="http://snomed.info/sct/32506021000036107/version/20260731"
                      code="254292007"
                      display="Tumor staging (tumor staging)"/>
-        <term:coding system="http://loinc.org"
+        <mt:coding system="http://loinc.org"
                      version="2.82"
                      code="21908-9"
                      display="Stage group.clinical Cancer"/>
-      </term:annotation>
-    </term:annotations>
+      </mt:annotation>
+    </mt:annotations>
   </bpmn2:extensionElements>
   <!-- ordinary BPMN continues here, untouched -->
 </bpmn2:task>
 ```
 
 The label stays. The diagram stays. The layout stays. Everything the extension adds lives inside
-`bpmn:extensionElements` under its own `term:` namespace, which is exactly the place BPMN 2.0 reserves for
+`bpmn:extensionElements` under its own `mt:` namespace, which is exactly the place BPMN 2.0 reserves for
 this kind of addition. A tool that does not know the namespace can still open and save the model, and a
 tool that does can read the annotations as typed objects. Whether a foreign editor actually preserves
 unknown extension content when it writes the file back is a property of that editor;
@@ -90,7 +90,7 @@ You are building the thing that consumes the models — a validator, a repositor
 generator. You want a stable file format and a way to read it that is not a regular expression.
 
 The file format is specified twice: as the moddle descriptor the editor uses
-([`extension/src/moddle/clinical.json`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/moddle/clinical.json))
+([`extension/src/moddle/medical-terminology.json`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/moddle/medical-terminology.json))
 and as a generated XSD you can validate against without any JavaScript at all ([Schema](/schema/)). The
 two are kept in step by a check that fails the build if they drift. For reading annotations in code, the
 package exports helpers such as `getAnnotations` — see the [API reference](/api/).
@@ -135,19 +135,19 @@ but how a document registry classifies them.
 ```xml title="examples/valid/lung-cancer-staging-annotated.bpmn (excerpt)"
 <bpmn2:dataObjectReference id="DataObj_MRI" name="MRI Scan Report">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-1"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-1"
                        text="MRI scan report of the thorax as input document for TNM staging">
-        <term:coding system="http://loinc.org"
+        <mt:coding system="http://loinc.org"
                      version="2.82" code="18748-4" display="Diagnostic imaging study"/>
-        <term:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode"
+        <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode"
                      version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"/>
-      </term:annotation>
-      <term:annotation id="term-ann-2">
-        <term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode"
+      </mt:annotation>
+      <mt:annotation id="mt-ann-2">
+        <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode"
                      version="2021-06-25T13:44:47" code="BEF" display="Clinical reports"/>
-      </term:annotation>
-    </term:annotations>
+      </mt:annotation>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:dataObjectReference>
 ```
@@ -175,10 +175,10 @@ I–II versus stage III–IV, therefore operable versus not", and inventing one 
 ```xml
 <bpmn2:exclusiveGateway id="Gateway_Split" name="Tumor Stage?">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-4"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-4"
                        text="Treatment decision based on TNM stage: Stage I-II (operable) vs. Stage III-IV (inoperable)"/>
-    </term:annotations>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:exclusiveGateway>
 ```
@@ -195,7 +195,7 @@ can then do with the file.
 
 ### Validation
 
-The repository ships a bpmnlint rule, `annotation-requires-id`, which reports any `term:Annotation` whose
+The repository ships a bpmnlint rule, `annotation-requires-id`, which reports any `mt:Annotation` whose
 `id` is missing, empty or does not match `[A-Za-z0-9._-]+`. The rule lives in the repository as the
 private workspace plugin `extension/lint/bpmnlint-plugin-terminology/`; the repository's own
 `.bpmnlintrc` enables it with `plugin:terminology/recommended`, and the conformance gate
@@ -207,7 +207,7 @@ tarball, so a project that wants the rule in its own CI today has to take a copy
 repository.
 :::
 
-For tooling that is not JavaScript, `schema/clinical-semantics.xsd` is generated from the moddle
+For tooling that is not JavaScript, `schema/medical-terminology.xsd` is generated from the moddle
 descriptor and can validate the extension elements directly. A generation check fails the build if the
 schema and the descriptor drift apart, so the XSD is a real contract rather than documentation that rots.
 Its scope is structure only — element nesting and attribute names, not "an annotation must have an id",
@@ -231,7 +231,7 @@ of a model in code is a call to `getAnnotations` on the element's business objec
 
 ### Mapping to FHIR
 
-`term:coding` uses exactly the fields of a FHIR `Coding` — `system`, `version`, `code`, `display` — so
+`mt:coding` uses exactly the fields of a FHIR `Coding` — `system`, `version`, `code`, `display` — so
 turning an annotation into a `CodeableConcept`, or into the coded element of an `ActivityDefinition`,
 `PlanDefinition` or `DocumentReference`, is a field-for-field transformation.
 

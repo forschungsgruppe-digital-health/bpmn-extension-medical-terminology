@@ -40,11 +40,11 @@ HL7 CodeSystem resource with `npm run generate:hl7`.
 
 ## Terminology extension rules
 
-Clinical data belongs only in `term:` elements under
+Clinical data belongs only in `mt:` elements under
 `bpmn:extensionElements`. Do not change BPMN core structures or BPMN-DI data
 for clinical semantics. Examples and tests must use clearly synthetic data.
 
-Moddle descriptor changes live in `extension/src/moddle/clinical.json`.
+Moddle descriptor changes live in `extension/src/moddle/medical-terminology.json`.
 Renaming or removing a moddle type or property is a breaking change and needs
 human approval.
 

@@ -7,21 +7,13 @@
 
 ## Context
 
-The terminology descriptor originally used
-`https://clinical-bpmn.org/terminology/v1`. The project does not control that
-domain, and the public predecessor repository `bpmn-js-clinical-semantics`
-uses the same URI and `term` prefix for an incompatible content model. A file
-could therefore not identify which model its `term:` content followed from the
-namespace alone.
+The terminology extension needs a stable, globally unique XML namespace under
+an authority controlled by the publisher. The identifier should also resolve to
+the human- and machine-readable format contract.
 
-The package SemVer cannot resolve that ambiguity. It versions the npm software
-but is not serialized into a BPMN file. The descriptor's `version` field is
-also package-release metadata that bpmn-moddle ignores; it is not an XML format
-discriminator.
-
-No external users or persisted consumer BPMN files exist at the time of this
-decision. The repository is still development software in the `0.x` series,
-so this is the least costly point at which to establish the public contract.
+Package SemVer cannot identify the serialized format because it is not written
+into BPMN files. The descriptor's `version` field is package-release metadata,
+not an XML format discriminator.
 
 ## Decision
 
@@ -34,9 +26,9 @@ The terminology extension uses:
 https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1
 ```
 
-The `term` prefix remains unchanged. The URI resolves to a human-readable
+The conventional prefix is `mt`. The URI resolves to a human-readable
 contract. The Moddle descriptor and XSD are published beside it as
-`clinical.json` and `clinical-semantics.xsd`.
+`medical-terminology.json` and `medical-terminology.xsd`.
 
 The repository name is consequently part of the serialized-data contract. The
 repository and its Pages path must not be renamed or removed without preserving
@@ -70,26 +62,12 @@ independent of the npm package SemVer and the descriptor's package `version`.
   declare a stable public release. Package SemVer does not alter the namespace
   automatically.
 
-The new controlled authority starts at `/v1`, rather than `/v2`, because the
-old URI was never an adopted public contract of this extension and there are no
-consumer files to distinguish. The authority change establishes the first
-public format contract.
-
-### Migration and predecessor
-
-Repository fixtures are updated in place. No compatibility alias, legacy
-reader, or migration command is provided because there are no existing users or
-external files.
-
-Files created by `bpmn-js-clinical-semantics` must not be migrated by replacing
-the URI. Its `Annotation` shape and BPMN attributes are incompatible and require
-a semantic conversion if they ever need to be retained. Moving this extension
-to the new URI resolves the public collision immediately; later deletion or
-archival of the predecessor repository is a separate lifecycle task.
+The controlled authority starts at `/v1`, establishing the first public format
+contract for this package.
 
 ### Generated documentation and drift prevention
 
-`extension/src/moddle/clinical.json` remains the source of truth.
+`extension/src/moddle/medical-terminology.json` remains the source of truth.
 
 - `tools/moddle-to-xsd.mjs` generates the XSD.
 - `tools/generate-namespace-docs.mjs` generates the namespace reference and
@@ -102,8 +80,6 @@ archival of the predecessor repository is a separate lifecycle task.
 
 - The namespace is controlled by the organization and resolves to maintained
   documentation.
-- The terminology and predecessor models are unambiguous even while both
-  repositories remain public.
 - BPMN files remain independent of npm release cadence.
 - A future incompatible format can coexist with `/v1`, at the cost of retaining
   the old Pages route and making migration behavior explicit.
@@ -112,13 +88,8 @@ archival of the predecessor repository is a separate lifecycle task.
 
 ## Alternatives considered
 
-- **Register `clinical-bpmn.org`.** Rejected because it adds ownership, renewal
-  and hosting obligations without improving the repository-bound documentation.
 - **Use an unversioned namespace.** Rejected because a detached BPMN file does
   not carry the npm package version; an explicit format-major makes a future
   incompatible contract distinguishable.
 - **Use a URN.** Rejected because the project wants a directly resolvable,
   citable contract with its XSD and descriptor.
-- **Keep the old URI and rely on deleting the predecessor.** Rejected because
-  deletion cannot retract clones or serialized files and does not establish
-  control over `clinical-bpmn.org`.

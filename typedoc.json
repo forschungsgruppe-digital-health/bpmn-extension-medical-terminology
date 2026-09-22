@@ -12,7 +12,7 @@
   "excludeInternal": true,
   "excludePrivate": true,
   "exclude": [
-    "**/moddle/clinical.json"
+    "**/moddle/medical-terminology.json"
   ],
   "readme": "none",
   "githubPages": false,

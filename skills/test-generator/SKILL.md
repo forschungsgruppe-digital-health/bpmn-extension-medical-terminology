@@ -28,7 +28,7 @@ Typical units you will characterize:
   `services/AnnotationHelper`.
 - **moddle + properties-panel** — `extension/src/moddle/*.json` descriptors and the
   `properties-panel/` providers/entries that read and write the `<extensionElements>`
-  (`term:`) onto BPMN business objects.
+  (`mt:`) onto BPMN business objects.
 
 ## Approach
 

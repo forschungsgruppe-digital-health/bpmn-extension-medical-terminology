@@ -1,9 +1,9 @@
-# User Stories: Terminology Extension (`term:`)
+# User Stories: Terminology Extension (`mt:`)
 
 > **Status:** implemented baseline with planned, human-confirmed follow-up
 > scope  
 > **Package:** `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` (`extension/`)
-> **Moddle descriptor:** [`extension/src/moddle/clinical.json`](../../extension/src/moddle/clinical.json)  
+> **Moddle descriptor:** [`extension/src/moddle/medical-terminology.json`](../../extension/src/moddle/medical-terminology.json)
 > **Namespace:** `term`, `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`
 > **Date:** 2026-08-27
 
@@ -20,7 +20,7 @@ The descriptor currently defines exactly three types:
 - `Annotation`, with `id`, optional `text`, and many `Coding` values;
 - `Coding`, with `system`, optional `version`, `code`, and optional `display`.
 
-Terminology content is persisted only as `term:` elements under BPMN
+Terminology content is persisted only as `mt:` elements under BPMN
 `extensionElements`. The properties panel currently exposes terminology
 editing for tasks, subprocesses, exclusive gateways, data references, and
 start, end, and intermediate events. Message flows are descriptor-supported
@@ -37,16 +37,16 @@ element,
 
 **Acceptance criteria:**
 
-- A `term:annotations` element can be placed in
+- A `mt:annotations` element can be placed in
   `bpmn:extensionElements`.
-- A `term:annotation` has a stable `id` and may have free-text `text`.
-- Each annotation may contain multiple `term:coding` children.
+- A `mt:annotation` has a stable `id` and may have free-text `text`.
+- Each annotation may contain multiple `mt:coding` children.
 - Each coding supports `system`, `code`, optional `version`, and optional
   `display`.
 - The annotation data survives BPMN XML load/save round trips.
 - Synthetic fixtures and tests cover multiple annotations and codings.
 
-**Implementation evidence:** `clinical.json`, `AnnotationHelper.js`, and
+**Implementation evidence:** `medical-terminology.json`, `AnnotationHelper.js`, and
 `tools/moddle-roundtrip.mjs`.
 
 ### US-T02: Create, identify, and remove annotations
@@ -57,7 +57,7 @@ element,
 
 **Acceptance criteria:**
 
-- New annotations receive a generated `term-ann-*` ID when no ID is supplied.
+- New annotations receive a generated `mt-ann-*` ID when no ID is supplied.
 - IDs are validated for allowed characters and uniqueness in the diagram.
 - The helper creates missing `ExtensionElements` and `Annotations`
   containers lazily.
@@ -179,7 +179,7 @@ and the package-discovery tests.
 - `.bpmnlintrc` loads `plugin:terminology/recommended`.
 - `annotation-requires-id` rejects missing or invalid annotation IDs.
 - Moddle roundtrip checking detects unstable serialization or dropped
-  `term:` elements.
+  `mt:` elements.
 - Generated terminology schema and extension checks are part of
   `npm run check:conformance`.
 

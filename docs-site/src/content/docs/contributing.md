@@ -14,7 +14,7 @@ Before you start, two rules apply to every change without exception:
 - **Only obviously synthetic clinical data** may appear anywhere — in the repository, in a test
   fixture, in an issue, or in a pull request. Never commit or transmit real patient data or
   realistic clinical identifiers.
-- **Clinical semantics live only in `term:` elements** under `bpmn:extensionElements`. BPMN core
+- **Clinical semantics live only in `mt:` elements** under `bpmn:extensionElements`. BPMN core
   and BPMN-DI structures are never changed to carry clinical meaning.
 :::
 
@@ -76,7 +76,7 @@ The repository is an npm workspace root. The root package is private and is neve
 | `demo/` | The private bpmn-js integration demo. Never published; it is the worked integration example. |
 | `examples/valid/` | Synthetic BPMN fixtures that must pass every conformance check. |
 | `examples/invalid/` | Negative fixtures that must **fail** linting. Continuous integration fails if they start passing. |
-| `schema/` | The generated `clinical-semantics.xsd` and its README. Generated from the moddle descriptor — never hand-edited. |
+| `schema/` | The generated `medical-terminology.xsd` and its README. Generated from the moddle descriptor — never hand-edited. |
 | `tools/` | Deterministic conformance, packaging and documentation checks — plain Node scripts, plus one shell script for the XSD core validation. |
 | `docs/` | The narrative documentation: the arc42 architecture set, the bpmn.io extension primer, the decision records, and the user stories. |
 | `docs-site/` | This documentation site. Deliberately **not** an npm workspace, so its dependency tree stays out of every other install. |
@@ -130,8 +130,8 @@ all call the *same* npm scripts.
 | `npm run check:packages` | yes | Publishing conventions for each publishable package: an accepted name prefix, `"type": "module"`, and a usable entry point (`main` or `exports`). Missing `exports`, peer dependencies, `repository.directory` or `publishConfig.registry` are warnings, not failures. Private packages skip the publish-specific rules but must still be ESM. |
 | `npm run generate:hl7:check` | yes | That the checked-in HL7 code-system resource still matches what the generator produces from the installed `hl7.terminology.r4` package. It is a drift guard: if the dependency moved and the generated file did not, this fails. Regenerate with `npm run generate:hl7`. |
 | `npm run lint:bpmn` | yes | Runs bpmnlint over the repository's `.bpmn` files with `.bpmnlintrc` — the recommended and correctness rule sets plus the repository's own terminology plugin. This is BPMN *structure*: disconnected nodes, missing start and end events, implicit splits, dangling references. |
-| `npm run check:roundtrip` | yes | Parses each fixture with the `term:` moddle extension registered, serialises it, re-parses and re-serialises, and asserts the two serialisations are identical. It also compares extension-element counts to detect content silently dropped on parse. This is where *extension* correctness is actually established, because the standard BPMN schema cannot check it. Add `--strict` to turn moddle parse warnings into failures. |
-| `npm run xsd:gen:check` | yes | That `schema/clinical-semantics.xsd` is exactly what `tools/moddle-to-xsd.mjs` generates from the moddle descriptor right now. The descriptor is the single source of truth; the schema is derived. See the [schema](/schema/) page. |
+| `npm run check:roundtrip` | yes | Parses each fixture with the `mt:` moddle extension registered, serialises it, re-parses and re-serialises, and asserts the two serialisations are identical. It also compares extension-element counts to detect content silently dropped on parse. This is where *extension* correctness is actually established, because the standard BPMN schema cannot check it. Add `--strict` to turn moddle parse warnings into failures. |
+| `npm run xsd:gen:check` | yes | That `schema/medical-terminology.xsd` is exactly what `tools/moddle-to-xsd.mjs` generates from the moddle descriptor right now. The descriptor is the single source of truth; the schema is derived. See the [schema](/schema/) page. |
 | `npm run xsd:ext` | yes | Validates each example against BPMN core **and** the extension's own schema in one pass, by generating a small driver schema that imports both. This works because the BPMN schema admits foreign content through a lax wildcard — a validator only checks it if it already holds a schema for that namespace. |
 | `npm run check:xsd` | informational | Validates the BPMN *core* of each file against the official OMG schema. Informational by design: a green result says nothing about the extension content, which the lax wildcard lets through unchecked. Pass `--strict` to make an invalid core fail. |
 | `npm run docs:defaults:check` | yes | That the generated [default configuration](/configuration/defaults/) page still matches the configuration the code assembles. The values it documents — which terminology server is contacted, which code-system versions are pinned — are module-private constants, so the page is generated from the assembled configuration itself and this check fails when the two drift. Regenerate with `npm run docs:defaults`. |
@@ -244,7 +244,7 @@ A pull request that is easy to merge tends to look like this:
 
 Some changes need more than a review:
 
-- **Renaming or removing a moddle type or property** in `extension/src/moddle/clinical.json` is a
+- **Renaming or removing a moddle type or property** in `extension/src/moddle/medical-terminology.json` is a
   breaking change to the data format and needs explicit human sign-off. Changing the descriptor's
   namespace `uri` is a deliberate breaking change that needs its own decision record. The current
   authority and versioning rules are fixed by

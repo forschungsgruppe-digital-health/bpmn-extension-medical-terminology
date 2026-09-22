@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BpmnModdle } from 'bpmn-moddle';
-import descriptor from '../../src/moddle/clinical.json';
+import descriptor from '../../src/moddle/medical-terminology.json';
 import { getAnnotations, getAnnotationsContainer } from '../../src/services/AnnotationHelper.js';
 import { saveAnnotation, deleteAnnotation } from '../../src/services/AnnotationModeling.js';
 import { createAnnotationCommandStack } from '../helpers/annotation-command-stack.js';
@@ -11,7 +11,7 @@ const first = {
 };
 
 function setup() {
-  const moddle = new BpmnModdle({ term: descriptor });
+  const moddle = new BpmnModdle({ mt: descriptor });
   const bo = moddle.create('bpmn:Task', { id: 'Task_Synthetic' });
   const element = { id: bo.id, businessObject: bo };
   return { ...createAnnotationCommandStack(), moddle, bo, element };
@@ -23,7 +23,7 @@ describe('annotation modeling with the bpmn-js command handler', () => {
     if (kind !== 'none') {
       const child = kind === 'foreign'
         ? moddle.createAny('test:metadata', 'https://example.invalid/test', { value: 'keep' })
-        : moddle.create('term:Annotations', { values: [] });
+        : moddle.create('mt:Annotations', { values: [] });
       bo.extensionElements = moddle.create('bpmn:ExtensionElements', { values: [child] });
       bo.extensionElements.$parent = bo;
       child.$parent = bo.extensionElements;
@@ -72,12 +72,12 @@ describe('annotation modeling with the bpmn-js command handler', () => {
     const { moddle, modeling, commandStack } = setup();
     const { rootElement: bo } = await moddle.fromXML(`
       <bpmn:task xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" xmlns:test="https://example.invalid/test" id="Task_Imported">
+        xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" xmlns:test="https://example.invalid/test" id="Task_Imported">
         <bpmn:extensionElements>
           <test:metadata value="keep" />
-          <term:annotations><term:annotation id="synthetic-1" text="Synthetic imported" test:flag="keep">
-            <term:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" test:flag="keep" />
-          </term:annotation></term:annotations>
+          <mt:annotations><mt:annotation id="synthetic-1" text="Synthetic imported" test:flag="keep">
+            <mt:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" test:flag="keep" />
+          </mt:annotation></mt:annotations>
         </bpmn:extensionElements>
       </bpmn:task>`, 'bpmn:Task');
     const element = { id: bo.id, businessObject: bo };

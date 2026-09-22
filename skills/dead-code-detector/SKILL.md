@@ -27,7 +27,7 @@ when there is no static `import`:
 - Referenced by string from a moddle descriptor (`extension/src/moddle/*.json`):
   `name`, `superClass`, `type`, and `extends` values bind types/properties by name,
   not by import. A moddle type with no descriptor reference may still be data on
-  existing `.bpmn` files — that is `term:` extension content, not dead code.
+  existing `.bpmn` files — that is `mt:` extension content, not dead code.
 - Registered into bpmn-js / properties-panel by convention rather than by direct call
   (a `*PropertiesProvider`, a module's `__init__`/`$inject`, a group/entry factory
   pulled in by the panel). Grep the `properties-panel/` dirs and `index.js` wiring

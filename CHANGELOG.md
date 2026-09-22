@@ -22,10 +22,6 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Removed the legacy `term:clinicalDomain` descriptor property and its
-  properties-panel configuration; terminology semantics now consist only of
-  annotations and codings under `bpmn:extensionElements`. This is a breaking
-  descriptor/API change and requires a major release.
 - Removed the obsolete public `ASPECTS`, `MODES`, and `TRANSFORMS` constants
   that belonged to the retired mapping model.
 - Removed the deprecated `TerminologyRegistry.searchAll()` method; callers

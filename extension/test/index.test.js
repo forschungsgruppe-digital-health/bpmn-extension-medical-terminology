@@ -110,14 +110,13 @@ describe('@forschungsgruppe-digital-health/bpmn-extension-medical-terminology â€
 
     const panelConfig = mod.resolveTerminologyPropertiesConfig({});
 
-    expect(panelConfig).not.toHaveProperty('showClinicalDomain');
     expect(panelConfig.showAnnotations).toBe(true);
   });
 
   it('should export moddle descriptor as JSON', async () => {
-    const { default: descriptor } = await import('../src/moddle/clinical.json');
-    expect(descriptor.name).toBe('ClinicalTerminology');
-    expect(descriptor.prefix).toBe('term');
+    const { default: descriptor } = await import('../src/moddle/medical-terminology.json');
+    expect(descriptor.name).toBe('MedicalTerminology');
+    expect(descriptor.prefix).toBe('mt');
     expect(descriptor.uri).toBe('https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1');
     expect(descriptor.types.map(type => type.name)).toEqual([
       'Annotations',

@@ -14,8 +14,8 @@ import { checkNamespaceConsistency } from '../../../tools/check-namespace-consis
 
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const files = [
-  'extension/src/moddle/clinical.json',
-  'schema/clinical-semantics.xsd',
+  'extension/src/moddle/medical-terminology.json',
+  'schema/medical-terminology.xsd',
   'README.md',
   'schema/README.md',
   'docs/ARCHITECTURE.md',
@@ -55,11 +55,11 @@ describe('namespace consistency check', () => {
   });
 
   it('rejects a stale generated XSD namespace', () => {
-    rewrite('schema/clinical-semantics.xsd', '/ns/terminology/v1', '/ns/terminology/v2');
+    rewrite('schema/medical-terminology.xsd', '/ns/terminology/v1', '/ns/terminology/v2');
     expect(checkNamespaceConsistency(root).errors[0]).toContain('targetNamespace');
   });
 
-  it('rejects a BPMN file bound to a different term namespace', () => {
+  it('rejects a BPMN file bound to a different terminology namespace', () => {
     rewrite('examples/valid/minimal-valid.bpmn', '/ns/terminology/v1', '/ns/terminology/v2');
     expect(checkNamespaceConsistency(root).errors[0]).toContain('minimal-valid.bpmn');
   });

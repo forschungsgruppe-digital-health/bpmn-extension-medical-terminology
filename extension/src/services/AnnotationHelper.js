@@ -1,5 +1,5 @@
 /**
- * Reading and writing `term:Annotations` on BPMN business objects.
+ * Reading and writing `mt:Annotations` on BPMN business objects.
  *
  * These functions are the programmatic counterpart to the properties panel.
  * They operate directly on the moddle business object of a BPMN element, so
@@ -14,7 +14,7 @@
  * `any`, so the package declares its own minimal shape.
  *
  * @typedef {object} ModdleElement - Minimal shape shared by BPMN and terminology moddle elements.
- * @property {string} $type - Namespaced type name, for example `term:Annotation`.
+ * @property {string} $type - Namespaced type name, for example `mt:Annotation`.
  * @property {ModdleElement} [$parent] - Owning element, maintained by the model.
  */
 
@@ -36,14 +36,14 @@
  * @property {string} [version] - Code system version the code was taken from.
  */
 
-const DEFAULT_ANN_PREFIX = 'term-ann';
+const DEFAULT_ANN_PREFIX = 'mt-ann';
 const ANN_ID_PATTERN = /^[A-Za-z0-9._-]+$/;
 
 /**
  * Find the first extension element of a given namespaced type.
  *
  * @param {ModdleElement} bo - Business object of a BPMN element.
- * @param {string} type - Namespaced type name, for example `term:Annotations`.
+ * @param {string} type - Namespaced type name, for example `mt:Annotations`.
  * @returns {ModdleElement | undefined} The element, or `undefined` when the
  *   business object carries no `bpmn:ExtensionElements` or no match.
  * @category Internal helpers
@@ -54,7 +54,7 @@ export function getExtensionElement(bo, type) {
 }
 
 /**
- * Return the `term:Annotations` container of a BPMN element, if it has one.
+ * Return the `mt:Annotations` container of a BPMN element, if it has one.
  *
  * @param {ModdleElement} bo - Business object of a BPMN element.
  * @returns {ModdleElement | undefined} The container, or `undefined` when the
@@ -62,14 +62,14 @@ export function getExtensionElement(bo, type) {
  * @category Annotations
  */
 export function getAnnotationsContainer(bo) {
-  return getExtensionElement(bo, 'term:Annotations');
+  return getExtensionElement(bo, 'mt:Annotations');
 }
 
 /**
  * Read all annotations bound to a BPMN element.
  *
  * @param {ModdleElement} bo - Business object of a BPMN element.
- * @returns {ModdleElement[]} The `term:Annotation` elements, in document
+ * @returns {ModdleElement[]} The `mt:Annotation` elements, in document
  *   order. An element without annotations yields an empty array, never
  *   `undefined`.
  * @example
@@ -161,7 +161,7 @@ export function isValidId(id) {
 /**
  * Mint an annotation identifier that does not collide with existing ones.
  *
- * Identifiers follow the pattern `term-ann-<n>`, counting up from 1 until an
+ * Identifiers follow the pattern `mt-ann-<n>`, counting up from 1 until an
  * unused value is found.
  *
  * @param {string[]} [existingIds] - Identifiers already in use. Pass the result
@@ -203,7 +203,7 @@ export function ensureExtensionElements(bo, moddle) {
 }
 
 /**
- * Return the element's `term:Annotations` container, creating it when absent.
+ * Return the element's `mt:Annotations` container, creating it when absent.
  *
  * Creates the surrounding `bpmn:ExtensionElements` as well if needed, and
  * wires the parent links the model expects. Mutates the business object.
@@ -217,7 +217,7 @@ export function ensureAnnotationsContainer(bo, moddle) {
   const extElements = ensureExtensionElements(bo, moddle);
   let container = getAnnotationsContainer(bo);
   if (!container) {
-    container = moddle.create('term:Annotations', { values: [] });
+    container = moddle.create('mt:Annotations', { values: [] });
     container.$parent = bo.extensionElements;
     extElements.values.push(container);
   }
@@ -227,9 +227,9 @@ export function ensureAnnotationsContainer(bo, moddle) {
 /**
  * Add one annotation to a BPMN element.
  *
- * Creates the `term:Annotations` container on first use. When no identifier is
+ * Creates the `mt:Annotations` container on first use. When no identifier is
  * supplied, one is minted with {@link createId}. Codings are created as
- * `term:Coding` children; an empty `version` is dropped rather than written as
+ * `mt:Coding` children; an empty `version` is dropped rather than written as
  * an empty attribute.
  *
  * @param {ModdleElement} bo - Business object of a BPMN element.
@@ -241,7 +241,7 @@ export function ensureAnnotationsContainer(bo, moddle) {
  * @param {TerminologyCoding[]} [options.codings] - Codes to bind.
  * @param {string[]} [options.existingIds] - Identifiers to avoid. Defaults to
  *   the identifiers already on `bo`.
- * @returns {ModdleElement} The created `term:Annotation` element.
+ * @returns {ModdleElement} The created `mt:Annotation` element.
  * @example
  * ```js
  * import { addAnnotation } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
@@ -266,12 +266,12 @@ export function addAnnotation(bo, moddle, { id, text, codings, existingIds }) {
   };
   if (text) props.text = text;
 
-  const annotation = moddle.create('term:Annotation', props);
+  const annotation = moddle.create('mt:Annotation', props);
   annotation.$parent = container;
 
   if (codings && codings.length > 0) {
     annotation.codings = codings.map(c => {
-      const coding = moddle.create('term:Coding', {
+      const coding = moddle.create('mt:Coding', {
         system: c.system,
         code: c.code,
         display: c.display,

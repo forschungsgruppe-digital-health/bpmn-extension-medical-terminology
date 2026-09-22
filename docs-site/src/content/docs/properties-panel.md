@@ -24,7 +24,7 @@ bottom of the properties panel. It contains one entry, which renders:
   search field.
 
 Each annotation is serialised into the element's `bpmn:extensionElements`, inside a
-`term:annotations` container, as a `term:annotation` with zero or more `term:coding` children.
+`mt:annotations` container, as a `mt:annotation` with zero or more `mt:coding` children.
 A typical result looks like this — the sample is excerpted from
 [`examples/valid/lung-cancer-staging-annotated.bpmn`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/examples/valid/lung-cancer-staging-annotated.bpmn),
 with the task's sequence-flow and data-association children left out:
@@ -32,18 +32,18 @@ with the task's sequence-flow and data-association children left out:
 ```xml title="Produced by the panel, serialised by bpmn-js"
 <bpmn2:task id="Task_Staging" name="Perform TNM Staging">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-3" text="Clinical TNM staging to determine tumor stage">
-        <term:coding system="http://snomed.info/sct"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-3" text="Clinical TNM staging to determine tumor stage">
+        <mt:coding system="http://snomed.info/sct"
                      version="http://snomed.info/sct/32506021000036107/version/20260731"
                      code="254292007"
                      display="Tumor staging (tumor staging)"/>
-        <term:coding system="http://loinc.org"
+        <mt:coding system="http://loinc.org"
                      version="2.82"
                      code="21908-9"
                      display="Stage group.clinical Cancer"/>
-      </term:annotation>
-    </term:annotations>
+      </mt:annotation>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:task>
 ```
@@ -130,8 +130,8 @@ const modeler = new BpmnModeler({
     createTerminologyModule(terminologyServices)
   ],
   moddleExtensions: {
-    // 4. Without this, term: elements are dropped on import and export.
-    term: TerminologyModdleDescriptor
+    // 4. Without this, mt: elements are dropped on import and export.
+    mt: TerminologyModdleDescriptor
   }
 });
 ```
@@ -165,7 +165,7 @@ const modeler = new BpmnModeler({
     TerminologyPropertiesPanelModule,
     createDefaultTerminologyModule()
   ],
-  moddleExtensions: { term: TerminologyModdleDescriptor }
+  moddleExtensions: { mt: TerminologyModdleDescriptor }
 });
 ```
 
@@ -211,16 +211,16 @@ they are English literals in the component.
 :::
 
 The group is marked as *edited* (the panel's change indicator) whenever the selected element
-carries a `term:Annotations` container holding at least one annotation.
+carries a `mt:Annotations` container holding at least one annotation.
 
 ## Annotating an element, step by step
 
 1. **Select** a supported element. The **Medical terminology** group appears.
 2. **Click + Add annotation.** The form opens.
 3. **Optionally set an id.** Leave it empty and the panel uses the placeholder it shows
-   you — `term-ann-1`, `term-ann-2`, … — counting up from 1 until it finds a number that is
+   you — `mt-ann-1`, `mt-ann-2`, … — counting up from 1 until it finds a number that is
    free across the whole diagram.
-4. **Optionally write free text.** This becomes `term:annotation/@text`, a natural-language
+4. **Optionally write free text.** This becomes `mt:annotation/@text`, a natural-language
    description of what the coding means in this process.
 5. **Pick a terminology** from the dropdown. The search field appears only after a selection.
 6. **Type a search term.** Results appear underneath as you type.
@@ -526,7 +526,7 @@ final, and use the `×` button rather than undo to correct a mistake.
 **Editing an existing annotation in place is not implemented.** The saved list is read-only:
 there is no way to change an annotation's text, add a coding to it, or correct a wrong code.
 The workflow is to remove the annotation and add it again. Note that removing it also frees its
-generated id, so re-adding usually reproduces the same `term-ann-*` value.
+generated id, so re-adding usually reproduces the same `mt-ann-*` value.
 
 Both are tracked; see [the roadmap](/roadmap/).
 :::
@@ -548,6 +548,6 @@ Two smaller limits, for completeness:
   servers and packages.
 - [Writing a provider](/extending/providers/) — the full metadata contract a provider must
   satisfy to render well in the dropdown.
-- [Schema](/schema/) — the `term:` XML shape the panel produces.
+- [Schema](/schema/) — the `mt:` XML shape the panel produces.
 - [Compatibility](/compatibility/) — bpmn-js and properties-panel version requirements.
 - [Roadmap](/roadmap/) — the command-stack fix, in-place editing, and the error export.

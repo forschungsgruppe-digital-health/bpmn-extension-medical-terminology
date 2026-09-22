@@ -58,7 +58,7 @@ const modeler = new BpmnModeler({
     createDefaultTerminologyModule()
   ],
   moddleExtensions: {
-    term: TerminologyModdleDescriptor
+    mt: TerminologyModdleDescriptor
   }
 });
 ```

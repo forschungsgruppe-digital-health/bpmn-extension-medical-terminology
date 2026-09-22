@@ -1,6 +1,6 @@
 ---
 title: XML schema
-description: "The term: namespace, the moddle content model, the generated XSD, and what happens to annotated files in tools that do not know the extension."
+description: "The mt: namespace, the moddle content model, the generated XSD, and what happens to annotated files in tools that do not know the extension."
 ---
 
 Everything this extension does ends up as XML inside a `.bpmn` file. That XML is the part
@@ -14,14 +14,14 @@ what a tool that has never heard of this extension does with an annotated file.
 | | |
 |---|---|
 | Namespace URI | `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` |
-| Conventional prefix | `term` |
-| Moddle package name | `ClinicalTerminology` |
+| Conventional prefix | `mt` |
+| Moddle package name | `MedicalTerminology` |
 | Tag alias | `lowerCase` |
 
 The URI is defined in
-[`extension/src/moddle/clinical.json`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/moddle/clinical.json)
+[`extension/src/moddle/medical-terminology.json`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/moddle/medical-terminology.json)
 and repeated in
-[`schema/clinical-semantics.xsd`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/schema/clinical-semantics.xsd).
+[`schema/medical-terminology.xsd`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/schema/medical-terminology.xsd).
 Its [generated namespace reference](/ns/terminology/v1/) publishes the exact
 content model together with the machine-readable descriptor and XSD.
 A document declares it like any other foreign namespace:
@@ -29,7 +29,7 @@ A document declares it like any other foreign namespace:
 ```xml
 <bpmn:definitions
     xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-    xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
+    xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
     id="Definitions_1"
     targetNamespace="https://example.invalid/bpmn/process">
 ```
@@ -64,17 +64,17 @@ Three types, in a strict containment chain: a container, the annotations inside 
 codes inside each annotation. All three declare `superClass: ["Element"]`, which in moddle
 terms means each one is a free-standing extension element rather than an addition to a BPMN
 type. Because the descriptor sets `xml.tagAlias: "lowerCase"`, the moddle type `Annotations`
-serialises as `<term:annotations>`, `Annotation` as `<term:annotation>` and `Coding` as
-`<term:coding>`.
+serialises as `<mt:annotations>`, `Annotation` as `<mt:annotation>` and `Coding` as
+`<mt:coding>`.
 
 ```text
 bpmn:extensionElements
-└── term:annotations                (container, at most one per element in practice)
-    └── term:annotation *           (id, text)
-        └── term:coding *           (system, version, code, display)
+└── mt:annotations                (container, at most one per element in practice)
+    └── mt:annotation *           (id, text)
+        └── mt:coding *           (system, version, code, display)
 ```
 
-### `term:Annotations` — the container
+### `mt:Annotations` — the container
 
 The single wrapper element that holds an element's terminology annotations. It carries no
 attributes of its own; it exists so that everything this extension writes sits under one
@@ -82,20 +82,20 @@ recognisable node inside `extensionElements`, next to whatever other vendors hav
 
 | Property | XML form | Cardinality | Meaning |
 |---|---|---|---|
-| `values` | child elements `<term:annotation>` | 0..n | The annotations attached to the enclosing BPMN element. |
+| `values` | child elements `<mt:annotation>` | 0..n | The annotations attached to the enclosing BPMN element. |
 
 The `values` property name never appears in the XML. Moddle serialises a typed `isMany`
 property as a bare repetition of the child type's own tag, which is why the container's
-content is simply a sequence of `<term:annotation>` elements.
+content is simply a sequence of `<mt:annotation>` elements.
 
 The writing helper
 ([`AnnotationHelper.js`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/services/AnnotationHelper.js))
 creates `bpmn:extensionElements` and the container lazily, on the first annotation, and
 reuses the existing container afterwards — so a normally-edited element has exactly one
-`<term:annotations>`. The reader side looks up the container by `$type`, takes the first
+`<mt:annotations>`. The reader side looks up the container by `$type`, takes the first
 match and ignores any others.
 
-### `term:Annotation` — one clinical statement
+### `mt:Annotation` — one clinical statement
 
 One annotation is one statement about the BPMN element: free text, one or more codes, or
 both. Several annotations on one element are the normal way to express several independent
@@ -106,15 +106,15 @@ for the document type and a second, code-only annotation for its IHE XDS class.
 |---|---|---|---|
 | `id` | attribute `id` | `String` | Identifier of the annotation. Semantically required — see [Identifiers](#identifiers-and-uniqueness) — though the XSD leaves it optional. |
 | `text` | attribute `text` | `String` | Optional human-readable note. Free text, not derived from any terminology. |
-| `codings` | child elements `<term:coding>` | 0..n | The coded representations of this statement. |
+| `codings` | child elements `<mt:coding>` | 0..n | The coded representations of this statement. |
 
 An annotation is meaningful with text only, with codings only, or with both. The editor
 refuses to save one that has neither — it answers with *"Please provide free text or at
 least one coding before saving."* — but the format itself does not. A bare
-`<term:annotation id="…"/>` is well-formed and schema-valid, and the shipped
+`<mt:annotation id="…"/>` is well-formed and schema-valid, and the shipped
 `minimal-valid.bpmn` fixture contains exactly that, with a `text` attribute and no codings.
 
-### `term:Coding` — one code in one code system
+### `mt:Coding` — one code in one code system
 
 Deliberately shaped like the FHIR `Coding` datatype, minus `userSelected`. Each coding is
 self-describing: a reader needs nothing but the element itself to know which terminology the
@@ -131,13 +131,13 @@ The `version` attribute is worth its own note, because its format varies by term
 all of these appear in the shipped example diagram:
 
 ```xml
-<term:coding system="http://snomed.info/sct"
+<mt:coding system="http://snomed.info/sct"
              version="http://snomed.info/sct/32506021000036107/version/20260731"
              code="254292007"
              display="Tumor staging (tumor staging)"/>
-<term:coding system="http://loinc.org" version="2.82" code="21908-9"
+<mt:coding system="http://loinc.org" version="2.82" code="21908-9"
              display="Stage group.clinical Cancer"/>
-<term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode"
+<mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode"
              version="2021-06-25T13:44:47" code="BRI" display="Physician letters"/>
 ```
 
@@ -149,7 +149,7 @@ versions its providers offer.
 
 ## Where the elements attach
 
-At the format level, `term:annotations` may appear inside **any** `bpmn:extensionElements`.
+At the format level, `mt:annotations` may appear inside **any** `bpmn:extensionElements`.
 The descriptor declares the three types as free-standing `Element`s; it does not `extend`
 any BPMN type and adds no foreign attributes to BPMN elements. Nothing in the moddle model
 or in the XSD restricts which BPMN element may carry the container.
@@ -188,7 +188,7 @@ complete document that carries the extension, diagram interchange included.
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
+                  xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
                   id="Definitions_valid"
                   targetNamespace="http://example.com/bpmn">
   <bpmn:process id="Process_1" isExecutable="false">
@@ -197,9 +197,9 @@ complete document that carries the extension, diagram interchange included.
     </bpmn:startEvent>
     <bpmn:task id="Task_1" name="Reviewed task">
       <bpmn:extensionElements>
-        <term:annotations>
-          <term:annotation id="term-ann-1" text="Synthetic reviewed task"/>
-        </term:annotations>
+        <mt:annotations>
+          <mt:annotation id="mt-ann-1" text="Synthetic reviewed task"/>
+        </mt:annotations>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_1</bpmn:incoming>
       <bpmn:outgoing>Flow_2</bpmn:outgoing>
@@ -236,8 +236,8 @@ complete document that carries the extension, diagram interchange included.
 
 Note what the extension did **not** do: no attribute was added to `<bpmn:task>`, no BPMN
 element was replaced, and the diagram interchange section is untouched. The extension's
-entire footprint in this document is the `<term:annotations>` block inside
-`<bpmn:extensionElements>` plus the `xmlns:term` declaration on the root — delete those two
+entire footprint in this document is the `<mt:annotations>` block inside
+`<bpmn:extensionElements>` plus the `xmlns:mt` declaration on the root — delete those two
 and what remains is a plain BPMN file.
 
 A multi-code annotation on a data object, from the larger fixture
@@ -246,21 +246,21 @@ A multi-code annotation on a data object, from the larger fixture
 ```xml
 <bpmn2:dataObjectReference id="DataObj_MRI" name="MRI Scan Report">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-1"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-1"
                        text="MRI scan report of the thorax as input document for TNM staging">
-        <term:coding system="http://loinc.org" version="2.82"
+        <mt:coding system="http://loinc.org" version="2.82"
                      code="18748-4" display="Diagnostic imaging study"/>
-        <term:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode"
+        <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode"
                      version="2020-02-07T07:55:58"
                      code="ERGE" display="Diagnostic imaging results"/>
-      </term:annotation>
-      <term:annotation id="term-ann-2">
-        <term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode"
+      </mt:annotation>
+      <mt:annotation id="mt-ann-2">
+        <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode"
                      version="2021-06-25T13:44:47"
                      code="BEF" display="Clinical reports"/>
-      </term:annotation>
-    </term:annotations>
+      </mt:annotation>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:dataObjectReference>
 ```
@@ -271,7 +271,7 @@ and carry no meaning.
 
 ## Identifiers and uniqueness
 
-`term:Annotation/@id` is the stable handle for an annotation: the thing an external system,
+`mt:Annotation/@id` is the stable handle for an annotation: the thing an external system,
 a diff, or a traceability matrix refers to. Three rules govern it, and only one of them lives
 in the schema.
 
@@ -282,7 +282,7 @@ character, no whitespace. This is enforced by
 when editing and by the `annotation-requires-id` bpmnlint rule when checking a file.
 
 **Generated identifiers.** When the editor creates an annotation without an explicit id it
-mints `term-ann-1`, `term-ann-2`, … counting up from 1 to the first unused value. Where the
+mints `mt-ann-1`, `mt-ann-2`, … counting up from 1 to the first unused value. Where the
 element registry is available it collects the identifiers of every element in the diagram
 first, so generated ids are unique across the whole file, not just within one element. The
 same collected set backs the panel's validation of an id you type yourself: a value already
@@ -299,19 +299,19 @@ files containing repeated `system`/`code` pairs are valid and will load.
 
 ## The generated XSD
 
-[`schema/clinical-semantics.xsd`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/schema/clinical-semantics.xsd)
+[`schema/medical-terminology.xsd`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/schema/medical-terminology.xsd)
 exists for consumers that are not JavaScript: a Java pipeline, an XML editor, a validation
 step in a document repository. It is **generated** from the moddle descriptor by
 [`tools/moddle-to-xsd.mjs`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/tools/moddle-to-xsd.mjs),
 never hand-edited, so it cannot drift from the model the JavaScript uses:
 
 ```bash
-npm run xsd:gen         # regenerate schema/clinical-semantics.xsd
+npm run xsd:gen         # regenerate schema/medical-terminology.xsd
 npm run xsd:gen:check   # exit 1 if the committed file is stale (the CI drift guard)
 ```
 
 The mapping is mechanical: a moddle type becomes a global element plus a named complex type
-(`term:tAnnotation`), `isAttr` properties become `xsd:attribute`, typed child properties
+(`mt:tAnnotation`), `isAttr` properties become `xsd:attribute`, typed child properties
 become `xsd:element ref`, and `isMany` becomes `maxOccurs="unbounded"`. The schema sets
 `elementFormDefault="qualified"` and `attributeFormDefault="unqualified"`, which is why
 elements are prefixed in instance documents and attributes are not.
@@ -331,7 +331,7 @@ A file can pass the XSD and still be wrong in every way that matters clinically.
 :::
 
 - **Required attributes.** Every attribute is optional in the XSD, `id` included. A bare
-  `<term:annotation/>` validates. "Required" is enforced by the bpmnlint rule, not the
+  `<mt:annotation/>` validates. "Required" is enforced by the bpmnlint rule, not the
   schema — the generated file says so in its own header comment, and it is why the lint gate
   is not optional in this project.
 - **Identifier uniqueness**, as described above.
@@ -349,7 +349,7 @@ The official `BPMN20.xsd` declares `<extensionElements>` with an
 `<xsd:any namespace="##other" processContents="lax">` wildcard. "Lax" means a validator
 checks foreign content *only if it already holds a schema for that namespace* — so
 validating an annotated file against `BPMN20.xsd` alone reports success while checking
-nothing inside `<term:annotations>`. To check both, import both schemas from a small driver
+nothing inside `<mt:annotations>`. To check both, import both schemas from a small driver
 schema and validate against that. Place the driver at the repository root, where the two
 relative paths below resolve:
 
@@ -359,7 +359,7 @@ relative paths below resolve:
   <xsd:import namespace="http://www.omg.org/spec/BPMN/20100524/MODEL"
               schemaLocation="node_modules/bpmn-moddle/resources/bpmn/xsd/BPMN20.xsd"/>
   <xsd:import namespace="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
-              schemaLocation="schema/clinical-semantics.xsd"/>
+              schemaLocation="schema/medical-terminology.xsd"/>
 </xsd:schema>
 ```
 
@@ -372,7 +372,7 @@ This is exactly what
 [`tools/validate-xsd-ext.mjs`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/tools/validate-xsd-ext.mjs)
 does in CI (`npm run xsd:ext`), except that it generates the extension schema on the fly from
 the descriptor so the check can never run against a stale file, and it runs a canary first:
-it feeds the validator a `<term:annotations>` element carrying a deliberately undeclared
+it feeds the validator a `<mt:annotations>` element carrying a deliberately undeclared
 attribute and fails the build unless xmllint rejects it *by name*. Without the canary a
 silently failing schema import would turn every subsequent "valid" into a lie, because the
 lax wildcard would skip the content entirely.
@@ -402,8 +402,8 @@ fails if `npm run lint:invalid` unexpectedly passes.
 The round-trip check
 ([`tools/moddle-roundtrip.mjs`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/tools/moddle-roundtrip.mjs))
 is the one that speaks directly to file durability. For each fixture it parses with the
-`term:` descriptor registered, serialises to *A*, re-parses *A* and re-serialises to *B*, and
-fails if `A !== B`. It also counts `<term:` element openings in the input and in *A* and
+`mt:` descriptor registered, serialises to *A*, re-parses *A* and re-serialises to *B*, and
+fails if `A !== B`. It also counts `<mt:` element openings in the input and in *A* and
 reports any that were dropped. Note the severity difference: unstable serialisation always
 fails the run, while a dropped element and any bpmn-moddle parse warning are reported but
 fail only under `--strict`, which the default gate does not pass.
@@ -420,7 +420,7 @@ With `xmllint`:
 ```bash
 xmllint --shell examples/valid/lung-cancer-staging-annotated.bpmn <<'EOF'
 setrootns
-xpath //term:coding/@code
+xpath //mt:coding/@code
 EOF
 ```
 
@@ -430,17 +430,17 @@ plain JSON file and `bpmn-moddle` publishes a proper export map:
 ```js title="read-annotations.mjs"
 import { readFileSync } from 'node:fs';
 import { BpmnModdle } from 'bpmn-moddle';
-import termDescriptor
+import medicalTerminologyDescriptor
   from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/moddle'
   with { type: 'json' };
 
-const moddle = new BpmnModdle({ term: termDescriptor });
+const moddle = new BpmnModdle({ mt: medicalTerminologyDescriptor });
 const { rootElement } = await moddle.fromXML(readFileSync(process.argv[2], 'utf8'));
 
 for (const root of rootElement.rootElements) {
   for (const element of root.flowElements || []) {
     const container = element.extensionElements?.values
-      ?.find((value) => value.$type === 'term:Annotations');
+      ?.find((value) => value.$type === 'mt:Annotations');
 
     for (const annotation of container?.values || []) {
       console.log(element.id, annotation.id, annotation.text ?? '');
@@ -455,12 +455,12 @@ for (const root of rootElement.rootElements) {
 Run against the annotated fixture, the first few lines are:
 
 ```text
-DataObj_MRI term-ann-1 MRI scan report of the thorax as input document for TNM staging
+DataObj_MRI mt-ann-1 MRI scan report of the thorax as input document for TNM staging
     http://loinc.org 18748-4 Diagnostic imaging study
     http://ihe-d.de/CodeSystems/IHEXDStypeCode ERGE Diagnostic imaging results
-DataObj_MRI term-ann-2
+DataObj_MRI mt-ann-2
     http://ihe-d.de/CodeSystems/IHEXDSclassCode BEF Clinical reports
-Task_Staging term-ann-3 Clinical TNM staging to determine tumor stage
+Task_Staging mt-ann-3 Clinical TNM staging to determine tumor stage
     http://snomed.info/sct 254292007 Tumor staging (tumor staging)
     http://loinc.org 21908-9 Stage group.clinical Cancer
 ```
@@ -478,7 +478,7 @@ why the main entry point requires a bundler.
 ## Forward compatibility
 
 The question that decides whether this format is safe to adopt: what happens to an annotated
-file in a tool that has never heard of the `term:` namespace?
+file in a tool that has never heard of the `mt:` namespace?
 
 **XML validators ignore it.** The `processContents="lax"` wildcard on
 `<extensionElements>` instructs a validator to check foreign content only when it already
@@ -487,8 +487,8 @@ holds a schema for that namespace, and otherwise to accept it. A validator that 
 
 **bpmn.io-based tools preserve it verbatim.** This was measured rather than assumed. Parsing
 `minimal-valid.bpmn` with a `BpmnModdle` instance that has **no** `term` descriptor
-registered produces zero warnings; re-serialising reproduces both `<term:` elements together
-with the `xmlns:term` declaration, unchanged. bpmn-moddle keeps unrecognised extension
+registered produces zero warnings; re-serialising reproduces both `<mt:` elements together
+with the `xmlns:mt` declaration, unchanged. bpmn-moddle keeps unrecognised extension
 content as generic elements and writes it back out. Since bpmn-moddle is the parser beneath
 bpmn-js, any bpmn.io viewer or modeller that opens and saves such a file keeps the
 annotations even without this package installed.
@@ -497,11 +497,11 @@ annotations even without this package installed.
 attributes this descriptor does not declare, parsing logs `unknown attribute <…>` warnings
 but the attributes survive the round trip (their serialisation order may change, since
 declared attributes are written first). They will, however, fail XSD validation against
-`clinical-semantics.xsd`, which allows no undeclared attributes. This is not hypothetical —
+`medical-terminology.xsd`, which allows no undeclared attributes. This is not hypothetical —
 see the note on the sibling library in [compatibility](/compatibility/).
 
 **The annotations are never mandatory to understand.** This extension does not use BPMN's
-formal `Extension` / `mustUnderstand` metamodel machinery. A consumer that ignores `term:`
+formal `Extension` / `mustUnderstand` metamodel machinery. A consumer that ignores `mt:`
 content entirely still has a complete, correct BPMN process; nothing in the core model
 depends on an annotation existing.
 

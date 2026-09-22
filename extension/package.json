@@ -23,7 +23,7 @@
   },
   "exports": {
     ".": "./src/index.js",
-    "./moddle": "./src/moddle/clinical.json",
+    "./moddle": "./src/moddle/medical-terminology.json",
     "./properties-panel": "./src/properties-panel/index.js",
     "./properties-panel.css": "./src/properties-panel/properties-panel.css",
     "./vite": "./src/vite/plugin.js",

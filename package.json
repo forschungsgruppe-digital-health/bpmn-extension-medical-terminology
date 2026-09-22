@@ -1,5 +1,5 @@
 {
-  "name": "clinical-bpmn",
+  "name": "bpmn-extension-medical-terminology-workspace",
   "private": true,
   "type": "module",
   "description": "Semantic medical terminology for BPMN process models",

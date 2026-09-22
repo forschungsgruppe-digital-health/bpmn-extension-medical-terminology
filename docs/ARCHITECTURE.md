@@ -12,7 +12,7 @@ For a from-scratch developer primer on BPMN, bpmn.io, and extending this
 package, see [EXTENDING.md](EXTENDING.md). The dated terminology scope is
 captured in the [terminology user story](user-stories/terminology-extension-mvp.md).
 
-Terminology annotations use the `term:` namespace
+Terminology annotations use the `mt:` namespace
 `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` and are attached exclusively in
 standard BPMN `extensionElements`. The extension does not modify BPMN core
 elements or BPMN-DI data.

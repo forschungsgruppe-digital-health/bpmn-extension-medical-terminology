@@ -7,21 +7,21 @@ _Defines technical and domain terms as they are used in this repository._
 | Term | Definition |
 |---|---|
 | **BPMN 2.0** | OMG Business Process Model and Notation. The standard process-model format extended by this package without changing its core structure. |
-| **`extensionElements`** | The standard BPMN container used for foreign application data. Terminology data is stored here under `term:`. |
+| **`extensionElements`** | The standard BPMN container used for foreign application data. Terminology data is stored here under `mt:`. |
 | **bpmn-js** | The bpmn.io modeler/viewer that hosts the extension as an additional module and moddle extension. |
 | **bpmn-moddle / moddle** | The metamodel layer that parses BPMN XML into typed business objects and serializes them back to XML. |
-| **moddle descriptor** | JSON declaring a namespace, prefix, types, inheritance, and properties. The current descriptor is `extension/src/moddle/clinical.json`. |
+| **moddle descriptor** | JSON declaring a namespace, prefix, types, inheritance, and properties. The current descriptor is `extension/src/moddle/medical-terminology.json`. |
 | **businessObject** | The moddle object backing a BPMN element; helpers and properties-panel entries read and update it. |
 | **properties panel** | The bpmn-js sidebar to which `TerminologyPropertiesProvider` contributes editing entries. |
 
-## `term:` terminology model
+## `mt:` terminology model
 
 | Term | Definition |
 |---|---|
-| **`term:` namespace** | Prefix for `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`, the public XML namespace of this package. |
+| **`mt:` namespace** | Prefix for `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`, the public XML namespace of this package. |
 | **`Annotations`** | `Element` container holding many `Annotation` values under `extensionElements`. |
 | **`Annotation`** | A terminology statement with an ID, optional free text, and zero or more codings. |
-| **`Coding`** | A code-system URI, code, optional display, and optional version serialized as a `term:Coding`. |
+| **`Coding`** | A code-system URI, code, optional display, and optional version serialized as a `mt:Coding`. |
 | **Concept** | The internal provider result shape containing at least `system`, `code`, and `display`, with optional version, active status, and properties. |
 
 ## Providers and FHIR terminology
@@ -52,7 +52,7 @@ _Defines technical and domain terms as they are used in this repository._
 |---|---|
 | **Raw ESM** | The extension publishes JavaScript source with `"type": "module"` and no library build step. |
 | **Package discovery** | Vite-time loading and filtering of installed FHIR `CodeSystem` JSON resources by package name and canonical URL. |
-| **Moddle roundtrip** | Parse → serialize A → parse A → serialize B, requiring stable A/B output and no dropped known `term:` elements. |
+| **Moddle roundtrip** | Parse → serialize A → parse A → serialize B, requiring stable A/B output and no dropped known `mt:` elements. |
 | **Conformance gate** | The npm-scripted lint, roundtrip, schema, XSD, and package checks aggregated by `check:conformance` and `verify`. |
 | **Release Please** | Release automation that maintains release PRs and updates configured extension artifacts. |
 | **GitHub Packages** | The npm registry at `https://npm.pkg.github.com` used for the published package. |

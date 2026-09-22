@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A524-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` adds machine-readable medical
-terminology to BPMN process models. It provides a `term:`
+terminology to BPMN process models. It provides a `mt:`
 moddle extension for XML serialization, a bpmn-js properties-panel provider,
 terminology services, and a Vite plugin for discovering terminology packages.
 
@@ -68,7 +68,7 @@ type. This limits reliable clinical process automation and interoperability.
 
 This extension adds terminology annotations for systems such as SNOMED CT,
 LOINC, ICD-10-GM, OPS, IHE XDS, KDL, and other FHIR-hosted code systems.
-Terminology annotations are optional and remain isolated in the `term:`
+Terminology annotations are optional and remain isolated in the `mt:`
 namespace under BPMN `extensionElements`.
 
 ## Features
@@ -127,7 +127,7 @@ const modeler = new BpmnModeler({
     createDefaultTerminologyModule()
   ],
   moddleExtensions: {
-    term: TerminologyModdleDescriptor
+    mt: TerminologyModdleDescriptor
   }
 });
 ```
@@ -173,7 +173,7 @@ const TerminologyServicesModule =
   createTerminologyModule(terminologyServices);
 
 addAnnotation(businessObject, moddle, {
-  id: 'term-ann-1',
+  id: 'mt-ann-1',
   text: 'CT-Thorax mit Kontrastmittel',
   codings: [{
     system: 'http://snomed.info/sct',
@@ -280,7 +280,7 @@ also keeps its existing ID and version behavior.
 The package version identifies the installed npm terminology package. It is
 not the FHIR CodeSystem version. Search concepts retain the selected
 CodeSystem's own `version`, and only that value is written to the existing
-`term:coding/@version` attribute in BPMN XML. The npm package version is
+`mt:coding/@version` attribute in BPMN XML. The npm package version is
 available as provider/package metadata and is never substituted into the
 Coding.
 
@@ -661,21 +661,21 @@ Terminology annotations are persisted as standard BPMN 2.0 extension elements:
 
 ```xml
 <bpmn2:dataObject id="DataObj_Befund" name="CT-Befundbericht"
-                  xmlns:term="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1">
+                  xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-1"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-1"
                        text="CT-Befund Thorax mit KM">
-        <term:coding system="http://snomed.info/sct"
+        <mt:coding system="http://snomed.info/sct"
                      code="169069000"
                      display="CT of chest (procedure)"/>
-      </term:annotation>
-    </term:annotations>
+      </mt:annotation>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:dataObject>
 ```
 
-Clinical data belongs only in `term:` elements under
+Clinical data belongs only in `mt:` elements under
 `bpmn:extensionElements`. It must not change BPMN core or BPMN-DI structures.
 
 ## Demo

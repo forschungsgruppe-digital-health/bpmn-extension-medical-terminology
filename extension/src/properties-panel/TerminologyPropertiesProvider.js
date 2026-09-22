@@ -37,7 +37,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
         component: AnnotationListEntry,
         isEdited: () => {
           const ext = element.businessObject.extensionElements;
-          return ext?.values?.some(v => v.$type === 'term:Annotations' && v.values?.length > 0);
+          return ext?.values?.some(v => v.$type === 'mt:Annotations' && v.values?.length > 0);
         }
       });
     }
@@ -47,7 +47,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
     }
 
     groups.push({
-      id: 'clinical-terminology',
+      id: 'medical-terminology',
       label: translate('Medical terminology'),
       entries
     });

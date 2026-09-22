@@ -29,7 +29,7 @@ qualifier and without a version.
 |---|---|---|
 | `id` | `string` getter | Unique across the registry. A duplicate registration throws. Also the value you would put in `disabledProviderIds`. |
 | `displayName` | `string` getter | Human-readable fallback label. |
-| `systemUri` | `string` getter | The canonical CodeSystem URI written into `term:coding/@system`. |
+| `systemUri` | `string` getter | The canonical CodeSystem URI written into `mt:coding/@system`. |
 | `capabilities` | `TerminologyCapabilities` getter | `{ search, lookup, hierarchy, validate }`, all booleans. The base class default is all `false`, and the panel hides a provider whose `search` is `false` — so a subclass that does not override this never reaches the dropdown. |
 | `search(term, options)` | `Promise<SearchResult>` | The only method the properties panel calls. |
 | `lookup(code)` | `Promise<Concept \| null>` | Return `null` for “not found”, do not throw. |
@@ -80,7 +80,7 @@ happens instead is quieter:
 | `sourceType` | `'api' \| 'package'` | Chooses the dropdown optgroup and the label format | The provider lands in the **Terminology servers (API)** group anyway, but gets the bare `displayName` label with **no system URI** shown — the least informative of the three label formats |
 | `sourceName` | `string` | Preferred base of the option label | Falls back to `displayName`, then `id` |
 | `sourceLabel` | `string` | The qualifier in parentheses — conventionally the server host for `'api'`, `packageName@version` for `'package'` | The API label degrades from `Name (systemUri, host)` to `Name (systemUri)` |
-| `version` | `string` | Two things: it is the fallback CodeSystem version stamped into a new `term:coding/@version` when a concept carries none, and the registry's fallback source of known versions for this system | Codings whose concepts carry no version are written **without** `@version`, and this provider contributes nothing to the version-drift check |
+| `version` | `string` | Two things: it is the fallback CodeSystem version stamped into a new `mt:coding/@version` when a concept carries none, and the registry's fallback source of known versions for this system | Codings whose concepts carry no version are written **without** `@version`, and this provider contributes nothing to the version-drift check |
 | `getCodeSystemVersions(systemUri)` | `(string) => string[]` | Authoritative list of versions this provider can serve for a system URI | The registry falls back to `systemUri === provider.systemUri ? [provider.version] : []`. Define the method when one provider serves several CodeSystems |
 | `packageName`, `packageVersion`, `packageKey` | `string` | Package-backed provenance; the default configuration reads `packageName`/`packageVersion` (with `getCodeSystemUris()`) to stop discovery from duplicating a bundled package | Irrelevant for an API-backed provider. Only supply them if your provider is backed by an installed npm terminology package |
 
@@ -110,10 +110,10 @@ mirror:
 
 ```ts
 interface Concept {
-  code: string;                            // → term:coding/@code
-  display?: string;                        // → term:coding/@display
-  system: string;                          // → term:coding/@system
-  version?: string;                        // → term:coding/@version
+  code: string;                            // → mt:coding/@code
+  display?: string;                        // → mt:coding/@display
+  system: string;                          // → mt:coding/@system
+  version?: string;                        // → mt:coding/@version
   active?: boolean;
   properties?: Record<string, unknown>;    // provider-specific extras
 }
