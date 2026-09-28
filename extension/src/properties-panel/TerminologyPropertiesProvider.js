@@ -1,6 +1,7 @@
 import { is } from 'bpmn-js/lib/util/ModelUtil';
 import { AnnotationListEntry } from './entries/AnnotationListEntry.js';
 import { resolveTerminologyPropertiesConfig } from './config.js';
+import { MEDICAL_TERMINOLOGY_ENTRY_ID } from './error-contract.js';
 
 const LOW_PRIORITY = 500;
 
@@ -33,7 +34,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
 
     if (config.showAnnotations) {
       entries.push({
-        id: 'medical-terminology',
+        id: MEDICAL_TERMINOLOGY_ENTRY_ID,
         component: AnnotationListEntry,
         isEdited: () => {
           const ext = element.businessObject.extensionElements;
