@@ -6,6 +6,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/pr
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BpmnModdle } from 'bpmn-moddle';
 import { createAnnotationCommandStack } from '../helpers/annotation-command-stack.js';
+import { TerminologyRequestError } from '../../src/core/TerminologyRequestError.js';
 
 const serviceState = vi.hoisted(() => ({
   current: {}
@@ -52,7 +53,8 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
     },
     TextFieldEntry(props) {
       const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
-      const error = props.validate ? props.validate(localValue) : null;
+      const error = serviceState.current.panelErrors?.[props.id]
+        || (props.validate ? props.validate(localValue) : null);
 
       useEffect(() => {
         setLocalValue(props.getValue(props.element) || '');
@@ -86,7 +88,8 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
     },
     TextAreaEntry(props) {
       const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
-      const error = props.validate ? props.validate(localValue) : null;
+      const error = serviceState.current.panelErrors?.[props.id]
+        || (props.validate ? props.validate(localValue) : null);
 
       useEffect(() => {
         setLocalValue(props.getValue(props.element) || '');
@@ -117,6 +120,12 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
         error ? h('div', { class: 'bio-properties-panel-error' }, error) : null,
         props.description ? h('div', { class: 'bio-properties-panel-description' }, props.description) : null
       ]);
+    },
+    useError(id) {
+      return serviceState.current.panelErrors?.[id];
+    },
+    useErrors() {
+      return serviceState.current.panelErrors || {};
     }
   };
 });
@@ -730,6 +739,8 @@ describe('terminology properties panel UI', () => {
       expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
     });
 
+    expect(view.container.querySelector('.search-input-shell').className).toContain('bio-properties-panel-input');
+
     expect(screen.queryByText(/Showing .* results/)).toBeNull();
 
     fireEvent.click(screen.getByText('Save annotation'));
@@ -737,6 +748,120 @@ describe('terminology properties panel UI', () => {
     expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
     expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
     expect(screen.queryByText('Please select a coding from the search results or provide free text before saving.')).toBeNull();
+  });
+
+  it('exposes the structured provider error to the host while keeping the UI fallback', async () => {
+    const context = await createTestContext({
+      id: 'Task_HostError',
+      type: 'bpmn:Task',
+      name: 'Host Error Task'
+    });
+    const requestError = new TerminologyRequestError(
+      'Synthetic terminology server failure.',
+      { kind: 'server', host: 'terminology.example.test', status: 503 }
+    );
+    const fire = vi.spyOn(context.eventBus, 'fire');
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw requestError;
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'synthetic failure' }
+    });
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('medicalTerminology.error', {
+        element: context.element,
+        error: requestError,
+        operation: 'search',
+        providerId: 'loinc'
+      });
+    });
+    expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
+  });
+
+  it('translates provider errors through the host translate service', async () => {
+    const context = await createTestContext({
+      id: 'Task_TranslatedError',
+      type: 'bpmn:Task',
+      name: 'Translated Error Task'
+    });
+
+    setServices(context, {
+      translate: (value, replacements = {}) => `Translated: ${value.replace(/{([^}]+)}/g, (_, key) => replacements[key] ?? `{${key}}`)}`,
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw { kind: 'network' };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'synthetic failure' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Translated: LOINC could not be reached. Check your network connection and server URL.')).toBeTruthy();
+    });
+  });
+
+  it('clears a search error when the terminology selection changes', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchErrorReset',
+      type: 'bpmn:Task',
+      name: 'Search Error Reset Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[0], PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw { kind: 'network' };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'synthetic search' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LOINC could not be reached. Check your network connection and server URL.')).toBeTruthy();
+    });
+
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'snomed-ct' }
+    });
+
+    expect(screen.queryByText('LOINC could not be reached. Check your network connection and server URL.')).toBeNull();
   });
 
   it('shows a data-specific message for an unexpected provider response', async () => {
@@ -857,6 +982,68 @@ describe('terminology properties panel UI', () => {
     await waitFor(() => expect(screen.getByText('+ Add annotation')).toBeTruthy());
     expect(context.element.businessObject.extensionElements).toBeTruthy();
     expect(search).toHaveBeenCalledTimes(2);
+  });
+
+  it('publishes and clears the entry error without replacing errors from other entries', async () => {
+    const context = await createTestContext({
+      id: 'Task_PanelErrorLifecycle',
+      type: 'bpmn:Task',
+      name: 'Panel Error Lifecycle Task'
+    });
+
+    const search = vi.fn()
+      .mockRejectedValueOnce({ kind: 'network' })
+      .mockResolvedValue({ items: [SEARCH_RESULTS.loinc[0]] });
+    const fire = vi.spyOn(context.eventBus, 'fire');
+
+    setServices(context, {
+      panelErrors: {
+        name: 'Synthetic existing panel error.'
+      },
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+
+    const searchInput = getControlByLabel(view.container, 'Search');
+    fireEvent.input(searchInput, {
+      target: { value: 'failed search' }
+    });
+
+    const publishedErrors = {
+      name: 'Synthetic existing panel error.',
+      'medical-terminology': 'LOINC could not be reached. Check your network connection and server URL.',
+      'annotation-search': 'LOINC could not be reached. Check your network connection and server URL.'
+    };
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: publishedErrors
+      });
+    });
+    expect(searchInput.closest('[data-entry-id="annotation-search"]').className).toContain('has-error');
+
+    serviceState.current.panelErrors = publishedErrors;
+    fireEvent.input(searchInput, {
+      target: { value: 'Stage group' }
+    });
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: {
+          name: 'Synthetic existing panel error.'
+        }
+      });
+    });
   });
 
   it('distinguishes an unselected result from an invalid search', async () => {
@@ -1298,6 +1485,7 @@ describe('terminology properties panel UI', () => {
       name: 'Configured Task'
     });
 
+    const fire = vi.spyOn(context.eventBus, 'fire');
     setServices(context);
 
     const view = render(h(AnnotationListEntry, { element: context.element }));
@@ -1312,6 +1500,57 @@ describe('terminology properties panel UI', () => {
 
     expect(screen.getByText('ID may only contain letters, numbers, dots, underscores, and hyphens.')).toBeTruthy();
     expect(getControlByLabel(view.container, 'ID').closest('.bio-properties-panel-entry').className).toContain('has-error');
+    const publishedErrors = {
+      'medical-terminology': 'ID may only contain letters, numbers, dots, underscores, and hyphens.',
+      'annotation-id': 'ID may only contain letters, numbers, dots, underscores, and hyphens.'
+    };
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: publishedErrors
+      });
+    });
+
+    serviceState.current.panelErrors = publishedErrors;
+    fireEvent.input(getControlByLabel(view.container, 'ID'), {
+      target: { value: 'valid-id' }
+    });
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: {}
+      });
+    });
+  });
+
+  it('clears the missing-content error when free text is entered', async () => {
+    const context = await createTestContext({
+      id: 'Task_FormErrorReset',
+      type: 'bpmn:Task',
+      name: 'Form Error Reset Task'
+    });
+
+    const fire = vi.spyOn(context.eventBus, 'fire');
+    setServices(context);
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.click(screen.getByText('Save annotation'));
+
+    expect(screen.getByText('Please provide free text or at least one coding before saving.')).toBeTruthy();
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: {
+          'medical-terminology': 'Please provide free text or at least one coding before saving.',
+          'annotation-form': 'Please provide free text or at least one coding before saving.'
+        }
+      });
+    });
+
+    fireEvent.input(getControlByLabel(view.container, 'Free text'), {
+      target: { value: 'Obviously synthetic annotation' }
+    });
+
+    expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
   });
 
   it('recreates the chemotherapy task without adding unsupported target data', async () => {
@@ -1671,7 +1910,9 @@ function setServices(context, overrides = {}) {
         Object.values(context.elements).forEach(callback);
       }
     },
-    translate: (value) => value,
+    translate: (value, replacements = {}) => value.replace(/{([^}]+)}/g, (_, key) =>
+      replacements[key] ?? `{${key}}`
+    ),
     terminologyRegistry: {
       listProviders: () => PROVIDERS,
       search: vi.fn(async (term, providerId) => ({
