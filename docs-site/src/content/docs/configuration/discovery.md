@@ -329,5 +329,5 @@ Packages reached only through `includeTransitiveFrom` are traversed one level fu
 
 - [Configuration](/configuration/) — the configuration object, servers, authentication and language
 - [Default values](/configuration/defaults/) — the generated table of shipped defaults
-- [Extending: providers](/extending/providers/) — writing a provider when no package covers your terminology
+- [Extending](/extending/) — writing a provider when no package covers your terminology
 - [Compatibility](/compatibility/) — bundler and peer-dependency expectations

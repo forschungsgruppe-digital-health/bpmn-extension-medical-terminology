@@ -729,7 +729,7 @@ matrix, and it is rebuilt from this repository on every push to `main`. Build it
 
 | Page | Audience | Content |
 |---|---|---|
-| [Use cases](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/use-cases/) | Anyone evaluating the extension | The problem it solves and worked scenarios |
+| [Decision and quick start](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/) | Anyone evaluating the extension | Fit, limits, framework choices, and minimal integration |
 | [Configuration](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/) | Integrators | Composition roots, providers, servers, authentication, language |
 | [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) | Integrators and modellers | The user-facing surface, its wiring contract and its current limits |
 | [Namespace v1](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1/) | XML/tooling integrators | Generated namespace contract, moddle descriptor and XSD |
@@ -743,16 +743,15 @@ The repository documents below remain the source for what they cover.
 | Document | Audience | Content |
 |---|---|---|
 | [README.md](README.md) | Users and integrators | Features, setup, usage, and discovery |
-| [Extending bpmn.io](docs/EXTENDING.md) | Developers and contributors | BPMN 2.0, bpmn.io, moddle, properties panel, linting, and validation primer |
-| [Terminology extension user story](docs/user-stories/terminology-extension-mvp.md) | Maintainers and stakeholders | Dated current scope, implemented capabilities, and planned follow-up |
-| [Architecture](docs/ARCHITECTURE.md) | Contributors and integrators | Complete arc42 architecture documentation |
+| [Archived terminology user story](docs/user-stories/terminology-extension-mvp.md) | Maintainers and stakeholders | Historical planning snapshot |
+| [Architecture](docs/ARCHITECTURE.md) | Contributors and integrators | Concise component and boundary overview |
 | [Architecture decisions](docs/adr/) | Maintainers and contributors | Accepted ADRs and ADR template |
 | [Schema](schema/README.md) | XML/tooling integrators | Generated terminology XSD and usage |
 | [Valid BPMN examples](examples/valid/README.md) | Contributors and users | Synthetic conformance fixtures |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Development, testing, branching, and publishing |
 | [SECURITY.md](SECURITY.md) | Maintainers and security reporters | Vulnerability reporting and data-handling rules |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | All contributors | Community standards and reporting |
-| [CHANGELOG.md](CHANGELOG.md) | Maintainers and release reviewers | Repository-level release history |
+| [Package changelog](extension/CHANGELOG.md) | Users and release reviewers | Published package release history |
 | [AGENTS.md](AGENTS.md) | Automation and agents | Repository rules and quality gates |
 
 ## Contributing
