@@ -49,9 +49,9 @@ already-published version on rerun.
 
 ## Demo deployment
 
-`pages.yml` runs on pushes to `main`, tests with Node 22, builds the private
-`demo` workspace using Vite, uploads `demo/dist`, and deploys it to GitHub
-Pages. The demo imports synthetic BPMN samples from `examples/valid/` and uses
+`pages.yml` runs on pushes to `main`, tests with Node 24, builds the documentation
+site and private `demo` workspace, assembles both into one Pages artifact, and deploys it
+to GitHub Pages. The demo imports synthetic BPMN samples from `examples/valid/` and uses
 the extension's default terminology services.
 
 ## Execution environments

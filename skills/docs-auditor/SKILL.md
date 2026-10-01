@@ -19,7 +19,7 @@ Discover the doc surface; do not assume a fixed list. Enumerate with
 `git ls-files '*.md' '*.mdx' 'AGENTS*' 'CLAUDE*' '*.adoc'` plus a glob sweep, then group:
 
 - **Root governance/onboarding:** `README.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md`,
-  `AGENTS.md`, `CLAUDE.md`, `docs/EXTENDING.md`, `LICENSE`, any `CODE-HEALTH-*` /
+  `AGENTS.md`, `CLAUDE.md`, `LICENSE`, any `CODE-HEALTH-*` /
   status / report files, `CHANGELOG`/release-please output.
 - **`docs/arc42/`:** the arc42 sections `01_…`–`12_…` (introduction & goals,
   constraints, context, solution strategy, building blocks, runtime, deployment,

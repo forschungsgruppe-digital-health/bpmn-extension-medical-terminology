@@ -38,7 +38,7 @@ graph TD
     Q --> M[Maintainability]
     Q --> D[Distribution]
     C --> Q1[Q1 BPMN and terminology conformance]
-    C --> Q2[Q2 lossless term roundtrip]
+    C --> Q2[Q2 lossless mt roundtrip]
     R --> Q3[Q3 generated schema consistency]
     R --> Q4[Q4 extension schema validity]
     M --> Q6[Q6 package conventions]
@@ -78,7 +78,7 @@ point, and recommended publishing metadata.
 
 ### Q5 — Test regression
 
-When a pull request or push is validated, the Node 22 workflow runs the
+When a pull request or push is validated, the Node 24 workflow runs the
 extension Vitest suite and builds the demo after the tests pass.
 
 ## 10.3 Targets requiring human input

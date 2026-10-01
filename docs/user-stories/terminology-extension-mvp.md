@@ -1,16 +1,15 @@
-# User Stories: Terminology Extension (`mt:`)
+# Archived user stories: Terminology Extension (`mt:`)
 
-> **Status:** implemented baseline with planned, human-confirmed follow-up
+> **Status:** archived planning snapshot; current behaviour is documented on the website and in issues
 > scope  
 > **Package:** `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` (`extension/`)
 > **Moddle descriptor:** [`extension/src/moddle/medical-terminology.json`](../../extension/src/moddle/medical-terminology.json)
-> **Namespace:** `term`, `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`
+> **Namespace:** `mt`, `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`
 > **Date:** 2026-08-27
 
-This document records the current terminology-extension behavior and the
-smallest useful follow-up stories. It is a planning and traceability document,
-not a promise that every future story is already implemented. Examples use
-synthetic model data only.
+This document is retained as a historical planning snapshot. It must not be used as the
+source for current behaviour or planned work; use the documentation site and GitHub issues
+instead. Examples use synthetic model data only.
 
 ## Current scope
 
@@ -207,5 +206,4 @@ human sign-off.
 ---
 
 [← Project README](../../README.md) ·
-[Developer primer](../EXTENDING.md) ·
 [Architecture](../ARCHITECTURE.md)

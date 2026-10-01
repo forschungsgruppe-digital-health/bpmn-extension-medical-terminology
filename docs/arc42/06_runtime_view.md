@@ -54,12 +54,13 @@ sequenceDiagram
     Entry->>Helper: addAnnotation/removeAnnotation
     Helper->>BO: create containers and child objects
     Entry->>Modeling: updateModdleProperties(...)
-    Modeling-->>Panel: command-stack change and re-render
+    Modeling-->>Panel: re-render
 ```
 
-The helper creates `bpmn:ExtensionElements` and `mt:Annotations` lazily.
-Created objects receive `$parent` links. bpmn-js therefore owns undo/redo and
-serialization rather than the entry component mutating XML directly.
+The helper creates `bpmn:ExtensionElements` and `mt:Annotations` lazily and assigns
+`$parent` links for serialization. Adding and removing annotations currently mutate the
+moddle objects before triggering a re-render, so those operations are not reversible through
+the bpmn-js command stack.
 
 ## Scenario 3 — Serialize and check a roundtrip
 
@@ -67,7 +68,7 @@ The demo uses `modeler.saveXML({ format: true })` for its XML preview and
 download. The conformance tool performs the same operation without a modeler:
 
 1. Discover `.bpmn` files under `examples/valid/` and `docs/`.
-2. Parse each file with `term` registered.
+2. Parse each file with `mt` registered.
 3. Serialize to XML A.
 4. Parse A and serialize again to XML B.
 5. Require A and B to be identical.
