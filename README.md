@@ -134,11 +134,12 @@ and generated [API reference](https://forschungsgruppe-digital-health.github.io/
 | How does a modeller edit annotations? | [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) |
 | How is the XML structured? | [XML schema](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/schema/) |
 | What is the exact namespace contract? | [Namespace v1](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1/) |
+| What prior work does this build on? | [Background and related work](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/background/) |
 | How do I report a problem? | [Support](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/support/) |
 
 Contributor-only material remains in the repository:
 
-- [Contributing](CONTRIBUTING.md)
+- [Contributing](CONTRIBUTING.md) and the full [contributor guide](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/contributing/)
 - [Architecture](docs/ARCHITECTURE.md) and [architecture decisions](docs/adr/)
 - [Security policy](SECURITY.md)
 - [Package changelog](extension/CHANGELOG.md)
