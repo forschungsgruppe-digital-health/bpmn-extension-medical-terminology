@@ -72,6 +72,47 @@ const TerminologyModule = createDefaultTerminologyModule({
 });
 ```
 
+### Authentication
+
+There is no global token setting. The recommended browser setup is a host-owned `fetchFn`
+that calls your same-origin backend; the backend keeps credentials and forwards the request to
+the terminology server. Do not put long-lived secrets into client-side configuration.
+
+For a server that accepts a browser-visible token, the SNOMED configuration supports
+`Bearer` and `Basic` authentication. Snowstorm transport additionally supports API keys:
+
+```js
+createDefaultTerminologyModule({
+  snomedConfig: {
+    auth: { type: 'Bearer', token: sessionToken }
+  }
+});
+```
+
+Use `fetchFn` when authentication must apply to all FHIR providers or when tokens need to be
+refreshed. The [API reference](/api/) documents the adapter-level authentication fields.
+
+### Result language
+
+For Snowstorm, choose the language and how it is sent:
+
+```js
+createDefaultTerminologyModule({
+  snomedConfig: {
+    transport: 'snowstorm',
+    baseUrl: 'https://snowstorm.example.org/snowstorm/snomed-ct',
+    language: 'de',
+    languageStrategy: 'header'
+  }
+});
+```
+
+`header` sends `Accept-Language`; `param` sends the server-specific language query
+parameter. FHIR requests currently use the package default (`de` as
+`displayLanguage`). If an application needs a different FHIR language policy, provide a
+host-owned `fetchFn` or configure a custom provider. The server ultimately decides whether a
+translated display is available.
+
 ### Snowstorm instead of FHIR for SNOMED CT
 
 ```js

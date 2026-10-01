@@ -41,8 +41,16 @@ which contains the current private reporting route, scope, and response targets.
 
 ## Licence and terminology content
 
-The source code is MIT licensed. External terminology content remains subject to the
-licences of its publishers and server operators. The package does not grant rights to
-SNOMED CT, LOINC, ICD-10-GM, OPS, ATC, or content returned by a configured server.
+The source code is MIT licensed. Terminology content keeps the licence of its publisher:
+
+| Content | How it is used | What the application owner must check |
+| --- | --- | --- |
+| HL7 Terminology, IHE XDS, and KDL defaults | Bundled and searchable offline | The licence and attribution in each source package or resource |
+| SNOMED CT, LOINC, ICD-10-GM, OPS, and ATC defaults | Requested from a terminology server at runtime | Publisher licence, server terms, and permitted territory/use |
+| A package or server added by the host | Chosen by the integrating application | Redistribution and access rights for that source |
+
+The extension's MIT licence does not grant rights to external terminology content. A selected
+concept stores only its system URI, code, optional version, and display in the BPMN file; that
+does not replace the publisher's terms.
 
 For development and pull requests, see [Contributing](/contributing/).
