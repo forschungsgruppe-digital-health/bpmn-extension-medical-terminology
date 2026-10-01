@@ -126,7 +126,6 @@ export default defineConfig({
         ] },
         ...apiSidebar,
         { label: 'Project & help', collapsed: true, items: [
-          { label: 'Background & related work', link: '/background/' },
           { label: 'Support', link: '/support/' },
           { label: 'Contributing', link: '/contributing/' }
         ] }

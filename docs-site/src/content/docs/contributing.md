@@ -297,5 +297,4 @@ That is a known limitation rather than an intended state — see
   bpmn.io mechanisms this package sits on.
 - [Architecture overview](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/ARCHITECTURE.md)
   — the component boundaries and recorded architecture decisions.
-- [Background and related work](/background/) — the research lineage, contribution, and limits.
 - [API reference](/api/) — every exported symbol, generated from the source.

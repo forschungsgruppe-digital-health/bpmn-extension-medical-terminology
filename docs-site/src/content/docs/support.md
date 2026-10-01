@@ -1,6 +1,6 @@
 ---
 title: Support
-description: Report bugs and security issues and understand the project's support boundary.
+description: Report bugs and security issues and understand the project's support boundary and response targets.
 ---
 
 This package is pre-1.0 research software, not a supported production service. Only the
@@ -32,6 +32,21 @@ and include:
 
 Use only obviously synthetic clinical data. Never attach patient data, realistic patient
 identifiers, credentials, or access tokens to an issue, screenshot, or example.
+
+## Response targets
+
+These are best-effort targets for this research project, not a service-level agreement:
+
+| Request | Target |
+| --- | --- |
+| Public bug report or support question | Initial triage within 10 working days |
+| Private security report | Acknowledgement within 5 working days |
+| Confirmed security report | Assessment and remediation plan within 30 days |
+| Feature request | Reviewed during backlog triage; no response or implementation deadline |
+
+An initial triage may be a request for more information, a classification, or a pointer to an
+existing issue. It does not promise a fix. Maintainer availability, university holidays, and
+project funding may extend these times.
 
 ## Report a security issue
 
