@@ -1,128 +1,98 @@
 # BPMN Extension Medical Terminology
 
 [![CI](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml/badge.svg)](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/actions/workflows/validate.yml)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A524-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
-`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` adds machine-readable medical
-terminology to BPMN process models. It provides a `mt:`
-moddle extension for XML serialization, a bpmn-js properties-panel provider,
-terminology services, and a Vite plugin for discovering terminology packages.
+`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` adds
+machine-readable medical codes to BPMN elements. It provides an XML extension, terminology
+services, and an optional bpmn-js properties-panel integration.
 
-All annotations are stored as standard BPMN 2.0 `extensionElements`, so BPMN
-tools that do not understand the extension preserve the model unchanged.
+- [Documentation](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/)
+- [Live demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/)
+- [API reference](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/api/)
 
-> **Documentation:** <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/>
-> — guides, the generated API reference, the XML schema and the compatibility matrix.
->
-> **Live demo:** <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/>
-> — a bpmn-js modeler with the terminology properties-panel group enabled.
+This is pre-1.0 research software. It does not execute clinical processes, generate FHIR
+resources, provide a terminology licence, or replace clinical validation.
 
-## Funding
+## What it does
 
-This work is part of **MiHUB – Medical Informatics Hub**, a Digital Progress Hub
-(Digitaler FortschrittsHub Gesundheit) of the German Medical Informatics
-Initiative (MII).
+A human-readable label such as `CT chest` is ambiguous to software. The extension can attach
+a SNOMED CT, LOINC, ICD-10-GM, OPS, ATC, IHE XDS, KDL, or another coding while leaving the
+BPMN element unchanged:
 
-MiHUB is funded by the German Federal Ministry of Research, Technology and Space
-(Bundesministerium für Forschung, Technologie und Raumfahrt, BMFTR) under grant
-number **01ZZ2506A** (01/2026 – 12/2029). The responsibility for the content of
-this publication lies with the authors.
+```xml
+<bpmn:task id="Task_CT" name="CT chest">
+  <bpmn:extensionElements>
+    <mt:annotations>
+      <mt:annotation id="mt-ann-1">
+        <mt:coding system="http://snomed.info/sct"
+                   code="169069000"
+                   display="Computed tomography of chest" />
+      </mt:annotation>
+    </mt:annotations>
+  </bpmn:extensionElements>
+</bpmn:task>
+```
 
-- Project: <https://mihubx.de/mihub/>
-- Funding record: [Förderkatalog des Bundes, FKZ 01ZZ2506A](https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A)
-- Funder: BMFTR ([ROR 04pz7b180](https://ror.org/04pz7b180))
+The `mt:` data uses the versioned namespace
+`https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`
+and is stored only below standard BPMN `extensionElements`.
 
-<details>
-<summary>Förderhinweis (deutsch)</summary>
+| Integration | What you can use |
+| --- | --- |
+| bpmn-js modeler | XML descriptor, terminology search, and properties-panel editor |
+| JavaScript application without the UI | Terminology registry, providers, and annotation helpers |
+| Camunda or another BPMN/XML framework | The framework-neutral `mt:` XML format and schema |
 
-Das diesem Repository zugrunde liegende Vorhaben wurde mit Mitteln des
-Bundesministeriums für Forschung, Technologie und Raumfahrt (BMFTR) unter dem
-Förderkennzeichen 01ZZ2506A gefördert. Die Verantwortung für den Inhalt dieser
-Veröffentlichung liegt bei den Autor:innen.
+Non-bpmn-js tools must preserve unknown extension elements when saving. Test a round trip in
+the target tool before adoption.
 
-</details>
+## Install
 
-## Table of Contents
+The package is raw ESM, published through GitHub Packages, and intended for applications
+with a bundler. Configure the organisation scope and a token that can read packages:
 
-- [Funding](#funding)
-- [Motivation](#motivation)
-- [Features](#features)
-- [Package](#package)
-- [Quick Start](#quick-start)
-- [Programmatic Usage](#programmatic-usage)
-- [Package Discovery with Vite](#package-discovery-with-vite)
-- [Generated XML](#generated-xml)
-- [Demo](#demo)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [Citation](#citation)
-- [License](#license)
-
-## Motivation
-
-BPMN 2.0 is widely used for modelling clinical pathways, but its elements do
-not carry machine-readable clinical terminology semantics. A task labelled
-“CT-Thorax” has no link to a SNOMED CT procedure code or an IHE XDS document
-type. This limits reliable clinical process automation and interoperability.
-
-This extension adds terminology annotations for systems such as SNOMED CT,
-LOINC, ICD-10-GM, OPS, IHE XDS, KDL, and other FHIR-hosted code systems.
-Terminology annotations are optional and remain isolated in the `mt:`
-namespace under BPMN `extensionElements`.
-
-## Features
-
-- Multi-code annotations on BPMN Tasks, DataObjects, Events, Gateways, and
-  MessageFlows.
-- Provider architecture for SNOMED CT via Ontoserver/FHIR by default or a
-  custom Snowstorm endpoint, package-backed HL7 resources, IHE XDS, and KDL.
-- Stable annotation IDs and optional coded entries.
-- Offline static providers for small terminology systems.
-- Interactive bpmn-js properties-panel integration.
-- Terminology registry with search, lookup, and validation operations.
-- Package-backed terminology providers with automatic or explicit discovery.
-- Vite resource filtering by exact canonical `CodeSystem.url`.
-- Raw ESM package with no library build step.
-
-## Package
-
-| Package | Location | Description |
-|---|---|---|
-| `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` | [`extension/`](extension/) | Terminology annotations, providers, moddle extension, properties panel, and Vite discovery |
-| Demo | [`demo/`](demo/) | Private bpmn-js integration example |
-
-Install the published package from GitHub Packages:
+```ini
+@forschungsgruppe-digital-health:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
 
 ```bash
 npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology
 ```
 
-Configure the `@forschungsgruppe-digital-health` scope to use
-`https://npm.pkg.github.com` before installing from GitHub Packages.
+Do not commit a token. Supported peer versions and bundler constraints are listed under
+[Compatibility](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/compatibility/).
 
-## Quick Start
+## bpmn-js quick start
 
-### Prerequisites
-
-- Node.js 24 or later for development
-- An application using bpmn-js 15 or later
-- `bpmn-js-properties-panel` 5 or later when using the properties panel
-
-### Integrate into a bpmn-js modeler
+The host registers its normal properties-panel modules, this package's UI and services, and
+the `mt` moddle descriptor:
 
 ```js
 import BpmnModeler from 'bpmn-js/lib/Modeler';
+import {
+  BpmnPropertiesPanelModule,
+  BpmnPropertiesProviderModule
+} from 'bpmn-js-properties-panel';
 import {
   TerminologyModdleDescriptor,
   TerminologyPropertiesPanelModule,
   createDefaultTerminologyModule
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
+
+import 'bpmn-js/dist/assets/diagram-js.css';
+import 'bpmn-js/dist/assets/bpmn-js.css';
+import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/properties-panel.css';
 
 const modeler = new BpmnModeler({
   container: '#canvas',
+  propertiesPanel: { parent: '#properties' },
   additionalModules: [
+    BpmnPropertiesPanelModule,
+    BpmnPropertiesProviderModule,
     TerminologyPropertiesPanelModule,
     createDefaultTerminologyModule()
   ],
@@ -132,559 +102,50 @@ const modeler = new BpmnModeler({
 });
 ```
 
-The package CSS contains only the structural styles for the terminology
-entries. Import the official bpmn-js and properties-panel styles in the host
-application as usual; the terminology styles inherit its fonts, colors, and
-CSS variables.
+The default setup offers server-backed providers and bundled, offline-searchable providers.
+Use the [configuration guide](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/)
+to select a self-hosted server, authentication route, offline-only operation, or installed
+FHIR terminology packages.
 
-## Programmatic Usage
+## JavaScript without the panel
 
-> The documentation site carries an expanded version of this section, including the
-> [default values](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/defaults/) generated from the code and the
-> language options that are not described below:
-> <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/>
-
-```js
-import {
-  SnomedCtProvider,
-  createTerminologyModule,
-  createTerminologyServices,
-  addAnnotation
-} from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
-
-const terminologyServices = createTerminologyServices({
-  providers: [
-    new SnomedCtProvider({
-      baseUrl: 'https://snowstorm.example.com'
-    })
-  ],
-  loaderConfig: {
-    fhirBaseUrl: 'https://fhir.example.com'
-  }
-});
-
-await terminologyServices.terminologyProviderLoader
-  .ensureProvider('http://terminology.hl7.org/CodeSystem/v3-ActCode');
-
-const results = await terminologyServices.terminologyRegistry
-  .search('pneumonia', 'snomed-ct');
-
-const TerminologyServicesModule =
-  createTerminologyModule(terminologyServices);
-
-addAnnotation(businessObject, moddle, {
-  id: 'mt-ann-1',
-  text: 'CT-Thorax mit Kontrastmittel',
-  codings: [{
-    system: 'http://snomed.info/sct',
-    code: '169069000',
-    display: 'CT of chest'
-  }]
-});
-```
-
-Terminology search failures are exposed as `TerminologyRequestError` instances
-with a `kind` of `network`, `authorization`, `server`, `data`, or `redirect`.
-The `data` kind means that the server responded but did not return a valid
-provider response; it is distinct from an empty successful result. `redirect`
-means that Snowstorm redirected the request and should be configured with its
-redirect-free API base URL.
-
-Search results always contain the displayed concepts. The optional `total`
-field is only present when the provider can supply a reliable total; clients
-must not infer a total from the number of returned concepts.
-
-`createDefaultTerminologyServices()` provides the standard service setup used
-by the demo and by a plain app after installation: SNOMED CT, FHIR
-terminology-server providers, and package-backed terminology providers are all
-available with sensible defaults, so the extension works out of the box after
-`npm install`.
-
-### Default service configuration
-
-| Option | Purpose |
-|---|---|
-| `serverConfig` | Override FHIR, SNOMED, and Snowstorm server base URLs |
-| `enableSnomed` | Enable or disable the default SNOMED provider |
-| `enableFhirDefaults` | Enable or disable built-in FHIR providers |
-| `enablePackageDefaults` | Enable or disable bundled package providers; explicit `packageDiscovery` providers remain available |
-| `disabledProviderIds` | Disable providers by ID |
-| `snomedConfig` | Override SNOMED provider settings |
-| `fhirProviderOverrides` | Override built-in FHIR providers |
-| `additionalFhirProviders` | Add additional FHIR providers |
-| `additionalPackageProviders` | Add package-backed providers |
-| `packageProviderOptions` | Override a bundled package provider's `componentLabel` or complete `displayName` |
-| `packageDiscovery` | Register explicit package data and configure package filtering |
-| `packageAutoDiscovery` | Use the bundled HL7, IHE XDS, and KDL package resources exposed by a bundler; does not disable explicit `packageDiscovery.packages` |
-| `loaderConfig` | Override or disable provider loading |
-
-Package-provider dropdown labels use the same dynamic format for bundled
-presets and discovered package versions:
-
-```text
-Name (package@version)
-```
-
-For a package part containing one CodeSystem, `Name` comes from that resource's
-FHIR `title`, `name`, `id`, or canonical URL. For a package containing several
-CodeSystems, it falls back to the package name. This means a bundled preset and
-an additional installed version use the same naming rule; neither relies on a
-hard-coded preset label. `sourceName` and `componentLabel` configuration values
-remain explicit overrides. For example, a KDL resource is displayed as
-`CodeSystem Klinische Dokumentenklassen-Liste (Version 2025)
-(dvmd.kdl.r4@2025.0.1)`.
-
-The provider's internal `displayName` still contains the package identity and
-component for API consumers. Generated registries use the canonical package
-name even when the package manifest also contains a longer title. Override only
-the component label while preserving the package metadata:
-
-```js
-createDefaultTerminologyServices({
-  packageProviderOptions: {
-    'ihe-xds-class': {
-      componentLabel: 'XDS document class'
-    }
-  }
-});
-```
-
-Set `displayName` instead when the application needs to replace the entire
-label.
-
-Package discovery creates one aggregate provider per installed package
-version. When exactly one CodeSystem is selected from a package, its FHIR
-`title`, `name`, `id`, or canonical URL is appended as the component.
-`componentLabels` overrides that component by package name (or by a
-version-qualified package key) and canonical CodeSystem URL. Invalid provider
-IDs, package names, or CodeSystem URLs fail fast with a descriptive error.
-
-When npm resolves one package version for both a direct and a transitive
-requirement, discovery keeps one provider and emits this non-blocking warning:
-
-```text
-[terminology] Package "hl7.terminology.r4" version "7.1.0" is installed directly and transitively. The package was deduplicated; one terminology provider will be used.
-```
-
-When different versions are installed in different `node_modules` paths, the
-registry keeps both entries instead of overwriting one by package name. Their
-keys are version-qualified (`hl7.terminology.r4@6.0.2` and
-`hl7.terminology.r4@7.1.0`), their display names include the package version,
-and their provider IDs are stable IDs such as
-`pkg-hl7-terminology-r4-6-0-2` and `pkg-hl7-terminology-r4-7-1-0`.
-`disabledProviderIds` can therefore disable one installed version without
-disabling the other. A single unversioned or legacy package entry keeps the
-existing `pkg-<package-name>` ID; explicit package data without npm metadata
-also keeps its existing ID and version behavior.
-
-The package version identifies the installed npm terminology package. It is
-not the FHIR CodeSystem version. Search concepts retain the selected
-CodeSystem's own `version`, and only that value is written to the existing
-`mt:coding/@version` attribute in BPMN XML. The npm package version is
-available as provider/package metadata and is never substituted into the
-Coding.
-
-When a diagram is loaded, a saved Coding with a CodeSystem version is shown
-with a yellow system/code marker only when the same CodeSystem URI is available
-locally but that exact saved version is not. This identifies a Coding that may
-need review after replacing a terminology package. If the old and new package
-versions are installed in parallel, the saved Coding remains normally marked
-because its CodeSystem version is still available. Versionless Codings and
-systems for which no local version is known remain unchanged.
-
-TypeScript consumers can import the public configuration types from
-`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/types`.
-
-Example:
+`createDefaultTerminologyServices()` exposes the same registry without registering a
+bpmn-js module:
 
 ```js
 import {
   createDefaultTerminologyServices
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
-const terminologyServices = createDefaultTerminologyServices({
-  serverConfig: {
-    fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
-  },
-  snomedConfig: {
-    transport: 'fhir'
-  },
-  disabledProviderIds: ['atc'],
-  fhirProviderOverrides: [
-    {
-      id: 'icd-10-gm',
-      expandParameters: { valueSetVersion: '2024' }
-    }
-  ]
-});
+const { terminologyRegistry } = createDefaultTerminologyServices();
+const result = await terminologyRegistry.search('pneumonia', 'snomed-ct');
 ```
 
-The default SNOMED provider uses the FHIR API at
-`https://r4.ontoserver.csiro.au/fhir`. To use a custom Snowstorm deployment
-or an application-owned same-origin endpoint, keep the provider ID unchanged
-and change its transport and base URL. `baseUrl` is the Snowstorm API context
-path, without the edition branch or `/concepts`; the provider appends both.
+For custom providers, annotation helpers, and all options, use the
+[Extending guide](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/extending/)
+and generated [API reference](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/api/).
 
-```js
-const terminologyServices = createDefaultTerminologyServices({
-  snomedConfig: {
-    transport: 'snowstorm',
-    baseUrl: '/api/snowstorm/snomed-ct',
-    branch: 'MAIN',
-    language: 'de',
-    languageStrategy: 'header',
-    defaultEcl: '< 404684003'
-  }
-});
-```
+## Documentation
 
-For another FHIR terminology server, keep `transport: 'fhir'` and set
-`serverConfig.snomedBaseUrl` or `snomedConfig.baseUrl`. For a Snowstorm
-instance, use `transport: 'snowstorm'` as shown above. The configured
-`defaultEcl` is sent as the `ecl` query parameter, and `languageStrategy:
-'header'` sends the configured language as `Accept-Language`.
+| Question | Start here |
+| --- | --- |
+| Does the package fit my use case? | [Decision and quick start](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/) |
+| How do I configure sources? | [Configuration](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/) |
+| How does a modeller edit annotations? | [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) |
+| How is the XML structured? | [XML schema](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/schema/) |
+| What is the exact namespace contract? | [Namespace v1](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1/) |
+| How do I report a problem? | [Support](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/support/) |
 
-There is no built-in public Snowstorm REST endpoint. Snowstorm transport is
-therefore opt-in and requires an explicit `baseUrl`. The extension does not
-provide or configure a Vite proxy, reverse proxy, or other CORS bypass; any
-same-origin route must be operated and configured by the host application.
+Contributor-only material remains in the repository:
 
-### CORS and host-owned request routing
+- [Contributing](CONTRIBUTING.md)
+- [Architecture](docs/ARCHITECTURE.md) and [architecture decisions](docs/adr/)
+- [Security policy](SECURITY.md)
+- [Package changelog](extension/CHANGELOG.md)
 
-Browsers enforce CORS at the network boundary. The extension cannot make a
-browser trust a third-party SNOMED/FHIR origin that does not include the
-necessary CORS headers. A browser app must use an endpoint that explicitly
-permits its origin through CORS. The extension does not ship or configure a
-Vite proxy.
+## Develop
 
-If the terminology server cannot provide the required CORS headers, the host
-application or its deployment environment must provide the backend or reverse
-proxy and expose that route as the configured `baseUrl`. The extension only
-uses the URL or `fetchFn` supplied by the application; it does not implement
-the routing service.
-
-The public config API supports this directly:
-
-```js
-const terminologyServices = createDefaultTerminologyServices({
-  fetchFn: async (url, init) => {
-    const response = await fetch(`/api/terminology?target=${encodeURIComponent(url)}`, {
-      ...init,
-      headers: {
-        ...init?.headers,
-        'X-Requested-By': 'bpmn-terminology'
-      }
-    });
-
-    return response;
-  }
-});
-```
-
-This is the supported extension-side hook for CORS-sensitive deployments. The
-browser itself still blocks direct cross-origin requests unless the remote
-server explicitly allows them. In particular, the public
-`https://snowstorm.snomedtools.org/snowstorm/snomed-ct` endpoint must not be
-used directly from a browser: it redirects browser requests to a denial page
-and does not provide a usable CORS response. Use a Snowstorm deployment with a
-redirect-free, CORS-enabled API endpoint or an application-owned backend route.
-A direct authenticated browser request additionally requires the operator to
-allow its preflight request and the `Authorization` header.
-
-### Out-of-the-box defaults and external overrides
-
-After installation in a bpmn-js app, the extension is designed to work without
-manual provider registration. It ships with sensible defaults for:
-
-- SNOMED CT via Ontoserver/FHIR (`https://r4.ontoserver.csiro.au/fhir` by
-  default)
-- FHIR terminology servers such as LOINC, ICD-10-GM, OPS, and ATC
-- default package-backed providers for common bundled terminology packages
-- automatic discovery of already installed terminology packages in the app
-
-The app can override any of these defaults from the outside by passing the
-public configuration object into `createDefaultTerminologyServices(...)`:
-
-```js
-const terminologyServices = createDefaultTerminologyServices({
-  serverConfig: {
-    fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
-  },
-  snomedConfig: {
-    transport: 'fhir'
-  },
-  packageDiscovery: {
-    enabled: true,
-    include: ['*'],
-    mode: 'auto'
-  },
-  packageMetadata: {
-    'hl7.terminology.r4': {
-      title: 'HL7 Terminology (Custom)',
-      version: '1.0.0'
-    }
-  },
-  disabledProviderIds: ['atc']
-});
-```
-
-This keeps the package usable in a plain app while still exposing a clean
-extension point for downstream projects that want to point to their own servers,
-package sets, or terminology metadata.
-
-The bundled HL7, IHE XDS, and KDL providers do not require the Vite discovery
-plugin. `enablePackageDefaults: false` disables only these bundled providers.
-The `packageAutoDiscovery` option controls the bundled package resources
-exposed by the host application; native ESM hosts can provide other packages
-explicitly through `packageDiscovery`, independent of both options:
-
-```js
-createDefaultTerminologyServices({
-  enablePackageDefaults: false,
-  packageAutoDiscovery: false,
-  packageDiscovery: {
-    packages: {
-      'my.terminology': [myCodeSystem]
-    }
-  }
-});
-```
-
-Installed terminology packages are discovered automatically by default when a
-Vite app exposes them through `globalThis.__FDH_TERMINOLOGY_PACKAGES__` or the
-terminology Vite plugin. You can disable the default automatic discovery with
-`packageAutoDiscovery: false`, or provide an explicit package set via
-`packageDiscovery`.
-
-When package discovery is explicitly enabled but no packages are exposed by the
-bundler, the extension writes an actionable warning to the browser console.
-The built-in package providers remain available; configure
-`packageDiscovery.packages`, provide `packageAutoDiscovery.globFn`, or expose
-`globalThis.__FDH_TERMINOLOGY_PACKAGES__` for the bundled package resources.
-
-Automatic discovery is deliberately limited to the package resources used by
-the four bundled presets: `hl7.terminology.r4`, the two selected IHE XDS
-CodeSystems from `de.ihe-d.terminology`, and the KDL CodeSystem from
-`dvmd.kdl.r4`. FHIR core and implementation-guide extension packages are
-dependencies of those packages, but are not imported, parsed, bundled, or
-registered as providers. Use `packageDiscovery.packages` for any other
-terminology package; explicit package discovery is not subject to this
-default allowlist.
-
-The published package keeps URL-pinned FHIR core and extension dependencies as
-installation-time resolution anchors because the upstream Simplifier package
-manifests refer to those packages by bare version. These technical packages
-remain excluded from automatic terminology discovery and are never registered
-as providers.
-
-The default IHE and KDL filters select resources by their canonical
-`CodeSystem.url`, not by a single package filename. This supports compatible
-package layouts such as `codesystem-kdl.xml.json` and
-`codesystem-kdl.json`. If a default package contains no matching resource, the
-Vite plugin emits a warning and skips that package instead of failing with an
-unresolved filename.
-
-### Cross-bundler discovery
-
-For Webpack, Rollup, esbuild, SSR, or other non-Vite builds, generate a plain
-ESM registry during the application build:
-
-```bash
-npx fdh-terminology-discover \
-  --root . \
-  --out src/generated/terminology-packages.js \
-  --package de.ihe-d.terminology
-```
-
-Register the generated registry without using a bundler plugin:
-
-```js
-import packages, { packageMetadata } from
-  './generated/terminology-packages.js';
-
-createDefaultTerminologyServices({
-  packageAutoDiscovery: false,
-  packageDiscovery: {
-    enabled: true,
-    packages,
-    metadata: packageMetadata
-  }
-});
-```
-
-The generated file contains ordinary ESM data and does not require a JSON
-loader or Vite-specific API. Use `--include <package>=<CodeSystem.url>` to keep
-only selected CodeSystems in the generated registry. Supplying `--include` or
-`--package` selects an explicit package set; it does not mean automatic
-discovery of every installed package. Without an explicit package selection,
-automatic discovery is limited to the default HL7, IHE XDS, and KDL resources.
-Use `--exclude-package` when automatic discovery should remain enabled while
-omitting complete packages.
-
-The CLI is optional. The runtime API is bundler-neutral and can receive an
-already imported package collection directly:
-
-```js
-import aerztlicheFachrichtungen from
-  'de.ihe-d.terminology/CodeSystem-AerztlicheFachrichtungen.json' with { type: 'json' };
-
-createDefaultTerminologyServices({
-  packageAutoDiscovery: false,
-  packageDiscovery: {
-    enabled: true,
-    packages: {
-      'de.ihe-d.terminology': [aerztlicheFachrichtungen]
-    }
-  }
-});
-```
-
-An application may also generate the same plain ESM registry with its own
-Node.js, esbuild, Webpack, or Rollup build step. The browser only consumes the
-resulting `packages` object; it cannot scan `node_modules` at runtime.
-
-## Package Discovery with Vite
-
-Install the terminology package that contains the CodeSystems:
-
-```bash
-npm install <your-terminology-package>
-```
-
-Configure the discovered packages and their CodeSystem filters in `vite.config.js`:
-
-```js
-import { defineConfig } from 'vite';
-import { terminologyVitePlugin } from
-  '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/vite';
-
-export default defineConfig({
-  plugins: [
-    terminologyVitePlugin()
-  ]
-});
-```
-
-The default plugin imports only the CodeSystems required by the bundled
-providers. It does not follow technical FHIR dependencies into the virtual
-module. In particular, it does not import `hl7.fhir.r4.core`,
-`hl7.fhir.uv.extensions.r4`, or unrelated resources from
-`de.ihe-d.terminology`.
-
-Applications that intentionally need another package can opt into it
-explicitly. Each explicit package entry supports the documented resource
-filters:
-
-```js
-const discoveryPackages = {
-  'my.terminology': {
-    include: ['https://example.org/CodeSystem/custom'],
-    exclude: []
-  }
-};
-
-export default defineConfig({
-  plugins: [
-    terminologyVitePlugin({
-      packages: discoveryPackages
-    })
-  ]
-});
-```
-
-Enable discovery in the terminology services:
-
-```js
-createDefaultTerminologyServices({
-  packageAutoDiscovery: true
-});
-```
-
-The plugin discovers installed FHIR terminology packages from the application's
-dependency graph and exposes them on
-`globalThis.__FDH_TERMINOLOGY_PACKAGES__`. The services create one provider
-per discovered package version. If npm has deduplicated equal direct and
-transitive requirements, the registry contains one provider and emits the
-warning described above. Each provider searches only the CodeSystems from its
-own package version, so parallel versions remain independently searchable and
-selectable while the selected coding still keeps its concrete CodeSystem URL
-and version.
-
-The plugin resolves its internal `virtual:fdh-terminology-packages` module
-through Vite's `resolveId` and `load` hooks while Vite transforms the HTML
-entry. The resulting development module is a Vite-managed module-graph entry,
-and the production build bundles it normally. Do not add that virtual module
-URI as an application script URL, pass it to `fetch()`, or import it from
-runtime-generated strings. It is an internal bundler module, not an HTTP
-resource, and package discovery does not create a CORS request. Applications
-only configure `terminologyVitePlugin` and use `packageAutoDiscovery`.
-
-The package names are explicit keys in `packages`; when parallel versions are
-provided manually, use version-qualified keys and matching metadata:
-
-```js
-packageDiscovery: {
-  packages: {
-    'hl7.terminology.r4@6.0.2': oldCodeSystems,
-    'hl7.terminology.r4@7.1.0': currentCodeSystems
-  },
-  metadata: {
-    'hl7.terminology.r4@6.0.2': {
-      packageName: 'hl7.terminology.r4',
-      version: '6.0.2'
-    },
-    'hl7.terminology.r4@7.1.0': {
-      packageName: 'hl7.terminology.r4',
-      version: '7.1.0'
-    }
-  }
-}
-```
-
-`include` and `exclude` match the canonical package name and may also target a
-version-qualified package key. Within each package version,
-`include` and `exclude` match exact canonical `CodeSystem.url` values, never
-filenames. `exclude` takes precedence over `include`, and `include: ['*']`
-loads every CodeSystem from that package. A configured URL that does not exist
-in the package causes an error.
-
-The repository demo itself uses the bundled providers and default terminology
-configuration. The filtered `packages` examples above are integration
-configurations for applications that want to restrict the available package
-content.
-
-## Generated XML
-
-Terminology annotations are persisted as standard BPMN 2.0 extension elements:
-
-```xml
-<bpmn2:dataObject id="DataObj_Befund" name="CT-Befundbericht"
-                  xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1">
-  <bpmn2:extensionElements>
-    <mt:annotations>
-      <mt:annotation id="mt-ann-1"
-                       text="CT-Befund Thorax mit KM">
-        <mt:coding system="http://snomed.info/sct"
-                     code="169069000"
-                     display="CT of chest (procedure)"/>
-      </mt:annotation>
-    </mt:annotations>
-  </bpmn2:extensionElements>
-</bpmn2:dataObject>
-```
-
-Clinical data belongs only in `mt:` elements under
-`bpmn:extensionElements`. It must not change BPMN core or BPMN-DI structures.
-
-## Demo
-
-The interactive demo is deployed to GitHub Pages on pushes to `main`:
-
-[bpmn-extension-medical-terminology demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/)
-
-Run it locally:
+Node.js 24 or later is required for repository development.
 
 ```bash
 git clone https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git
@@ -693,106 +154,28 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-The package itself is independent of the host application's deployment
-architecture: an integrator can use a direct CORS-enabled terminology service,
-its own backend proxy, or only local package-backed providers. It does not
-ship a proxy or require one.
-
-### Demo Snowstorm configuration
-
-To enable Snowstorm with `npm run dev`, set a redirect-free Snowstorm base URL
-in `demo/.env.local`. The configured endpoint must allow the demo's browser
-origin through CORS. The demo does not configure or provide a Vite proxy.
-
-```dotenv
-VITE_SNOWSTORM_BASE_URL=https://snowstorm.example.test/snowstorm/snomed-ct
-VITE_SNOWSTORM_BRANCH=MAIN
-VITE_SNOWSTORM_LANGUAGE=de
-VITE_SNOWSTORM_LANGUAGE_STRATEGY=header
-VITE_SNOWSTORM_DEFAULT_ECL=< 404684003
-VITE_SNOWSTORM_MAX_RESULTS=15
-```
-
-Without `VITE_SNOWSTORM_BASE_URL`, the demo keeps the package's default FHIR
-SNOMED configuration. GitHub Pages and other static deployments can enable
-Snowstorm only with a CORS-capable external endpoint. If an organization uses
-its own backend or reverse proxy, configure the resulting same-origin route in
-the host application's `baseUrl`; that infrastructure is outside this
-package.
-
-## Documentation
-
-The documentation site at <https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/> is the place to start. It carries the guides,
-the API reference generated from the source, the XML schema reference and the compatibility
-matrix, and it is rebuilt from this repository on every push to `main`. Build it locally with
-`npm run docs:install` followed by `npm run docs:dev`.
-
-| Page | Audience | Content |
-|---|---|---|
-| [Decision and quick start](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/) | Anyone evaluating the extension | Fit, limits, framework choices, and minimal integration |
-| [Configuration](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/) | Integrators | Composition roots, providers, servers, authentication, language |
-| [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) | Integrators and modellers | The user-facing surface, its wiring contract and its current limits |
-| [Namespace v1](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1/) | XML/tooling integrators | Generated namespace contract, moddle descriptor and XSD |
-| [XML schema](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/schema/) | Tooling integrators | Namespace, content model, serialisation, forward compatibility |
-| [Compatibility](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/compatibility/) | Integrators | Supported versions, the bundler-only model, coexistence with other extensions |
-| [Extending](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/extending/) | Contributors | Writing a provider or a transport adapter |
-| [API reference](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/api/) | Developers | Every export, generated from the source |
-
-The repository documents below remain the source for what they cover.
-
-| Document | Audience | Content |
-|---|---|---|
-| [README.md](README.md) | Users and integrators | Features, setup, usage, and discovery |
-| [Archived terminology user story](docs/user-stories/terminology-extension-mvp.md) | Maintainers and stakeholders | Historical planning snapshot |
-| [Architecture](docs/ARCHITECTURE.md) | Contributors and integrators | Concise component and boundary overview |
-| [Architecture decisions](docs/adr/) | Maintainers and contributors | Accepted ADRs and ADR template |
-| [Schema](schema/README.md) | XML/tooling integrators | Generated terminology XSD and usage |
-| [Valid BPMN examples](examples/valid/README.md) | Contributors and users | Synthetic conformance fixtures |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Development, testing, branching, and publishing |
-| [SECURITY.md](SECURITY.md) | Maintainers and security reporters | Vulnerability reporting and data-handling rules |
-| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | All contributors | Community standards and reporting |
-| [Package changelog](extension/CHANGELOG.md) | Users and release reviewers | Published package release history |
-| [AGENTS.md](AGENTS.md) | Automation and agents | Repository rules and quality gates |
-
-## Contributing
+Before a pull request or release:
 
 ```bash
-git clone https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology.git
-cd bpmn-extension-medical-terminology
-npm install --legacy-peer-deps
-npm test
 npm run verify
 ```
 
-`npm run verify` runs package-convention checks, BPMN conformance checks, and
-the extension test suite. See [CONTRIBUTING.md](CONTRIBUTING.md) for the full
-contributor and publishing guide.
+The command checks package metadata, versions, generated terminology data, BPMN conformance,
+moddle round trips, XML Schema validation, and the Vitest suite. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the complete workflow.
 
-## Citation
+## Funding and citation
 
-If you use this software, please cite it using the metadata in
-[CITATION.cff](CITATION.cff).
-Broader machine-readable software metadata is available in
-[codemeta.json](codemeta.json).
+This work is part of **MiHUB – Medical Informatics Hub**, funded by the German Federal
+Ministry of Research, Technology and Space (BMFTR), grant **01ZZ2506A**. Responsibility for
+the content lies with the authors. See the [funding record](https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A)
+and [CITATION.cff](CITATION.cff).
 
-## License
+## Licence
 
-MIT © Technische Universität Dresden, Forschungsgruppe Digital Health.
-See [LICENSE](LICENSE).
+The source code is [MIT licensed](LICENSE). bpmn-js has an additional visible-watermark
+condition; see the [bpmn.io licence](https://bpmn.io/license/).
 
-### bpmn.io watermark
-
-This extension targets [bpmn.io](https://bpmn.io). bpmn-js is a peer dependency and
-is not distributed with this package. bpmn-js is published under MIT terms with one
-additional condition: the code that renders the bpmn.io watermark must not be removed
-or altered, and the watermark must stay fully visible and unobstructed in any website
-or application that uses it. This applies to the playground in `demo/` and to any
-application built on this extension. See <https://bpmn.io/license/>.
-
-### Terminology content
-
-This extension stores code system identifiers and codes only. It ships no SNOMED CT,
-LOINC or ICD-10 content — no display names, descriptions, hierarchies or excerpts.
-Using those terminologies in an application requires the licenses of their respective
-publishers: an Affiliate License via BfArM/MLDS for SNOMED CT, the LOINC Copyright
-Notice and License for LOINC, and the BfArM terms of use for ICD-10-GM.
+Terminology content remains subject to its publisher's terms. The software licence does not
+grant rights to SNOMED CT, LOINC, ICD-10-GM, OPS, ATC, or content returned by a configured
+server. See [Support and licensing](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/support/#licence-and-terminology-content).

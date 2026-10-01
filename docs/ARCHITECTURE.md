@@ -59,3 +59,7 @@ Formal decisions and their consequences are recorded in [`docs/adr/`](adr/):
 
 The older detailed arc42 chapters remain in `docs/arc42/` as internal background but are no
 longer published on the user documentation site.
+
+Research positioning and prior work are retained separately in
+[Background and related work](BACKGROUND_AND_RELATED_WORK.md). They support maintainers and
+publications without adding that material to the modeller-facing site.
