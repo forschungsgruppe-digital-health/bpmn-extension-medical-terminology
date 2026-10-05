@@ -13,20 +13,28 @@ explicitly; retries do not overwrite them.
 
 ## Initial setup
 
-Create a granular npm token with stage-only write permission for the
-`@forschungsgruppe-digital-health` scope, including new-package creation, and
-store it as the repository Actions secret `NPM_STAGING_TOKEN`. npm normalizes
-neither the scope nor account permissions through the workflow: the token's
-account must be allowed to publish there. Never commit the token.
+The initial staging smoke test uses a granular stage-only token stored as
+`NPM_STAGING_TOKEN`. Once the package exists, ongoing staging uses OIDC without
+an npm secret. Configure two stage-only GitHub Trusted Publishers on npm:
+
+- Owner: `forschungsgruppe-digital-health`.
+- Repository: `bpmn-extension-medical-terminology`.
+- Workflow `release-please.yml` for automatic staging through the reusable workflow.
+- Workflow `npm-stage.yml` for manual staging.
+- Allow staging only; do not allow direct publishing.
+
+npm validates the calling workflow identity for reusable workflows, so the
+automatic and manual entry points each need a publisher. Both caller and
+callee declare `id-token: write`. Revoke the bootstrap token and remove its
+GitHub secret once setup is complete. No second smoke upload is required by
+this procedure; the first future genuine RC run verifies OIDC end to end.
 
 An initial stage of a new package creates a public `0.0.0-stage` placeholder.
 The candidate's contents remain staged until approval. Rejecting a candidate
 does not necessarily remove that placeholder.
 
-Once the package exists, a maintainer can configure a stage-only GitHub Trusted
-Publisher on npm. Switching this workflow to OIDC is a separate change: add
-`id-token: write` to caller and callee, stop requiring the token, and revoke it
-after a successful OIDC stage. Until then, renew the token before expiration.
+Trusted Publisher setup and stage rejection require maintainer 2FA. The
+workflow cannot approve its own stages.
 
 ## Manual smoke test
 

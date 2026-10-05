@@ -32,8 +32,7 @@ jobs:
     if: needs.release-please.outputs.release_created == 'true'
     permissions:
       contents: read
+      id-token: write
     uses: ./.github/workflows/npm-stage.yml
     with:
       tag: ${{ needs.release-please.outputs.tag_name }}
-    secrets:
-      NPM_STAGING_TOKEN: ${{ secrets.NPM_STAGING_TOKEN }}
