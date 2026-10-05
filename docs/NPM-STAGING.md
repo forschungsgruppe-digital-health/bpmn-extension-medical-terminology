@@ -32,7 +32,11 @@ after a successful OIDC stage. Until then, renew the token before expiration.
 
 After this workflow is available on the default branch, run `npm-stage` in
 GitHub Actions with an existing tag (for example `terminology-v0.1.9`) and
-`test_version: 1.0.0-rc.1`. This overrides only the npm copy's package version;
+`test_version: 1.0.0-rc.1`. For old tags without `check:versions`, also supply
+`smoke_commit` with the full SHA of a verified current `dev` commit whose
+package version matches the supplied tag. The workflow verifies that commit
+instead of the old tag. Normal release calls always check out the release tag.
+This overrides only the npm copy's package version;
 it does not create a release, change source metadata, or publish to GitHub
 Packages. It is an authentication/transport test, not an actual RC.
 

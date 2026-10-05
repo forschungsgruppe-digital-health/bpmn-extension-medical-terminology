@@ -19,6 +19,10 @@ on:
         description: Optional smoke-test RC version; changes only the staged tarball
         required: false
         type: string
+      smoke_commit:
+        description: Optional full commit SHA for smoke tests before a new release exists
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -38,6 +42,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.tag }}
           TEST_VERSION: ${{ inputs.test_version }}
+          SMOKE_COMMIT: ${{ inputs.smoke_commit }}
         run: |
           node --input-type=module -e '
             if (!/^terminology-v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(process.env.RELEASE_TAG)) {
@@ -46,11 +51,14 @@ jobs:
             if (process.env.TEST_VERSION && !/^\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(process.env.TEST_VERSION)) {
               throw new Error("Smoke-test version must be X.Y.Z-rc.N");
             }
+            if (process.env.SMOKE_COMMIT && (!process.env.TEST_VERSION || !/^[0-9a-f]{40}$/.test(process.env.SMOKE_COMMIT))) {
+              throw new Error("Smoke commit requires test_version and a full commit SHA");
+            }
           '
 
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
-          ref: refs/tags/${{ inputs.tag }}
+          ref: ${{ inputs.smoke_commit || format('refs/tags/{0}', inputs.tag) }}
           persist-credentials: false
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
