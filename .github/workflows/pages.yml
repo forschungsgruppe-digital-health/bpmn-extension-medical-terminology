@@ -15,6 +15,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      preserve_run:
+        description: 'Run containing site-preview to preserve at root (empty for normal deployment)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -63,6 +68,9 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
@@ -75,6 +83,12 @@ jobs:
 
       - name: Install package dependencies
         run: npm ci --legacy-peer-deps
+
+      - name: Require a preserved site for the preview branch
+        if: github.ref_name == 'docs/streamline-user-documentation' && inputs.preserve_run == ''
+        run: |
+          echo 'Set preserve_run to the run containing the existing site-preview artifact.'
+          exit 1
 
       - name: Install documentation site dependencies
         run: npm ci --prefix docs-site
@@ -90,25 +104,43 @@ jobs:
 
       - name: Build documentation site
         # docs:gate has already generated TypeDoc output for the sidebar.
+        env:
+          DOCS_BASE_PATH: ${{ inputs.preserve_run && '/bpmn-extension-medical-terminology/preview/streamline' || '/bpmn-extension-medical-terminology' }}
         run: npm --prefix docs-site run build
 
       - name: Build demo application
         env:
-          BASE_PATH: ${{ env.SITE_BASE }}demo/
+          BASE_PATH: ${{ inputs.preserve_run && '/bpmn-extension-medical-terminology/preview/streamline/demo/' || '/bpmn-extension-medical-terminology/demo/' }}
           BUILD_SOURCEMAP: 'false'
         run: npm run build
 
       - name: Assemble the published tree
+        env:
+          PRESERVE_RUN: ${{ inputs.preserve_run }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          rm -rf _site
           mkdir -p _site
-          cp -R docs-site/dist/. _site/
-          mkdir -p _site/demo
-          cp -R demo/dist/. _site/demo/
+          destination=_site
+          if [ -n "$PRESERVE_RUN" ]; then
+            [[ "$PRESERVE_RUN" =~ ^[0-9]+$ ]] || exit 1
+            gh run download "$PRESERVE_RUN" --name site-preview --dir _site
+            test -f _site/index.html
+            test -f _site/use-cases/index.html
+            destination=_site/preview/streamline
+            test ! -e "$destination"
+          fi
+          mkdir -p "$destination/demo"
+          cp -R docs-site/dist/. "$destination/"
+          cp -R demo/dist/. "$destination/demo/"
           echo "Assembled $(find _site -type f | wc -l) files, $(du -sh _site | cut -f1)."
 
       - name: Check internal links
         run: npm run docs:links
+
+      - name: Check preview links
+        if: inputs.preserve_run != ''
+        run: node tools/check-site-links.mjs _site/preview/streamline --base /bpmn-extension-medical-terminology/preview/streamline
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5

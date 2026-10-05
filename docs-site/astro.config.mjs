@@ -11,7 +11,8 @@ import { readFileSync } from 'node:fs';
 const apiSidebar = JSON.parse(readFileSync(new URL('./src/generated/api-sidebar.json', import.meta.url), 'utf8'));
 
 
-const SITE_BASE = '/bpmn-extension-medical-terminology';
+const DEFAULT_BASE = '/bpmn-extension-medical-terminology';
+const SITE_BASE = (process.env.DOCS_BASE_PATH || DEFAULT_BASE).replace(/\/$/, '');
 
 /**
  * Prefix root-relative links written in Markdown with the site base.
@@ -28,6 +29,11 @@ function rehypeBaseLinks() {
       if (node.type === 'element' && node.properties) {
         for (const attribute of ['href', 'src']) {
           const value = node.properties[attribute];
+          if (typeof value === 'string' && SITE_BASE !== DEFAULT_BASE &&
+              (value === DEFAULT_BASE || value.startsWith(`${DEFAULT_BASE}/`))) {
+            node.properties[attribute] = SITE_BASE + value.slice(DEFAULT_BASE.length);
+            continue;
+          }
           if (
             typeof value === 'string' &&
             value.startsWith('/') &&
