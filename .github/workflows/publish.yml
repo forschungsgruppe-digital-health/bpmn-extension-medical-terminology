@@ -1,9 +1,9 @@
 name: publish
 
-# Decoupled publish: any published GitHub Release pushes the workspace packages to
+# Decoupled publish: a stable published GitHub Release pushes the workspace packages to
 # GitHub Packages. This is independent of release-please's release-creation step
 # (which proved unreliable for this monorepo) — a release, manual or automated, is
-# the trigger. The publish is idempotent: an already-published version is skipped,
+# the trigger. RCs publish through npm-stage.yml. This publish is idempotent: an already-published version is skipped,
 # so re-runs and multiple release events do not fail.
 on:
   release:
@@ -22,7 +22,9 @@ permissions:
 jobs:
   publish:
     # Manual runs are intentionally limited to the trusted main branch.
-    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
+    # RC releases publish through npm-stage.yml to avoid duplicate uploads.
+    # Manual runs remain available on main for targeted recovery.
+    if: (github.event_name == 'release' && !contains(github.event.release.tag_name, '-rc.')) || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
