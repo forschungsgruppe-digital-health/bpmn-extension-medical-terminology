@@ -29,11 +29,6 @@ function rehypeBaseLinks() {
       if (node.type === 'element' && node.properties) {
         for (const attribute of ['href', 'src']) {
           const value = node.properties[attribute];
-          if (typeof value === 'string' && SITE_BASE !== DEFAULT_BASE &&
-              (value === DEFAULT_BASE || value.startsWith(`${DEFAULT_BASE}/`))) {
-            node.properties[attribute] = SITE_BASE + value.slice(DEFAULT_BASE.length);
-            continue;
-          }
           if (
             typeof value === 'string' &&
             value.startsWith('/') &&
