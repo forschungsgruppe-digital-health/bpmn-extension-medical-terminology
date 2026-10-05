@@ -17,7 +17,7 @@ authors:
 license: MIT
 repository-code: "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology"
 url: "https://tu-dresden.de/bu/wirtschaft/winf/digital-health"
-version: "0.1.9"
+version: "1.0.0-rc.1"
 keywords:
   - "BPMN"
   - "bpmn-js"
