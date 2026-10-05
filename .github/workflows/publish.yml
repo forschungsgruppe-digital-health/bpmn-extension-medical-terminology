@@ -54,8 +54,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           for pkg in extension; do
+            version=$(node -p 'require("./extension/package.json").version')
+            tag=latest
+            if [[ "$version" == *-* ]]; then tag=rc; fi
             echo "::group::publish @forschungsgruppe-digital-health/bpmn-extension-medical-terminology"
-            if npm publish --workspace="$pkg" 2>publish-err.log; then
+            if npm publish --workspace="$pkg" --tag="$tag" 2>publish-err.log; then
               echo "published $pkg"
             elif grep -qiE "cannot publish over|already exists|EPUBLISHCONFLICT|409|conflict" publish-err.log; then
               echo "skip $pkg — this version is already published"
