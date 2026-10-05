@@ -8,13 +8,13 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 > **Monorepo note.** Per-package version history is authoritative and is generated
 > automatically by [release-please](https://github.com/googleapis/release-please) in the
-> extension package's own `CHANGELOG.md` once a release is cut. Tagged
+> [extension package's changelog](extension/CHANGELOG.md) once a release is cut. Tagged
 > releases are also listed under
 > [GitHub Releases](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/releases).
 > This root changelog records repository-wide and cross-cutting changes (documentation,
 > tooling, governance, repository structure) that are not tied to a single package version.
 
-## [Unreleased]
+## Repository changes
 
 ### Added
 
@@ -40,5 +40,3 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `SECURITY.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `AGENTS.md`, `CLAUDE.md`).
 - The bpmn-js integration is now the private, unpublished `demo` workspace. The
   publishable package is `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`.
-
-[Unreleased]: https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.1.0...HEAD

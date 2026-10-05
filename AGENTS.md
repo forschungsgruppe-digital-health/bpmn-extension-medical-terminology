@@ -9,6 +9,8 @@ This repository publishes one raw-ESM bpmn-js extension:
 Run `npm run verify` before release work. It combines:
 
 - `npm run check:packages` — publish conventions for `extension/package.json`
+- `npm run check:versions` — coupled release metadata and lockfile versions
+- `npm run generate:hl7:check` — generated bundled terminology data is current
 - `npm run check:conformance` — BPMN linting, terminology moddle roundtrip, and
   informational BPMN-core XSD validation
 - `npm test` — Vitest suite

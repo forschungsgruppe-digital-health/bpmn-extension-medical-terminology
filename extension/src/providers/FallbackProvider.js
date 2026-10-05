@@ -62,7 +62,8 @@ export class FallbackProvider extends TerminologyProvider {
       if (getResultItems(primaryResult).length > 0) {
         return primaryResult;
       }
-    } catch {
+    } catch (error) {
+      this._warnFallback('search', error);
       primaryResult = null;
     }
 
@@ -82,8 +83,8 @@ export class FallbackProvider extends TerminologyProvider {
       if (primaryConcept) {
         return primaryConcept;
       }
-    } catch {
-      // ignore primary lookup failure and continue with fallback
+    } catch (error) {
+      this._warnFallback('lookup', error);
     }
 
     return this._fallbackProvider.lookup(code);
@@ -95,8 +96,8 @@ export class FallbackProvider extends TerminologyProvider {
       if (primaryResult.valid) {
         return primaryResult;
       }
-    } catch {
-      // ignore primary validation failure and continue with fallback
+    } catch (error) {
+      this._warnFallback('validation', error);
     }
 
     return this._fallbackProvider.validate(code);
@@ -108,10 +109,17 @@ export class FallbackProvider extends TerminologyProvider {
       if ((primaryHierarchy.parents?.length || 0) > 0 || (primaryHierarchy.children?.length || 0) > 0) {
         return primaryHierarchy;
       }
-    } catch {
-      // ignore primary hierarchy failure and continue with fallback
+    } catch (error) {
+      this._warnFallback('hierarchy lookup', error);
     }
 
     return this._fallbackProvider.getHierarchy(code);
+  }
+
+  _warnFallback(operation, error) {
+    console.warn(
+      `[terminology] Primary provider "${this._primaryProvider.id}" failed during ${operation}; using fallback provider "${this._fallbackProvider.id}".`,
+      error
+    );
   }
 }

@@ -74,6 +74,28 @@ describe('FallbackProvider', () => {
     await expect(provider.validate('X1')).resolves.toEqual({ valid: true });
   });
 
+  it('warns operators when a primary lookup failure triggers the fallback', async () => {
+    const primary = createProvider({
+      lookup: vi.fn(async () => { throw new Error('primary unavailable'); })
+    });
+    const fallback = createProvider({
+      lookup: vi.fn(async () => ({ code: 'X1', display: 'Found' }))
+    });
+    const provider = new FallbackProvider({
+      id: 'dual-track',
+      primaryProvider: primary,
+      fallbackProvider: fallback
+    });
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await expect(provider.lookup('X1')).resolves.toEqual({ code: 'X1', display: 'Found' });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('Primary provider "provider" failed during lookup'),
+      expect.any(Error)
+    );
+    warn.mockRestore();
+  });
+
   it('should reject mismatched system URIs', () => {
     const primary = createProvider({ systemUri: 'http://example.com/a' });
     const fallback = createProvider({ systemUri: 'http://example.com/b' });

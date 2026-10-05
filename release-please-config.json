@@ -5,6 +5,9 @@
     "extension": {
       "component": "terminology",
       "release-type": "node",
+      "release-as": "1.0.0-rc.1",
+      "prerelease": true,
+      "prerelease-type": "rc",
       "extra-files": [
         {
           "type": "json",
@@ -16,7 +19,27 @@
           "path": "src/moddle/clinical.json",
           "jsonpath": "$.version"
         },
-        "/schema/clinical-semantics.xsd"
+        "/schema/clinical-semantics.xsd",
+        {
+          "type": "yaml",
+          "path": "/CITATION.cff",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "/codemeta.json",
+          "jsonpath": "$.version"
+        },
+        {
+          "type": "json",
+          "path": "/package-lock.json",
+          "jsonpath": "$.packages['extension'].version"
+        },
+        {
+          "type": "json",
+          "path": "/package-lock.json",
+          "jsonpath": "$.packages['extension/lint/bpmnlint-plugin-terminology'].version"
+        }
       ]
     }
   },

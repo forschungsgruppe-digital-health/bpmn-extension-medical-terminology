@@ -16,6 +16,9 @@ the repository README for the CLI, Vite filtering, and manual-import examples.
 
 Install the package with npm:
 
+For staged candidates, use the
+[download and test checklist](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/RELEASE-TESTING.md).
+
 ```bash
 npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology
 ```

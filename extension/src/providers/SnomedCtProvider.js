@@ -43,7 +43,8 @@ export class SnomedCtProvider extends TerminologyProvider {
       languageStrategy: config.languageStrategy ?? 'header',
       auth: config.auth,
       fetchFn: config.fetchFn,
-      headers: config.headers
+      headers: config.headers,
+      requestTimeoutMs: config.requestTimeoutMs
     });
   }
 
@@ -72,7 +73,8 @@ export class SnomedCtProvider extends TerminologyProvider {
         term,
         limit: options.limit ?? this._maxResults,
         offset: options.offset ?? 0,
-        additionalParams
+        additionalParams,
+        signal: options.signal
       });
     } catch (error) {
       console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);

@@ -41,7 +41,8 @@ prioritization require maintainer review._
 
 ## 11.5 Lifecycle
 
-The package is pre-1.0 (`extension/package.json` currently reports `0.1.0`).
+The current package version is recorded in
+[`extension/package.json`](../../extension/package.json).
 Public APIs and descriptor details therefore require compatibility review even
 when SemVer permits evolution. The release process is automated, but the
 decision whether a descriptor change is additive or breaking remains a human

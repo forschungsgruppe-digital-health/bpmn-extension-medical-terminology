@@ -9,6 +9,11 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to publish (terminology-vX.Y.Z)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -21,6 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name || inputs.tag }}
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -31,6 +38,13 @@ jobs:
 
       - run: npm ci --legacy-peer-deps
 
+      - name: Verify release artifacts before publishing
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          npm run check:versions -- --tag "$RELEASE_TAG"
+          npm run verify
+
       # Publish each workspace. Raw-src publish (no build step). Already-published
       # versions return a conflict and are skipped; any other failure fails the job.
       - name: Publish packages to GitHub Packages
@@ -40,8 +54,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || secrets.PACKAGES_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           for pkg in extension; do
+            version=$(node -p 'require("./extension/package.json").version')
+            tag=latest
+            if [[ "$version" == *-* ]]; then tag=rc; fi
             echo "::group::publish @forschungsgruppe-digital-health/bpmn-extension-medical-terminology"
-            if npm publish --workspace="$pkg" 2>publish-err.log; then
+            if npm publish --workspace="$pkg" --tag="$tag" 2>publish-err.log; then
               echo "published $pkg"
             elif grep -qiE "cannot publish over|already exists|EPUBLISHCONFLICT|409|conflict" publish-err.log; then
               echo "skip $pkg — this version is already published"

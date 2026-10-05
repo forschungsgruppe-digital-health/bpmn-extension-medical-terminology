@@ -9,6 +9,10 @@ import {
   createDataError,
   createRequestError
 } from '../core/TerminologyRequestError.js';
+import {
+  createRequestSignal,
+  DEFAULT_REQUEST_TIMEOUT_MS
+} from '../core/request-signal.js';
 
 function normalizeLanguage(lang) {
   if (!lang) return undefined;
@@ -39,6 +43,7 @@ export class SnowstormAdapter {
    * @param {import('../core/types').ConnectionConfig['auth']} [config.auth]
    * @param {typeof fetch} [config.fetchFn]
    * @param {Record<string, string>} [config.headers]
+   * @param {number} [config.requestTimeoutMs=15000]
    */
   constructor(config) {
     this._baseUrl = resolveSnowstormBaseUrl(config.baseUrl);
@@ -46,6 +51,7 @@ export class SnowstormAdapter {
     this._auth = config.auth;
     this._fetch = config.fetchFn || globalThis.fetch.bind(globalThis);
     this._extraHeaders = config.headers || {};
+    this._requestTimeoutMs = config.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     // language config
     this._languageStrategy = config.languageStrategy ?? languageConfig.languageStrategy ?? 'param';
     this._configuredLanguage = config.language ?? languageConfig.language;
@@ -58,6 +64,7 @@ export class SnowstormAdapter {
    * @param {number} params.offset
    * @param {string} [params.language]
    * @param {Record<string, string>} [params.additionalParams]
+   * @param {AbortSignal} [params.signal]
    * @returns {Promise<{ items: import('../core/types').Concept[], total?: number }>}
    */
   async search(params) {
@@ -83,12 +90,15 @@ export class SnowstormAdapter {
       }
     }
 
+    const request = createRequestSignal(params.signal, this._requestTimeoutMs);
     let res;
 
     try {
-      res = await this._request(url);
+      res = await this._request(url, request.signal);
     } catch (error) {
-      throw createRequestError(null, url, { cause: error });
+      throw createRequestError(null, url, { cause: error, kind: request.getAbortKind() });
+    } finally {
+      request.cleanup();
     }
 
     if (res.redirected || res.type === 'opaqueredirect' || !res.ok) {
@@ -133,11 +143,8 @@ export class SnowstormAdapter {
    * @returns {Promise<import('../core/types').Concept | null>}
    */
   async lookup(code) {
-    const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${code}`);
-    const res = await this._request(url);
-    if (!res.ok) return null;
-    const item = await res.json();
-    return this._mapConcept(item);
+    const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${encodeURIComponent(code)}`);
+    return this._getConcept(url, { allowNotFound: true });
   }
 
   /**
@@ -145,11 +152,8 @@ export class SnowstormAdapter {
    * @returns {Promise<import('../core/types').Concept[]>}
    */
   async getParents(code) {
-    const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${code}/parents`);
-    const res = await this._request(url);
-    if (!res.ok) return [];
-    const items = await res.json();
-    return (Array.isArray(items) ? items : []).map(i => this._mapConcept(i));
+    const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${encodeURIComponent(code)}/parents`);
+    return this._getConceptList(url, { allowNotFound: true });
   }
 
   /**
@@ -157,13 +161,53 @@ export class SnowstormAdapter {
    * @returns {Promise<import('../core/types').Concept[]>}
    */
   async getChildren(code) {
-    const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${code}/children`);
+    const url = new URL(`${this._baseUrl}/${this._branch}/concepts/${encodeURIComponent(code)}/children`);
     url.searchParams.set('limit', '50');
-    const res = await this._request(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    const items = data.items || data;
-    return (Array.isArray(items) ? items : []).map(i => this._mapConcept(i));
+    return this._getConceptList(url, { allowNotFound: true, allowWrappedItems: true });
+  }
+
+  async _getConcept(url, { allowNotFound = false } = {}) {
+    const res = await this._requestOrThrow(url, { allowNotFound });
+    if (!res) return null;
+
+    try {
+      const item = await res.json();
+      if (!isSnowstormConcept(item)) throw new Error('Invalid concept response.');
+      return this._mapConcept(item);
+    } catch (error) {
+      throw createDataError(url, error);
+    }
+  }
+
+  async _getConceptList(url, { allowNotFound = false, allowWrappedItems = false } = {}) {
+    const res = await this._requestOrThrow(url, { allowNotFound });
+    if (!res) return [];
+
+    try {
+      const data = await res.json();
+      const items = allowWrappedItems ? (data.items || data) : data;
+      if (!Array.isArray(items) || items.some(item => !isSnowstormConcept(item))) {
+        throw new Error('Invalid concept list response.');
+      }
+      return items.map(item => this._mapConcept(item));
+    } catch (error) {
+      throw createDataError(url, error);
+    }
+  }
+
+  async _requestOrThrow(url, { allowNotFound = false } = {}) {
+    let res;
+    try {
+      res = await this._request(url);
+    } catch (error) {
+      throw createRequestError(null, url, { cause: error });
+    }
+
+    if (allowNotFound && res.status === 404) return null;
+    if (res.redirected || res.type === 'opaqueredirect' || !res.ok) {
+      throw createRequestError(res, url);
+    }
+    return res;
   }
 
   _resolveLanguage() {
@@ -201,11 +245,18 @@ export class SnowstormAdapter {
   }
 
   /** @private */
-  async _request(url) {
+  async _request(url, signal) {
     const headers = { ...this._extraHeaders };
     if (this._auth?.type === 'Bearer') headers['Authorization'] = `Bearer ${this._auth.token}`;
     if (this._auth?.type === 'Basic') headers['Authorization'] = `Basic ${this._auth.credentials}`;
     if (this._auth?.type === 'ApiKey') headers[this._auth.headerName || 'X-Api-Key'] = this._auth.apiKey;
-    return this._fetch(url.toString(), { headers });
+    return this._fetch(url.toString(), { headers, signal });
   }
+}
+
+function isSnowstormConcept(item) {
+  return item
+    && typeof item === 'object'
+    && typeof item.conceptId === 'string'
+    && Boolean(item.conceptId.trim());
 }

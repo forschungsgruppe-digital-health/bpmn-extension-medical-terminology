@@ -17,6 +17,10 @@ import {
   createRequestError,
   TerminologyRequestError
 } from '../core/TerminologyRequestError.js';
+import {
+  createRequestSignal,
+  DEFAULT_REQUEST_TIMEOUT_MS
+} from '../core/request-signal.js';
 import languageConfig from '../config/terminology-language-config.js';
 
 function resolveBaseUrl(baseUrl) {
@@ -55,6 +59,7 @@ export class FhirTerminologyAdapter {
    * @param {Record<string, string>} [config.headers]
    * @param {Record<string, string>} [config.expandParameters]
    * @param {Record<string, string>} [config.lookupParameters]
+   * @param {number} [config.requestTimeoutMs=15000]
    */
   constructor(config) {
     this._baseUrl = resolveBaseUrl(config.baseUrl);
@@ -65,6 +70,7 @@ export class FhirTerminologyAdapter {
     this._extraHeaders = config.headers || {};
     this._expandParameters = config.expandParameters || {};
     this._lookupParameters = config.lookupParameters || {};
+    this._requestTimeoutMs = config.requestTimeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
     // Language configuration:
     // languageStrategy: 'param' (use displayLanguage query param) or 'header' (use Accept-Language header)
     this._languageStrategy = config.languageStrategy ?? languageConfig.languageStrategy ?? 'param';
@@ -80,7 +86,7 @@ export class FhirTerminologyAdapter {
    * {@link FhirValueSetExpansionContains} which we map to our internal
    * {@link Concept} type.
    *
-   * @param {{ term: string, limit: number, offset: number }} params
+   * @param {{ term: string, limit: number, offset: number, signal?: AbortSignal }} params
    * @returns {Promise<{ items: Concept[], total?: number }>}
    */
   async search(params) {
@@ -114,12 +120,15 @@ export class FhirTerminologyAdapter {
     // Some FHIR Servers need this flag for text return
     url.searchParams.set('includeDesignations', 'true');
 
+    const request = createRequestSignal(params.signal, this._requestTimeoutMs);
     let res;
 
     try {
-      res = await this._request(url, extraRequestHeaders);
+      res = await this._request(url, extraRequestHeaders, request.signal);
     } catch (error) {
-      throw createRequestError(null, url, { cause: error });
+      throw createRequestError(null, url, { cause: error, kind: request.getAbortKind() });
+    } finally {
+      request.cleanup();
     }
 
     if (!res.ok) {
@@ -210,10 +219,19 @@ export class FhirTerminologyAdapter {
       lookupExtraHeaders['Accept-Language'] = lookupResolvedLanguage;
     }
 
+    let res;
     try {
-      const res = await this._request(url, lookupExtraHeaders);
-      if (!res.ok) return null;
+      res = await this._request(url, lookupExtraHeaders);
+    } catch (error) {
+      throw createRequestError(null, url, { cause: error });
+    }
 
+    if (res.status === 404) return null;
+    if (res.redirected || res.type === 'opaqueredirect' || !res.ok) {
+      throw createRequestError(res, url);
+    }
+
+    try {
       /** @type {FhirParameters} */
       const data = await res.json();
 
@@ -229,11 +247,9 @@ export class FhirTerminologyAdapter {
         active: true
       };
     } catch (error) {
-      if (error instanceof TerminologyRequestError) {
-        throw error;
-      }
-
-      return null;
+      throw error instanceof TerminologyRequestError
+        ? error
+        : createDataError(url, error);
     }
   }
 
@@ -294,11 +310,11 @@ export class FhirTerminologyAdapter {
     return 'en';
   }
 
-  async _request(url, additionalHeaders = {}) {
+  async _request(url, additionalHeaders = {}, signal) {
     const headers = { Accept: FHIR_MIME_TYPE, ...this._extraHeaders, ...additionalHeaders };
     if (this._auth?.type === 'Bearer') headers['Authorization'] = `Bearer ${this._auth.token}`;
     if (this._auth?.type === 'Basic') headers['Authorization'] = `Basic ${this._auth.credentials}`;
-    return this._fetch(url.toString(), { headers });
+    return this._fetch(url.toString(), { headers, signal });
   }
 }
 

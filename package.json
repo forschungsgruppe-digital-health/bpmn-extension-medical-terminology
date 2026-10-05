@@ -28,8 +28,9 @@
     "generate:terminology": "node extension/src/cli/generate-terminology-packages.js",
     "xsd:ext": "node tools/validate-xsd-ext.mjs",
     "check:packages": "node tools/check-package-conventions.mjs",
+    "check:versions": "node tools/check-versions.mjs",
     "check:conformance": "npm run lint:bpmn && npm run check:roundtrip && npm run xsd:gen:check && npm run xsd:ext && npm run check:xsd",
-    "verify": "npm run check:packages && npm run generate:hl7:check && npm run check:conformance && npm test",
+    "verify": "npm run check:packages && npm run check:versions && npm run generate:hl7:check && npm run check:conformance && npm test",
     "hooks:install": "node tools/setup-hooks.mjs",
     "prepare": "node tools/setup-hooks.mjs"
   },

@@ -15,6 +15,9 @@ single version so a consumer can tell which release a file came from:
 - the moddle descriptor (`extension/src/moddle/clinical.json`),
 - the extension schema (`schema/clinical-semantics.xsd`).
 
+The same release identity is also recorded in `CITATION.cff`, `codemeta.json`,
+and the extension/lint-plugin workspace entries in the root `package-lock.json`.
+
 There is a trap: the moddle descriptor's namespace `uri`
 (`https://clinical-bpmn.org/terminology/v1`) embeds a version, but that is the
 **data-format contract** version. Auto-bumping it on every release would change
@@ -40,11 +43,35 @@ the XSD, applied automatically by Release Please — and we leave the namespace
 - The namespace `uri` is changed **by hand only**, as a deliberate breaking
   change to the data format (a new ADR when that happens).
 
+### Release metadata and lockfile consistency
+
+`extra-files` also targets `CITATION.cff` (`yaml`, `$.version`),
+`codemeta.json` (`json`, `$.version`) and both coupled workspace versions in
+`package-lock.json`. Both lock entries are explicit: when a root lockfile updater
+is present, the `node-workspace` plugin skips its automatic root-lock update.
+Updating only the lint-plugin entry would therefore leave the extension stale.
+
+`npm run check:versions` compares all these values with `extension/package.json`
+in the current checkout and rejects missing or mismatched versions. It runs in
+`verify`, PR validation and publishing; publishing also checks the release tag.
+The check needs no network access and accepts a consistent future release PR
+before that release exists. `xsd:gen:check` continues to validate the full
+generated schema, including its namespace and structure.
+
+The private demo retains its independent version (its lock entry must match it).
+Namespace versions, dependency/CodeSystem versions, `cff-version`, and historical
+or synthetic versions are outside the release lockstep. Prose links to the package
+manifest rather than repeating its current version.
+
+Every release on `main` is returned to `dev` through a PR merged with a merge
+commit; see the [release handoff](../../CONTRIBUTING.md#version-consistency-and-release-handoff).
+Existing tags are never rewritten to repair old metadata.
+
 ## Consequences
 
-- A reader of any artifact sees the same version; CI's drift guard fails loudly
-  if the XSD and descriptor ever disagree, so a misconfigured updater cannot ship
-  a silent inconsistency.
+- A reader of any coupled release artifact sees the same version; CI rejects
+  drift between package, manifest, lint plugin, descriptor, schema, citation
+  metadata and lockfile. The schema-generation check also rejects structural drift.
 - The namespace stays stable across ordinary releases — diagrams keep parsing.
 - Cost: the descriptor carries a `version` field that moddle ignores, and the XSD
   carries a version comment. Both verified harmless (round-trip is clean).
