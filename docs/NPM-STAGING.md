@@ -2,14 +2,27 @@
 
 `release-please.yml` calls `npm-stage.yml` after creating a package release.
 The staging workflow checks out the exact release tag, checks coupled versions,
-and runs `npm run verify`. It extracts the publishable workspace tarball into
-a temporary directory and changes only that copy's registry to npmjs.org.
-GitHub Packages and the repository's `publishConfig` remain unchanged.
+and runs `npm run verify`. It prepares one registry-neutral archive in a
+temporary directory. RCs are first staged on npm and then the identical archive
+is published to GitHub Packages under `rc`. The source `publishConfig` remains
+unchanged. Stable GitHub publishing stays in `publish.yml`; RC release events
+are excluded there to avoid duplicate uploads.
+
+GitHub publishing uses `GH_PACKAGES_TOKEN` if configured, otherwise the job's
+`GITHUB_TOKEN` with package write access. If GitHub publishing fails after npm
+staging succeeded, the npm stage remains; the run is failed, not rolled back.
+Use the existing manual GitHub publishing workflow with the exact release tag
+to recover. Do not rerun npm staging for a version that still has a stage.
 
 Prereleases are staged with the `rc` tag; stable versions use `latest`. Staging
 never approves or rejects a version automatically. The receipt and stage ID
 appear in the run log and summary. Duplicate staged/published versions fail
 explicitly; retries do not overwrite them.
+
+After rejecting an RC, use the next version, for example `1.0.0-rc.2`, for a
+changed candidate. Optionally delete the rejected GitHub package version as a
+package admin. No workflow automatically deletes or replaces existing versions,
+and npm rejection does not automatically remove the GitHub copy.
 
 ## Initial setup
 
@@ -51,8 +64,10 @@ the matching version tag (for this preparation: `terminology-v1.0.0-rc.1`).
 That tag need not exist in smoke mode. The workflow verifies that commit
 instead of the old tag. Normal release calls always check out the release tag.
 This overrides only the npm copy's package version;
-it does not create a release, change source metadata, or publish to GitHub
-Packages. It is an authentication/transport test, not an actual RC.
+it does not create a release or change source metadata. It also publishes the
+RC archive to GitHub Packages after successful staging. It is an
+authentication/transport test, not an actual RC. The initial bootstrap test
+predated this coupling and uploaded only to npm; do not repeat it.
 
 Download and inspect the stage following the [checklist](RELEASE-TESTING.md).
 Then an authenticated maintainer rejects the exact stage ID:
