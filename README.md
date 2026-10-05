@@ -713,6 +713,9 @@ package.
 
 ## Documentation
 
+Release maintainers: [npm staging setup](docs/NPM-STAGING.md) and
+[release candidate testing checklist](docs/RELEASE-TESTING.md).
+
 | Document | Audience | Content |
 |---|---|---|
 | [README.md](README.md) | Users and integrators | Features, setup, usage, and discovery |
