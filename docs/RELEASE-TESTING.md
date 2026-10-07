@@ -143,7 +143,13 @@ const propertiesPanelModule = createTerminologyPropertiesPanelModule({
 Bei allen Änderungen das durch die Host-Anwendung gespeicherte XML prüfen:
 ID, Freitext, System-URI, Code und CodeSystem-Version stimmen; abgebrochene oder
 ungültige Eingaben werden nicht gespeichert. Terminologiedaten stehen unter
-`bpmn:extensionElements` im `term:`-Namensraum. Beispiele: [Generated XML](../README.md#generated-xml).
+`bpmn:extensionElements` mit dem Präfix `mt:` und der Namespace-URI
+`https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`.
+Beispiele: [Generated XML](../README.md#generated-xml).
+
+- [ ] Ein bestehendes Modell mit dem früheren Namespace öffnen: Migration oder
+  eine verständliche Inkompatibilitätsmeldung prüfen. Alte Annotationen dürfen
+  beim Speichern nicht unbemerkt verloren gehen.
 
 ## 6. Fehler absichtlich provozieren
 
