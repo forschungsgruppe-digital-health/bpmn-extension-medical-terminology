@@ -21,6 +21,7 @@ export { default as TerminologyModdleDescriptor } from './moddle/clinical.json' 
 export { default as TerminologyPropertiesPanelModule } from './properties-panel/index.js';
 export { createTerminologyPropertiesPanelModule } from './properties-panel/index.js';
 export { DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG } from './properties-panel/config.js';
+export { TERMINOLOGY_ERROR_EVENT } from './properties-panel/error-contract.js';
 
 export {
   getAnnotations,
