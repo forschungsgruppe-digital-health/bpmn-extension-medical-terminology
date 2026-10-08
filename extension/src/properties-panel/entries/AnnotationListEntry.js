@@ -15,11 +15,24 @@ import {
   getConceptLabel,
   getAutocompleteSuffix
 } from './search-utils.js';
+import {
+  ANNOTATION_FORM_ENTRY_ID,
+  ANNOTATION_ID_ENTRY_ID,
+  ANNOTATION_SEARCH_ENTRY_ID,
+  MEDICAL_TERMINOLOGY_ENTRY_ID,
+  TERMINOLOGY_ERROR_EVENT
+} from '../error-contract.js';
+import { usePropertiesPanelErrors } from '../usePropertiesPanelError.js';
+import { PropertiesPanelErrorEntry } from './PropertiesPanelErrorEntry.js';
 
 export function AnnotationListEntry(props) {
-  const { element } = props;
+  const {
+    element,
+    id = MEDICAL_TERMINOLOGY_ENTRY_ID
+  } = props;
   const moddle = useService('moddle');
   const modeling = useService('modeling');
+  const translate = useService('translate');
   const eventBus = useService('eventBus', false);
   const elementRegistry = useService('elementRegistry', false);
   const terminologyRegistry = useService('terminologyRegistry', false);
@@ -123,26 +136,44 @@ export function AnnotationListEntry(props) {
     const providerName = provider?.displayName || 'The selected terminology';
 
     if (error?.kind === 'authorization') {
-      return `${providerName} denied access. Check the server credentials and permissions.`;
+      return translate(
+        '{providerName} denied access. Check the server credentials and permissions.',
+        { providerName }
+      );
     }
 
     if (error?.kind === 'server') {
-      return `${providerName} is currently unavailable (HTTP ${error.status}). Please try again later.`;
+      return translate(
+        '{providerName} is currently unavailable (HTTP {status}). Please try again later.',
+        { providerName, status: error.status }
+      );
     }
 
     if (error?.kind === 'data') {
-      return `${providerName} returned invalid terminology data. Check the server compatibility and try again.`;
+      return translate(
+        '{providerName} returned invalid terminology data. Check the server compatibility and try again.',
+        { providerName }
+      );
     }
 
     if (error?.kind === 'redirect') {
-      return `${providerName} redirected the search request. Use a redirect-free endpoint or a host-owned same-origin endpoint.`;
+      return translate(
+        '{providerName} redirected the search request. Use a redirect-free endpoint or a host-owned same-origin endpoint.',
+        { providerName }
+      );
     }
 
     if (error?.kind === 'timeout') {
-      return `${providerName} did not respond in time. Please try again.`;
+      return translate(
+        '{providerName} did not respond in time. Please try again.',
+        { providerName }
+      );
     }
 
-    return `${providerName} could not be reached. Check your network connection and server URL.`;
+    return translate(
+      '{providerName} could not be reached. Check your network connection and server URL.',
+      { providerName }
+    );
   }
 
   function getSelectedProvider() {
@@ -193,11 +224,11 @@ export function AnnotationListEntry(props) {
     }
 
     if (!isValidId(resolvedId)) {
-      return 'ID may only contain letters, numbers, dots, underscores, and hyphens.';
+      return translate('ID may only contain letters, numbers, dots, underscores, and hyphens.');
     }
 
     if (getExistingIds().includes(resolvedId)) {
-      return 'ID must be unique across the diagram.';
+      return translate('ID must be unique across the diagram.');
     }
   }
 
@@ -236,13 +267,13 @@ export function AnnotationListEntry(props) {
 
     if (!terminologyRegistry) {
       setSearchBusy(false);
-      setSearchError('No terminology registry configured (demo without live provider).');
+      setSearchError(translate('No terminology registry configured (demo without live provider).'));
       return;
     }
 
     if (!providerId) {
       setSearchBusy(false);
-      setSearchError('Please select a terminology first.');
+      setSearchError(translate('Please select a terminology first.'));
       return;
     }
 
@@ -256,7 +287,7 @@ export function AnnotationListEntry(props) {
       }
 
       if (!resolvedProviderId) {
-        setSearchError('Unknown system and no dynamic terminology loader configured.');
+        setSearchError(translate('Unknown system and no dynamic terminology loader configured.'));
         return;
       }
 
@@ -276,6 +307,12 @@ export function AnnotationListEntry(props) {
       if (requestId !== searchRequestSequence.current) {
         return;
       }
+      eventBus?.fire(TERMINOLOGY_ERROR_EVENT, {
+        element,
+        error,
+        operation: 'search',
+        providerId
+      });
       setSearchError(getSearchErrorMessage(error, getSelectedProvider()));
     } finally {
       if (requestId === searchRequestSequence.current) {
@@ -379,11 +416,11 @@ export function AnnotationListEntry(props) {
       }
 
       if (searchTerm.trim()) {
-        setFormError('Please select a coding from the search results or provide free text before saving.');
+        setFormError(translate('Please select a coding from the search results or provide free text before saving.'));
         return;
       }
 
-      setFormError('Please provide free text or at least one coding before saving.');
+      setFormError(translate('Please provide free text or at least one coding before saving.'));
       return;
     }
 
@@ -401,14 +438,14 @@ export function AnnotationListEntry(props) {
       .find((key) => key && existingCodingKeys.includes(key));
 
     if (duplicateCodingKey) {
-      setFormError('A terminology code with the same system and code is already used in the diagram.');
+      setFormError(translate('A terminology code with the same system and code is already used in the diagram.'));
       return;
     }
 
     setFormError('');
 
     if (editingAnnotation && !getAnnotations(bo).includes(editingAnnotation)) {
-      setFormError('This annotation no longer exists. Cancel and reopen the form.');
+      setFormError(translate('This annotation no longer exists. Cancel and reopen the form.'));
       return;
     }
 
@@ -664,6 +701,18 @@ export function AnnotationListEntry(props) {
     !searchError &&
     searchResults.length === 0;
   const resolvedId = getResolvedId(formData);
+  const idError = showForm ? validateId(resolvedId) : undefined;
+  const localEntryError = searchError || formError || idError;
+  const panelErrors = usePropertiesPanelErrors({
+    [id]: localEntryError,
+    [ANNOTATION_ID_ENTRY_ID]: idError,
+    [ANNOTATION_SEARCH_ENTRY_ID]: searchError,
+    [ANNOTATION_FORM_ENTRY_ID]: formError
+  }, eventBus);
+  const entryError = panelErrors[id];
+  const displayedEntryError = localEntryError && entryError === localEntryError
+    ? undefined
+    : entryError;
 
   useEffect(() => {
     if (!showSearchSuggestions || activeSearchResultIndex < 0) {
@@ -704,7 +753,7 @@ export function AnnotationListEntry(props) {
   ]);
 
   return html`
-    <div class="medical-terminology">
+    <div class="medical-terminology" data-entry-id=${id}>
 
       <!-- Existing annotations list -->
       ${annotations.length > 0 && html`
@@ -761,7 +810,7 @@ export function AnnotationListEntry(props) {
           ${editingAnnotation && html`<div class="form-hint">Edit annotation</div>`}
           <${TextFieldEntry}
             element=${bo}
-            id="annotation-id"
+            id=${ANNOTATION_ID_ENTRY_ID}
             label="ID"
             placeholder=${resolvedId}
             debounce=${(fn) => fn}
@@ -842,10 +891,14 @@ export function AnnotationListEntry(props) {
               </div>
             `}
             ${selectedProviderId && html`
-              <div class="form-row">
+              <${PropertiesPanelErrorEntry}
+                id=${ANNOTATION_SEARCH_ENTRY_ID}
+                className="form-row"
+                localError=${searchError}
+              >
                <label class="bio-properties-panel-label">Search ${searchBusy ? '(searching...)' : ''}</label>
                 <div class="search-field">
-                  <div class="search-input-shell ${searchFocused ? 'search-input-shell--focused' : ''}">
+                  <div class="search-input-shell bio-properties-panel-input ${searchFocused ? 'search-input-shell--focused' : ''}">
                     <div class="search-input-ghost" aria-hidden="true">
                       <span class="search-input-ghost__typed">${searchTerm}</span><span class="search-input-ghost__completion">${searchCompletion}</span>
                     </div>
@@ -889,7 +942,7 @@ export function AnnotationListEntry(props) {
                     </div>
                   `}
                 </div>
-              </div>
+              <//>
               ${searchResultSummary && html`
                 <div class="form-hint">${searchResultSummary}</div>
               `}
@@ -905,10 +958,17 @@ export function AnnotationListEntry(props) {
                 </div>
               </div>
             `}
-            ${searchError && html`<div class="bio-properties-panel-error">${searchError}</div>`}
           </fieldset>
 
-          ${formError && html`<div class="bio-properties-panel-error">${formError}</div>`}
+          <${PropertiesPanelErrorEntry}
+            id=${ANNOTATION_FORM_ENTRY_ID}
+            localError=${formError}
+          />
+          <${PropertiesPanelErrorEntry}
+            id=${id}
+            localError=${displayedEntryError}
+            suppressError=${localEntryError}
+          />
 
           <div class="form-row">
             <button

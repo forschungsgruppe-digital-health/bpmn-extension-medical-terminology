@@ -1,0 +1,169 @@
+name: npm-stage
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+    secrets:
+      GH_PACKAGES_TOKEN:
+        required: false
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (terminology-vX.Y.Z)
+        required: true
+        type: string
+      test_version:
+        description: Optional smoke-test RC version; changes only the staged tarball
+        required: false
+        type: string
+      smoke_commit:
+        description: Optional full commit SHA for smoke tests before a new release exists
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+concurrency:
+  group: npm-stage-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Validate release tag and optional test version
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          TEST_VERSION: ${{ inputs.test_version }}
+          SMOKE_COMMIT: ${{ inputs.smoke_commit }}
+        run: |
+          node --input-type=module -e '
+            if (!/^terminology-v\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(process.env.RELEASE_TAG)) {
+              throw new Error("Expected an existing terminology-vX.Y.Z release tag");
+            }
+            if (process.env.TEST_VERSION && !/^\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(process.env.TEST_VERSION)) {
+              throw new Error("Smoke-test version must be X.Y.Z-rc.N");
+            }
+            if (process.env.SMOKE_COMMIT && (!process.env.TEST_VERSION || !/^[0-9a-f]{40}$/.test(process.env.SMOKE_COMMIT))) {
+              throw new Error("Smoke commit requires test_version and a full commit SHA");
+            }
+          '
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          ref: ${{ inputs.smoke_commit || format('refs/tags/{0}', inputs.tag) }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install npm with staging support
+        run: npm install --global npm@11.15.0 --registry=https://registry.npmjs.org
+
+      - run: npm ci --legacy-peer-deps
+
+      - name: Ensure XSD validator is available
+        run: |
+          if ! command -v xmllint >/dev/null 2>&1; then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=/dev/null \
+              -o Acquire::Retries=3
+            sudo apt-get install -y --no-install-recommends libxml2-utils
+          fi
+
+      - name: Verify exact release checkout
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          npm run check:versions -- --tag "$RELEASE_TAG"
+          npm run verify
+
+      - name: Prepare shared package archive
+        id: package
+        env:
+          TEST_VERSION: ${{ inputs.test_version }}
+        run: |
+          stage_dir=$(mktemp -d)
+          npm pack --workspace=extension --ignore-scripts --pack-destination="$stage_dir" --json > "$stage_dir/pack.json"
+          archive=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[0].filename)' "$stage_dir/pack.json")
+          tar -xzf "$stage_dir/$archive" -C "$stage_dir"
+          export STAGE_PACKAGE_DIR="$stage_dir/package"
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const file = `${process.env.STAGE_PACKAGE_DIR}/package.json`;
+            const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+            if (pkg.name !== "@forschungsgruppe-digital-health/bpmn-extension-medical-terminology") {
+              throw new Error("Unexpected package name");
+            }
+            if (process.env.TEST_VERSION) pkg.version = process.env.TEST_VERSION;
+            pkg.publishConfig = { ...pkg.publishConfig };
+            delete pkg.publishConfig.registry;
+            delete pkg.publishConfig.access;
+            const tag = pkg.version.includes("-") ? "rc" : "latest";
+            pkg.publishConfig.tag = tag;
+            fs.writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, `directory=${process.env.STAGE_PACKAGE_DIR}\nversion=${pkg.version}\ntag=${tag}\n`);
+          '
+          npm pack "$STAGE_PACKAGE_DIR" --ignore-scripts --pack-destination="$stage_dir" --json > "$stage_dir/shared-pack.json"
+          shared_archive=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[0].filename)' "$stage_dir/shared-pack.json")
+          echo "archive=$stage_dir/$shared_archive" >> "$GITHUB_OUTPUT"
+
+      - name: Stage on npm (never approve automatically)
+        working-directory: ${{ steps.package.outputs.directory }}
+        env:
+          NPM_TAG: ${{ steps.package.outputs.tag }}
+          PACKAGE_ARCHIVE: ${{ steps.package.outputs.archive }}
+        run: |
+          npm stage publish "$PACKAGE_ARCHIVE" --registry=https://registry.npmjs.org --access=public --tag="$NPM_TAG" --ignore-scripts --json | tee "$RUNNER_TEMP/npm-stage-result.json"
+
+      - name: Show stage receipt and test instructions
+        env:
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+          NPM_TAG: ${{ steps.package.outputs.tag }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          TEST_VERSION: ${{ inputs.test_version }}
+        run: |
+          {
+            echo "## npm stage: $PACKAGE_VERSION ($NPM_TAG)"
+            echo "Source release: $RELEASE_TAG"
+            echo "Source commit: $(git rev-parse HEAD)"
+            if [ -n "$TEST_VERSION" ]; then
+              echo 'Smoke test only: package version overridden in the npm copy; reject this stage after inspection.'
+            fi
+            echo '### npm receipt (includes stage ID)'
+            echo '```json'
+            cat "$RUNNER_TEMP/npm-stage-result.json"
+            echo '```'
+            echo '[Maintainer checklist](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/RELEASE-TESTING.md)'
+            echo 'Approve or reject interactively with npm account + 2FA; workflow retries do not replace an existing version.'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure GitHub Packages authentication for RCs
+        if: steps.package.outputs.tag == 'rc'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: '@forschungsgruppe-digital-health'
+
+      - name: Publish the same RC archive to GitHub Packages
+        if: steps.package.outputs.tag == 'rc'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
+          PACKAGE_ARCHIVE: ${{ steps.package.outputs.archive }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          npm publish "$PACKAGE_ARCHIVE" --registry=https://npm.pkg.github.com --tag=rc --ignore-scripts
+          echo "GitHub Packages: $PACKAGE_VERSION (rc), identical archive to npm stage." >> "$GITHUB_STEP_SUMMARY"

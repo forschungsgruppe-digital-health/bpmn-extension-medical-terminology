@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- GENERATED from the moddle descriptor by tools/moddle-to-xsd.mjs. Do not edit by hand. -->
 <!-- Scope: STRUCTURE only. Semantic rules (e.g. required attributes) live in the bpmnlint plugin. -->
-<!-- extension version 0.1.9 (kept in sync by Release Please) x-release-please-version -->
+<!-- extension version 1.0.0-rc.1 (kept in sync by Release Please) x-release-please-version -->
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
             xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
             targetNamespace="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"

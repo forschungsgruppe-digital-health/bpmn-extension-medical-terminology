@@ -190,6 +190,48 @@ provider response; it is distinct from an empty successful result. `redirect`
 means that Snowstorm redirected the request and should be configured with its
 redirect-free API base URL.
 
+### Properties-panel and host error handling
+
+The terminology UI reuses the public bpmn.io properties-panel error contract:
+
+- Standard fields use their entry `validate` function and `useError(id)`-aware
+  field component. The custom search control follows the same entry contract.
+- Errors are published via `propertiesPanel.setErrors` under the owning entry
+  ID (`annotation-id`, `annotation-search`, or `annotation-form`) and under
+  `medical-terminology`. The latter lets the containing properties-panel group
+  show its error marker.
+- Existing errors belonging to other entries are preserved. Terminology errors
+  are removed after correction or a successful retry without clearing unrelated
+  host errors.
+- User-facing error strings pass through the host's `translate` service.
+
+`propertiesPanel.setErrors` stores strings and drives entry/group presentation;
+it is not a technical notification API. A failed provider request therefore
+also emits `medicalTerminology.error` on the bpmn-js `eventBus`. Its payload
+preserves the original structured error for logging, telemetry, or a host-owned
+notification, while the search entry remains the UI fallback when no listener
+is installed:
+
+```js
+modeler.get('eventBus').on('medicalTerminology.error', ({
+  element,
+  error,
+  operation,
+  providerId
+}) => {
+  // error remains the original TerminologyRequestError where supplied by the
+  // provider, including kind, host, and status.
+});
+```
+
+The event name is also exported as `TERMINOLOGY_ERROR_EVENT` to avoid repeating
+the string in host integrations.
+
+Superseded or aborted searches do not emit this event and do not leave a stale
+UI error. The extension deliberately does not prescribe a toast implementation;
+the host may choose one in its event listener without creating a second default
+message in the properties panel.
+
 Search results always contain the displayed concepts. The optional `total`
 field is only present when the provider can supply a reliable total; clients
 must not infer a total from the number of returned concepts.
@@ -739,6 +781,8 @@ matrix, and it is rebuilt from this repository on every push to `main`. Build it
 | [API reference](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/api/) | Developers | Every export, generated from the source |
 
 The repository documents below remain the source for what they cover.
+Release maintainers: [npm staging setup](docs/NPM-STAGING.md) and
+[release candidate testing checklist](docs/RELEASE-TESTING.md).
 
 | Document | Audience | Content |
 |---|---|---|

@@ -284,6 +284,10 @@
             "link": "/api/type-aliases/fhirversioncode/"
           },
           {
+            "label": "TERMINOLOGY\\_ERROR\\_EVENT",
+            "link": "/api/variables/terminology_error_event/"
+          },
+          {
             "label": "TerminologyPropertiesPanelModule",
             "link": "/api/variables/terminologypropertiespanelmodule/"
           }
