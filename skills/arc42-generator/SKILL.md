@@ -16,7 +16,7 @@ Use only current repository evidence:
 - `AGENTS.md`, `README.md`, `CONTRIBUTING.md`, `docs/ARCHITECTURE.md`, and
   `docs/adr/`
 - root, `extension/`, and `demo/` package manifests
-- `extension/src/moddle/clinical.json`
+- `extension/src/moddle/medical-terminology.json`
 - `extension/src/` providers, adapters, services, properties-panel modules, and
   Vite plugin
 - `tools/`, `.githooks/`, and `.github/workflows/`
@@ -25,8 +25,8 @@ Use only current repository evidence:
 This repository has one published package,
 `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`, a private `demo/` workspace,
 and the terminology lint plugin workspace under
-`extension/lint/bpmnlint-plugin-terminology`. It has one `term:` namespace:
-`https://clinical-bpmn.org/terminology/v1`.
+`extension/lint/bpmnlint-plugin-terminology`. It has one `mt:` namespace:
+`https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`.
 
 FHIR terminology servers and FHIR `CodeSystem` resources are valid current
 concepts: document `FhirProvider`, `FhirTerminologyAdapter`, package-backed
@@ -69,11 +69,11 @@ formal accepted ADRs in `docs/adr/`:
 
 ## Current architecture facts
 
-- Clinical semantics are stored only as `term:` content under BPMN
+- Clinical semantics are stored only as `mt:` content under BPMN
   `extensionElements`; BPMN core and BPMN-DI are not changed.
 - The moddle descriptor declares `Annotations`, `Annotation`, and `Coding`;
   use the actual properties in
-  `extension/src/moddle/clinical.json`.
+  `extension/src/moddle/medical-terminology.json`.
 - Provider building blocks are `TerminologyProvider`, `TerminologyRegistry`,
   `SnomedCtProvider`, `FhirProvider`, `StaticProvider`, `FallbackProvider`,
   Snowstorm/FHIR adapters, package presets, and package discovery.

@@ -11,6 +11,12 @@ import {
 } from './PackageMetadata.js';
 import { createFhirTerminologyProviderLoader } from './TerminologyProviderLoader.js';
 
+/**
+ * @typedef {Object} TerminologyServices - Runtime services consumed by the properties-panel module.
+ * @property {TerminologyRegistry} terminologyRegistry - Registry containing every configured provider.
+ * @property {import('./TerminologyProviderLoader.js').TerminologyProviderLoader} [terminologyProviderLoader] - Optional lazy loader for FHIR-hosted CodeSystems.
+ */
+
 function createPackageProviderId(id) {
   return `${id}-package`;
 }
@@ -34,9 +40,9 @@ function isProviderInstance(value) {
  *   id: string,
  *   displayName?: string,
  *   systemUri?: string,
- *   codeSystem: import('@types/fhir').fhir4.CodeSystem
+ *   codeSystem: fhir4.CodeSystem
  * }} config
- * @returns {import('../providers/StaticProvider').StaticProvider}
+ * @returns {import('../providers/StaticProvider.js').StaticProvider}
  */
 export function createPackageTerminologyProvider(config) {
   return createStaticProviderFromCodeSystem(config.codeSystem, {
@@ -63,7 +69,7 @@ export function createPackageTerminologyProvider(config) {
  *   componentLabel?: string,
  *   sourceName?: string,
  *   includeCodeSystemName?: boolean,
- *   codeSystems: import('@types/fhir').fhir4.CodeSystem[],
+ *   codeSystems: fhir4.CodeSystem[],
  *   systemUri?: string
  * }} config
  * @returns {StaticProvider}
@@ -144,8 +150,8 @@ function formatPackageSourceLabel(packageName, metadata = {}) {
  *   id: string,
  *   displayName: string,
  *   systemUri: string,
- *   codeSystem: import('@types/fhir').fhir4.CodeSystem,
- *   fallbackProvider?: import('../core/TerminologyProvider').TerminologyProvider,
+ *   codeSystem: fhir4.CodeSystem,
+ *   fallbackProvider?: import('../core/TerminologyProvider.js').TerminologyProvider,
  *   fallbackFhirConfig?: ConstructorParameters<typeof FhirProvider>[0]
  * }} config
  * @returns {FallbackProvider}
@@ -205,20 +211,20 @@ function normalizePackageProvider(providerOrConfig) {
  *
  * @param {{
  *   terminologyRegistry?: TerminologyRegistry,
- *   staticProviderFactories?: Array<() => import('../core/TerminologyProvider').TerminologyProvider>,
- *   providers?: import('../core/TerminologyProvider').TerminologyProvider[],
- *   fhirProviders?: Array<import('../core/TerminologyProvider').TerminologyProvider | ConstructorParameters<typeof FhirProvider>[0]>,
- *   packageProviders?: Array<import('../core/TerminologyProvider').TerminologyProvider | {
+ *   staticProviderFactories?: Array<() => import('../core/TerminologyProvider.js').TerminologyProvider>,
+ *   providers?: import('../core/TerminologyProvider.js').TerminologyProvider[],
+ *   fhirProviders?: Array<import('../core/TerminologyProvider.js').TerminologyProvider | ConstructorParameters<typeof FhirProvider>[0]>,
+ *   packageProviders?: Array<import('../core/TerminologyProvider.js').TerminologyProvider | {
  *     id: string,
  *     displayName?: string,
  *     systemUri?: string,
- *     codeSystem: import('@types/fhir').fhir4.CodeSystem,
- *     fallbackProvider?: import('../core/TerminologyProvider').TerminologyProvider,
+ *     codeSystem: fhir4.CodeSystem,
+ *     fallbackProvider?: import('../core/TerminologyProvider.js').TerminologyProvider,
  *     fallbackFhirConfig?: ConstructorParameters<typeof FhirProvider>[0]
  *   }>,
  *   loaderConfig?: false | Omit<Parameters<typeof createFhirTerminologyProviderLoader>[0], 'terminologyRegistry'>
  * }} [config]
- * @returns {{ terminologyRegistry: TerminologyRegistry, terminologyProviderLoader?: ReturnType<typeof createFhirTerminologyProviderLoader> }}
+ * @returns {TerminologyServices}
  */
 export function createTerminologyServices(config = {}) {
   const terminologyRegistry = config.terminologyRegistry || new TerminologyRegistry();
@@ -249,7 +255,7 @@ export function createTerminologyServices(config = {}) {
  * Expose terminology services as a bpmn-js module that can be passed into
  * `additionalModules`.
  *
- * @param {{ terminologyRegistry: TerminologyRegistry, terminologyProviderLoader?: any }} services
+ * @param {TerminologyServices} services
  * @returns {Record<string, [string, any]>}
  */
 export function createTerminologyModule(services) {

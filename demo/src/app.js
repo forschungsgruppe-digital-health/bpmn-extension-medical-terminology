@@ -28,7 +28,7 @@ import plainBpmn from '../../examples/valid/lung-cancer-staging.bpmn?raw';
 let modeler;
 
 const SAMPLES = {
-  annotated: { label: 'Lung cancer — annotated (term:)', xml: annotatedBpmn },
+  annotated: { label: 'Lung cancer — annotated (mt:)', xml: annotatedBpmn },
   plain: { label: 'Lung cancer — plain BPMN (no extensions)', xml: plainBpmn },
   demo: { label: 'Demo sample', url: './sample.bpmn' }
 };
@@ -95,7 +95,7 @@ async function bootstrap() {
       terminologyServicesModule
     );
 
-    moddleExtensions.term = TerminologyModdleDescriptor;
+    moddleExtensions.mt = TerminologyModdleDescriptor;
   }
 
   modeler = new BpmnModeler({

@@ -12,7 +12,7 @@ graph TB
         DEMO["Private bpmn-js demo<br/>demo/"]
         FIX["Synthetic BPMN fixtures<br/>examples/valid/ and examples/invalid/"]
         TOOLS["Conformance and package tools<br/>tools/"]
-        MODDLE["term: moddle descriptor<br/>extension/src/moddle/clinical.json"]
+        MODDLE["mt: moddle descriptor<br/>extension/src/moddle/medical-terminology.json"]
     end
 
     subgraph Host["Consumer application"]
@@ -41,7 +41,7 @@ graph TB
 
 ### In scope
 
-- The `term:` BPMN moddle descriptor and `clinical-semantics.xsd`.
+- The `mt:` BPMN moddle descriptor and `medical-terminology.xsd`.
 - `TerminologyProvider`, `TerminologyRegistry`, adapters, providers, presets,
   package-backed CodeSystem loading, and default service configuration.
 - The bpmn-js properties-panel provider and annotation helper operations.

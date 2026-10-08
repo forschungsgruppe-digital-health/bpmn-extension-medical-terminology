@@ -7,11 +7,11 @@ architectural freedom._
 
 | Constraint | Evidence | Architectural consequence |
 |---|---|---|
-| Clinical semantics belong only in BPMN 2.0 `extensionElements` under a custom namespace; BPMN core and BPMN-DI must not be changed | `AGENTS.md`; `extension/src/moddle/clinical.json` | The extension augments standard BPMN elements instead of replacing them or introducing a sidecar format |
-| The public namespace is `term:` → `https://clinical-bpmn.org/terminology/v1` | `extension/src/moddle/clinical.json`; `schema/clinical-semantics.xsd` | The prefix and URI are serialized-data contracts and must remain stable |
+| Clinical semantics belong only in BPMN 2.0 `extensionElements` under a custom namespace; BPMN core and BPMN-DI must not be changed | `AGENTS.md`; `extension/src/moddle/medical-terminology.json` | The extension augments standard BPMN elements instead of replacing them or introducing a sidecar format |
+| The public namespace is `mt:` → `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` | `extension/src/moddle/medical-terminology.json`; `schema/medical-terminology.xsd` | The prefix and URI are serialized-data contracts and must remain stable |
 | Renaming or removing a moddle type or property is a breaking MAJOR change and requires human sign-off | `AGENTS.md`; `skills/moddle-extension-review/SKILL.md` | Descriptor changes are reviewed as public API changes |
 | The package integrates with bpmn-js and the bpmn-js properties panel | `extension/package.json` peer dependencies; `demo/src/app.js` | The published artifact is an extension module, not a standalone editor |
-| FHIR terminology is an integration boundary, not a second BPMN mapping model | `FhirProvider`, `FhirTerminologyAdapter`, package discovery services | FHIR resources are queried or loaded as terminology data; BPMN persistence remains `term:` only |
+| FHIR terminology is an integration boundary, not a second BPMN mapping model | `FhirProvider`, `FhirTerminologyAdapter`, package discovery services | FHIR resources are queried or loaded as terminology data; BPMN persistence remains `mt:` only |
 
 ### Language, runtime, and topology
 
@@ -19,7 +19,7 @@ architectural freedom._
 |---|---|---|
 | Module format | Raw ESM JavaScript with JSDoc; no TypeScript source | root and `extension/package.json` use `"type": "module"`; package entry points target `src/` |
 | Library build | No library build step; `extension/src/` is published | `extension/package.json`; `tools/check-package-conventions.mjs` |
-| Node.js | `>=22` | root `package.json`; `.github/workflows/validate.yml` and `pages.yml` |
+| Node.js | `>=24` | root `package.json`; `.github/workflows/validate.yml` and `pages.yml` |
 | Package manager | npm workspaces; local and CI installation uses `--legacy-peer-deps` | root `package.json`; `AGENTS.md`; workflows |
 | Workspaces | `extension`, `demo`, and `extension/lint/bpmnlint-plugin-terminology` | root `package.json` |
 | Unit tests | Vitest in the published extension workspace | root scripts and `extension/package.json` |
@@ -59,6 +59,7 @@ The deterministic gate is the authority, not an agent's interpretation:
 | BPMN and terminology lint | `npm run lint:bpmn` | Blocking structural and terminology rules |
 | Moddle roundtrip | `npm run check:roundtrip` | Blocking stability and known-extension loss checks |
 | Generated XSD drift | `npm run xsd:gen:check` | Blocking generated-schema consistency |
+| Namespace contract drift | `npm run check:namespace` and `npm run docs:namespace:check` | Descriptor, XSD, fixtures, demo and current documentation use one URI |
 | Extension XSD checks | `npm run xsd:ext` | Validates the custom schema |
 | BPMN core XSD | `npm run check:xsd` | Informational by default because the standard XSD permits foreign extension content |
 | Package conventions | `npm run check:packages` | Blocking publishability checks for `extension/` |

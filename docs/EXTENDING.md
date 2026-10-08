@@ -11,7 +11,7 @@ For project usage, start with the [README](../README.md). For architecture and
 design rationale, see [ARCHITECTURE.md](ARCHITECTURE.md). For setup, quality
 gates, and release workflow, see [CONTRIBUTING.md](../CONTRIBUTING.md). The
 repository rules in [AGENTS.md](../AGENTS.md) define the hard boundary that
-clinical data belongs only in `term:` elements under BPMN
+clinical data belongs only in `mt:` elements under BPMN
 `<extensionElements>`.
 
 ## Table of Contents
@@ -150,9 +150,9 @@ Its XSD type accepts foreign child elements:
 ```xml
 <bpmn2:task id="Task_1">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-1" text="Synthetic terminology note"/>
-    </term:annotations>
+    <mt:annotations>
+      <mt:annotation id="mt-ann-1" text="Synthetic terminology note"/>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:task>
 ```
@@ -163,13 +163,13 @@ Foreign child elements inside `<extensionElements>` must use a namespace other
 than the BPMN model namespace. This repository uses only:
 
 ```xml
-xmlns:term="https://clinical-bpmn.org/terminology/v1"
+xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1"
 ```
 
 Do not invent terminology elements in the `bpmn:` namespace. Foreign
 attributes are also permitted directly on BPMN elements because the BPMN base
 type has an `xsd:anyAttribute` wildcard. This extension does not use foreign
-attributes; terminology data is kept in `term:` child elements under
+attributes; terminology data is kept in `mt:` child elements under
 `extensionElements`.
 
 `processContents="lax"` means a validator checks foreign content against a
@@ -195,7 +195,7 @@ references, not directly under `<definitions>`.
 ### Preserve a valid BPMN core
 
 An extension must not change the BPMN core or BPMN-DI structures. The model
-must remain readable by a consumer that ignores `term:` content.
+must remain readable by a consumer that ignores `mt:` content.
 `mustUnderstand="false"` (the default) communicates that an extension may be
 ignored; this repository does not require a consumer to understand terminology
 annotations in order to open the BPMN process.
@@ -273,13 +273,13 @@ top-level keys are `name`, `uri`, `prefix`, and `types`.
 - `isMany: true` makes a repeating child collection.
 
 The descriptor in this repository is
-[`extension/src/moddle/clinical.json`](../extension/src/moddle/clinical.json):
+[`extension/src/moddle/medical-terminology.json`](../extension/src/moddle/medical-terminology.json):
 
 ```json
 {
-  "name": "ClinicalTerminology",
-  "uri": "https://clinical-bpmn.org/terminology/v1",
-  "prefix": "term",
+  "name": "MedicalTerminology",
+  "uri": "https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1",
+  "prefix": "mt",
   "types": [
     {
       "name": "Annotations",
@@ -319,7 +319,7 @@ import { TerminologyModdleDescriptor }
   from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 const modeler = new BpmnModeler({
-  moddleExtensions: { term: TerminologyModdleDescriptor }
+  moddleExtensions: { mt: TerminologyModdleDescriptor }
 });
 ```
 
@@ -404,7 +404,7 @@ ExampleProvider.$inject = [ 'propertiesPanel' ];
 In this repository,
 [`TerminologyPropertiesProvider.js`](../extension/src/properties-panel/TerminologyPropertiesProvider.js)
 adds the “Medical terminology” group. Its entries edit
-the `term:Annotations` collection through `modeling.updateModdleProperties`.
+the `mt:Annotations` collection through `modeling.updateModdleProperties`.
 The panel currently targets tasks,
 subprocesses, exclusive gateways, data references, and start, end, and
 intermediate events.
@@ -442,7 +442,7 @@ module.exports = function () {
 Plugins are named `bpmnlint-plugin-<name>` and referenced as
 `plugin:<name>/...` in `.bpmnlintrc`. The current repository plugin lives at
 [`extension/lint/bpmnlint-plugin-terminology/`](../extension/lint/bpmnlint-plugin-terminology/).
-Its `annotation-requires-id` rule checks that every `term:Annotation` has a
+Its `annotation-requires-id` rule checks that every `mt:Annotation` has a
 non-empty ID containing only letters, numbers, dots, underscores, and hyphens:
 
 ```json
@@ -453,7 +453,7 @@ non-empty ID containing only letters, numbers, dots, underscores, and hyphens:
     "plugin:terminology/recommended"
   ],
   "moddleExtensions": {
-    "term": "./extension/src/moddle/clinical.json"
+    "mt": "./extension/src/moddle/medical-terminology.json"
   }
 }
 ```
@@ -477,7 +477,7 @@ JavaScript with JSDoc and is tested with Vitest.
 | Synthetic negative fixtures | [`examples/invalid/`](../examples/invalid/) |
 | Deterministic checks | [`tools/`](../tools/) |
 
-### The `term:` descriptor
+### The `mt:` descriptor
 
 The three current descriptor types are:
 
@@ -488,23 +488,23 @@ The three current descriptor types are:
    optional `display` attributes.
 
 The lower-case tag alias means the types serialize as
-`term:annotations`, `term:annotation`, and `term:coding`. A normal annotated
+`mt:annotations`, `mt:annotation`, and `mt:coding`. A normal annotated
 element therefore looks like this:
 
 ```xml
 <bpmn2:task id="Task_Synthetic" name="Synthetic imaging review">
   <bpmn2:extensionElements>
-    <term:annotations>
-      <term:annotation id="term-ann-1"
+    <mt:annotations>
+      <mt:annotation id="mt-ann-1"
                        text="Synthetic terminology annotation">
-        <term:coding system="http://snomed.info/sct"
+        <mt:coding system="http://snomed.info/sct"
                      code="9990001"
                      display="Synthetic procedure concept"/>
-        <term:coding system="http://loinc.org"
+        <mt:coding system="http://loinc.org"
                      code="9990002"
                      display="Synthetic observation concept"/>
-      </term:annotation>
-    </term:annotations>
+      </mt:annotation>
+    </mt:annotations>
   </bpmn2:extensionElements>
 </bpmn2:task>
 ```
@@ -518,7 +518,7 @@ The public module is exported from
 [`extension/src/properties-panel/index.js`](../extension/src/properties-panel/index.js).
 `AnnotationListEntry` provides annotation and coding CRUD. The helper in
 [`extension/src/services/AnnotationHelper.js`](../extension/src/services/AnnotationHelper.js)
-creates `bpmn:ExtensionElements` and the `term:Annotations` container lazily,
+creates `bpmn:ExtensionElements` and the `mt:Annotations` container lazily,
 maintains parent links, generates IDs, and reads or removes annotations.
 
 ### Terminology providers
@@ -574,11 +574,11 @@ be passed to the script.
 [`tools/moddle-roundtrip.mjs`](../tools/moddle-roundtrip.mjs). For each fixture
 it:
 
-1. parses XML with the shipped `term:` descriptor;
+1. parses XML with the shipped `mt:` descriptor;
 2. serializes it to XML;
 3. parses and serializes the result again;
 4. requires the second serialization to equal the first; and
-5. compares the number of `term:` elements before and after parsing.
+5. compares the number of `mt:` elements before and after parsing.
 
 Serialization instability or dropped extension elements fails the check.
 Unknown extension warnings are non-fatal by default and can be promoted with

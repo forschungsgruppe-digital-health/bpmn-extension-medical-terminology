@@ -3,7 +3,7 @@
 # Validate the BPMN *core* of each file against the official OMG BPMN 2.0 XSD
 # (Semantic / DI / DC), shipped with bpmn-moddle.
 #
-# SCOPE: this checks structural standard-conformance ONLY. Custom term:
+# SCOPE: this checks structural standard-conformance ONLY. Custom mt:
 # data lives in <extensionElements> and is accepted by the schema via
 # processContents="lax" — i.e. a green XSD result does NOT mean the extensions
 # are valid. Extension correctness is checked by tools/moddle-roundtrip.mjs.

@@ -1,5 +1,5 @@
 {
-  "name": "clinical-bpmn-demo",
+  "name": "bpmn-medical-terminology-demo",
   "version": "0.1.0",
   "private": true,
   "description": "Demo app for @forschungsgruppe-digital-health/bpmn-extension-medical-terminology",

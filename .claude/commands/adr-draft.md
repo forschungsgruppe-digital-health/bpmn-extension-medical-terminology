@@ -20,7 +20,7 @@ not invent another directory.
 3. Write a self-contained English ADR with status **proposed**, context,
    decision, alternatives, consequences, and links to affected code/docs.
 4. Cite current repository facts: the single published `extension/` package,
-   private `demo/`, `term:` namespace, FHIR terminology providers and
+   private `demo/`, `mt:` namespace, FHIR terminology providers and
    CodeSystem resources, raw ESM, Vitest, deterministic conformance scripts,
    and GitHub Packages workflows as relevant.
 5. If the decision touches a moddle descriptor, BPMN conformance, or publishing,

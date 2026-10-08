@@ -11,7 +11,9 @@ export function createDemoViteConfig(env = {}) {
     build: {
       outDir: 'dist',
       emptyOutDir: true,
-      sourcemap: true
+      // Source maps roughly double the published demo. Kept on for local
+      // builds, switched off for the Pages build via BUILD_SOURCEMAP=false.
+      sourcemap: env.BUILD_SOURCEMAP !== 'false'
     }
   };
 }

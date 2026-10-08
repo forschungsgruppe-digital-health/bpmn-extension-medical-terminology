@@ -19,7 +19,7 @@ Install dependencies with `npm install --legacy-peer-deps`.
 
 ## Hard rules
 
-- Store clinical semantics only in `term:` elements under
+- Store clinical semantics only in `mt:` elements under
   `bpmn:extensionElements`; never alter BPMN core or BPMN-DI structures.
 - Commit only obviously synthetic clinical data.
 - Renaming or removing a terminology moddle type or property is a breaking

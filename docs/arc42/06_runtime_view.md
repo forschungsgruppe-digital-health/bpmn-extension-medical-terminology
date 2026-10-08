@@ -19,15 +19,15 @@ const modeler = new BpmnModeler({
     createDefaultTerminologyModule()
   ],
   moddleExtensions: {
-    term: TerminologyModdleDescriptor
+    mt: TerminologyModdleDescriptor
   }
 });
 
 await modeler.importXML(annotatedBpmn);
 ```
 
-`bpmn-moddle` materializes `term:Annotations`, `term:Annotation`, and
-`term:Coding` values inside `bpmn:extensionElements`. Without the descriptor,
+`bpmn-moddle` materializes `mt:Annotations`, `mt:Annotation`, and
+`mt:Coding` values inside `bpmn:extensionElements`. Without the descriptor,
 the host cannot provide typed terminology objects; the conformance roundtrip
 tool reports parse warnings for unknown content.
 
@@ -49,7 +49,7 @@ sequenceDiagram
     Provider-->>Panel: clinical terminology group
     Panel->>Entry: render current values
     Entry->>Helper: getAnnotations(BO)
-    Helper-->>Entry: term: values
+    Helper-->>Entry: mt: values
     User->>Entry: add or remove annotation
     Entry->>Helper: addAnnotation/removeAnnotation
     Helper->>BO: create containers and child objects
@@ -57,7 +57,7 @@ sequenceDiagram
     Modeling-->>Panel: command-stack change and re-render
 ```
 
-The helper creates `bpmn:ExtensionElements` and `term:Annotations` lazily.
+The helper creates `bpmn:ExtensionElements` and `mt:Annotations` lazily.
 Created objects receive `$parent` links. bpmn-js therefore owns undo/redo and
 serialization rather than the entry component mutating XML directly.
 
@@ -71,7 +71,7 @@ download. The conformance tool performs the same operation without a modeler:
 3. Serialize to XML A.
 4. Parse A and serialize again to XML B.
 5. Require A and B to be identical.
-6. Compare `<term:...>` element counts to detect dropped extension elements.
+6. Compare `<mt:...>` element counts to detect dropped extension elements.
 7. Report parse warnings; `--strict` promotes warnings to failures.
 
 The command is `npm run check:roundtrip`, and it is part of

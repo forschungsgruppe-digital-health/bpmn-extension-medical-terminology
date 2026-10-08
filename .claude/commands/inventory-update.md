@@ -13,7 +13,7 @@ allowed-tools: Task, Read, Grep, Glob, Write, Bash
 > source, moddle descriptors, or `package.json`.
 
 Scope: the npm-workspaces ESM monorepo of bpmn-js extension libraries —
-`extension` (`term:`) and `demo`, plus the conformance tooling under `tools/`. Plain JS + JSDoc
+`extension` (`mt:`) and `demo`, plus the conformance tooling under `tools/`. Plain JS + JSDoc
 (no TypeScript), Vitest. See `AGENTS.md`.
 
 ## Steps

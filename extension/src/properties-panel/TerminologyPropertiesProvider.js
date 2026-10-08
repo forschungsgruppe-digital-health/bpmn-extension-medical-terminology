@@ -1,4 +1,4 @@
-import { is } from 'bpmn-js/lib/util/ModelUtil';
+import { is } from 'bpmn-js/lib/util/ModelUtil.js';
 import { AnnotationListEntry } from './entries/AnnotationListEntry.js';
 import { resolveTerminologyPropertiesConfig } from './config.js';
 import { MEDICAL_TERMINOLOGY_ENTRY_ID } from './error-contract.js';
@@ -28,7 +28,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
         component: AnnotationListEntry,
         isEdited: () => {
           const ext = element.businessObject.extensionElements;
-          return ext?.values?.some(v => v.$type === 'term:Annotations' && v.values?.length > 0);
+          return ext?.values?.some(v => v.$type === 'mt:Annotations' && v.values?.length > 0);
         }
       });
     }
@@ -38,7 +38,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
     }
 
     groups.push({
-      id: 'clinical-terminology',
+      id: 'medical-terminology',
       label: translate('Medical terminology'),
       entries
     });

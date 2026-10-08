@@ -18,7 +18,7 @@ Argument format: a path or a Feature ID, e.g. `extension/src/providers` or
 classification slots straight into a full inventory.
 
 This is an npm-workspaces **ESM** monorepo of **bpmn-js extension libraries**
-(`extension` → `term:`, `demo` → host wrapper). Plain **JavaScript + JSDoc, no TypeScript**;
+(`extension` → `mt:`, `demo` → host wrapper). Plain **JavaScript + JSDoc, no TypeScript**;
 tested with **Vitest**; clinical data lives only in BPMN `<extensionElements>`
 under the custom prefix. See `AGENTS.md`.
 
@@ -29,8 +29,8 @@ under the custom prefix. See `AGENTS.md`.
      `extension/package.json` (`./moddle`, `./properties-panel`,
      …). Note any divergence between the two as a finding;
      do not reconcile it.
-   - The moddle type(s) it reads/writes, by exact `term:Type`
-     (`extension/src/moddle/*.json`, e.g. `term:Annotation`).
+   - The moddle type(s) it reads/writes, by exact `mt:Type`
+     (`extension/src/moddle/*.json`, e.g. `mt:Annotation`).
    - The properties-panel provider/entry that surfaces it
      (`extension/src/properties-panel/**`, e.g. `*PropertiesProvider.js`,
        `AnnotationListEntry`).
