@@ -14,7 +14,7 @@ function lintAnnotations(annotations) {
     id: 'Task_1',
     extensionElements: {
       values: [{
-        $type: 'term:Annotations',
+        $type: 'mt:Annotations',
         values: annotations
       }]
     }
@@ -28,14 +28,14 @@ function lintAnnotations(annotations) {
 describe('annotation-requires-id', () => {
   it('accepts non-empty IDs containing hyphens', () => {
     expect(lintAnnotations([
-      { $type: 'term:Annotation', id: '-term-ann-1-' }
+      { $type: 'mt:Annotation', id: '-mt-ann-1-' }
     ])).toHaveLength(0);
   });
 
   it('reports annotations without a valid ID', () => {
     const reports = lintAnnotations([
-      { $type: 'term:Annotation', id: 'invalid id' },
-      { $type: 'term:Annotation' }
+      { $type: 'mt:Annotation', id: 'invalid id' },
+      { $type: 'mt:Annotation' }
     ]);
 
     expect(reports).toHaveLength(2);

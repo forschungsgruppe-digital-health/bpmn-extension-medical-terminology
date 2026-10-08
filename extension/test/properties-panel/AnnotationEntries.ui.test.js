@@ -6,6 +6,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/pr
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BpmnModdle } from 'bpmn-moddle';
 import { createAnnotationCommandStack } from '../helpers/annotation-command-stack.js';
+import { TerminologyRequestError } from '../../src/core/TerminologyRequestError.js';
 
 const serviceState = vi.hoisted(() => ({
   current: {}
@@ -52,7 +53,8 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
     },
     TextFieldEntry(props) {
       const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
-      const error = props.validate ? props.validate(localValue) : null;
+      const error = serviceState.current.panelErrors?.[props.id]
+        || (props.validate ? props.validate(localValue) : null);
 
       useEffect(() => {
         setLocalValue(props.getValue(props.element) || '');
@@ -86,7 +88,8 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
     },
     TextAreaEntry(props) {
       const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
-      const error = props.validate ? props.validate(localValue) : null;
+      const error = serviceState.current.panelErrors?.[props.id]
+        || (props.validate ? props.validate(localValue) : null);
 
       useEffect(() => {
         setLocalValue(props.getValue(props.element) || '');
@@ -117,6 +120,12 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
         error ? h('div', { class: 'bio-properties-panel-error' }, error) : null,
         props.description ? h('div', { class: 'bio-properties-panel-description' }, props.description) : null
       ]);
+    },
+    useError(id) {
+      return serviceState.current.panelErrors?.[id];
+    },
+    useErrors() {
+      return serviceState.current.panelErrors || {};
     }
   };
 });
@@ -208,12 +217,12 @@ describe('terminology properties panel UI', () => {
     const context = await createTestContext({ id: 'Task_Synthetic', type: 'bpmn:Task' });
     const { rootElement: imported } = await context.moddle.fromXML(`
       <bpmn:task xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-        xmlns:term="https://clinical-bpmn.org/terminology/v1" id="Task_Synthetic">
-        <bpmn:extensionElements><term:annotations>
-          <term:annotation id="synthetic-1" text="Synthetic imported">
-            <term:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" />
-          </term:annotation>
-        </term:annotations></bpmn:extensionElements>
+        xmlns:mt="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1" id="Task_Synthetic">
+        <bpmn:extensionElements><mt:annotations>
+          <mt:annotation id="synthetic-1" text="Synthetic imported">
+            <mt:coding system="https://example.invalid/cs" code="TEST" display="Synthetic code" version="1" />
+          </mt:annotation>
+        </mt:annotations></bpmn:extensionElements>
       </bpmn:task>`, 'bpmn:Task');
     context.element.businessObject = imported;
     setServices(context);
@@ -244,7 +253,7 @@ describe('terminology properties panel UI', () => {
     fireEvent.click(screen.getByTitle('Remove coding'));
     fireEvent.input(getControlByLabel(view.container, 'ID'), { target: { value: 'synthetic-renamed' } });
     fireEvent.click(screen.getByText('Save changes'));
-    expect((await context.moddle.toXML(imported)).xml).not.toContain('<term:coding');
+    expect((await context.moddle.toXML(imported)).xml).not.toContain('<mt:coding');
     expect((await context.moddle.toXML(imported)).xml).toContain('id="synthetic-renamed"');
     context.commandStack.undo();
     await waitFor(() => expect(screen.getByRole('button', { name: 'Edit annotation synthetic-1' })).toBeTruthy());
@@ -364,9 +373,9 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('Task_Staging', xml);
 
     expect(xml).toContain('id="Task_Staging"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="Clinical TNM staging to determine tumor stage">');
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" code="254292007" display="Tumor staging (tumor staging)"');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="21908-9" display="Stage group.clinical Cancer"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Clinical TNM staging to determine tumor stage">');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" code="254292007" display="Tumor staging (tumor staging)"');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="21908-9" display="Stage group.clinical Cancer"');
   });
 
   it('sorts the terminology dropdown alphabetically when providers change at runtime', async () => {
@@ -730,6 +739,8 @@ describe('terminology properties panel UI', () => {
       expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
     });
 
+    expect(view.container.querySelector('.search-input-shell').className).toContain('bio-properties-panel-input');
+
     expect(screen.queryByText(/Showing .* results/)).toBeNull();
 
     fireEvent.click(screen.getByText('Save annotation'));
@@ -737,6 +748,120 @@ describe('terminology properties panel UI', () => {
     expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
     expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
     expect(screen.queryByText('Please select a coding from the search results or provide free text before saving.')).toBeNull();
+  });
+
+  it('exposes the structured provider error to the host while keeping the UI fallback', async () => {
+    const context = await createTestContext({
+      id: 'Task_HostError',
+      type: 'bpmn:Task',
+      name: 'Host Error Task'
+    });
+    const requestError = new TerminologyRequestError(
+      'Synthetic terminology server failure.',
+      { kind: 'server', host: 'terminology.example.test', status: 503 }
+    );
+    const fire = vi.spyOn(context.eventBus, 'fire');
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw requestError;
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'synthetic failure' }
+    });
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('medicalTerminology.error', {
+        element: context.element,
+        error: requestError,
+        operation: 'search',
+        providerId: 'loinc'
+      });
+    });
+    expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
+  });
+
+  it('translates provider errors through the host translate service', async () => {
+    const context = await createTestContext({
+      id: 'Task_TranslatedError',
+      type: 'bpmn:Task',
+      name: 'Translated Error Task'
+    });
+
+    setServices(context, {
+      translate: (value, replacements = {}) => `Translated: ${value.replace(/{([^}]+)}/g, (_, key) => replacements[key] ?? `{${key}}`)}`,
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw { kind: 'network' };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'synthetic failure' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Translated: LOINC could not be reached. Check your network connection and server URL.')).toBeTruthy();
+    });
+  });
+
+  it('clears a search error when the terminology selection changes', async () => {
+    const context = await createTestContext({
+      id: 'Task_SearchErrorReset',
+      type: 'bpmn:Task',
+      name: 'Search Error Reset Task'
+    });
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[0], PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw { kind: 'network' };
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'synthetic search' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LOINC could not be reached. Check your network connection and server URL.')).toBeTruthy();
+    });
+
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'snomed-ct' }
+    });
+
+    expect(screen.queryByText('LOINC could not be reached. Check your network connection and server URL.')).toBeNull();
   });
 
   it('shows a data-specific message for an unexpected provider response', async () => {
@@ -859,6 +984,68 @@ describe('terminology properties panel UI', () => {
     expect(search).toHaveBeenCalledTimes(2);
   });
 
+  it('publishes and clears the entry error without replacing errors from other entries', async () => {
+    const context = await createTestContext({
+      id: 'Task_PanelErrorLifecycle',
+      type: 'bpmn:Task',
+      name: 'Panel Error Lifecycle Task'
+    });
+
+    const search = vi.fn()
+      .mockRejectedValueOnce({ kind: 'network' })
+      .mockResolvedValue({ items: [SEARCH_RESULTS.loinc[0]] });
+    const fire = vi.spyOn(context.eventBus, 'fire');
+
+    setServices(context, {
+      panelErrors: {
+        name: 'Synthetic existing panel error.'
+      },
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search,
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+
+    const searchInput = getControlByLabel(view.container, 'Search');
+    fireEvent.input(searchInput, {
+      target: { value: 'failed search' }
+    });
+
+    const publishedErrors = {
+      name: 'Synthetic existing panel error.',
+      'medical-terminology': 'LOINC could not be reached. Check your network connection and server URL.',
+      'annotation-search': 'LOINC could not be reached. Check your network connection and server URL.'
+    };
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: publishedErrors
+      });
+    });
+    expect(searchInput.closest('[data-entry-id="annotation-search"]').className).toContain('has-error');
+
+    serviceState.current.panelErrors = publishedErrors;
+    fireEvent.input(searchInput, {
+      target: { value: 'Stage group' }
+    });
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: {
+          name: 'Synthetic existing panel error.'
+        }
+      });
+    });
+  });
+
   it('distinguishes an unselected result from an invalid search', async () => {
     const context = await createTestContext({
       id: 'Task_UnselectedResult',
@@ -932,7 +1119,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:annotation id="thorax-report-type" text="Thorax report" />');
+    expect(xml).toContain('<mt:annotation id="thorax-report-type" text="Thorax report" />');
   });
 
   it('persists the terminology code system version in XML', async () => {
@@ -972,7 +1159,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
   });
 
   it('marks saved Codings yellow when their CodeSystem version is unavailable', async () => {
@@ -1151,8 +1338,8 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="https://example.org/CodeSystem/acme" version="2024.1" code="OLD" display="Legacy concept"');
-    expect(xml).toContain('<term:coding system="https://example.org/CodeSystem/acme" version="2025.1" code="NEW" display="Current concept"');
+    expect(xml).toContain('<mt:coding system="https://example.org/CodeSystem/acme" version="2024.1" code="OLD" display="Legacy concept"');
+    expect(xml).toContain('<mt:coding system="https://example.org/CodeSystem/acme" version="2025.1" code="NEW" display="Current concept"');
     expect(xml).not.toContain('version="6.0.2"');
     expect(xml).not.toContain('version="7.1.0"');
   });
@@ -1194,7 +1381,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="20240901" code="233604007" display="Pneumonia"');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" version="20240901" code="233604007" display="Pneumonia"');
   });
 
   it('uses the selected provider version when a search result omits one', async () => {
@@ -1235,7 +1422,7 @@ describe('terminology properties panel UI', () => {
 
     const xml = await serializeXml(context.moddle, context.definitions);
 
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" version="2024-09" code="254292007" display="Tumor staging (tumor staging)"');
   });
 
   it('blocks duplicate terminology codes with the same system', async () => {
@@ -1288,7 +1475,7 @@ describe('terminology properties panel UI', () => {
     expect(screen.getByText('A terminology code with the same system and code is already used in the diagram.')).toBeTruthy();
 
     const xml = await serializeXml(context.moddle, context.definitions);
-    expect((xml.match(/<term:annotation\b/g) || [])).toHaveLength(1);
+    expect((xml.match(/<mt:annotation\b/g) || [])).toHaveLength(1);
   });
 
   it('marks the ID field and shows its error below the field', async () => {
@@ -1298,6 +1485,7 @@ describe('terminology properties panel UI', () => {
       name: 'Configured Task'
     });
 
+    const fire = vi.spyOn(context.eventBus, 'fire');
     setServices(context);
 
     const view = render(h(AnnotationListEntry, { element: context.element }));
@@ -1312,6 +1500,57 @@ describe('terminology properties panel UI', () => {
 
     expect(screen.getByText('ID may only contain letters, numbers, dots, underscores, and hyphens.')).toBeTruthy();
     expect(getControlByLabel(view.container, 'ID').closest('.bio-properties-panel-entry').className).toContain('has-error');
+    const publishedErrors = {
+      'medical-terminology': 'ID may only contain letters, numbers, dots, underscores, and hyphens.',
+      'annotation-id': 'ID may only contain letters, numbers, dots, underscores, and hyphens.'
+    };
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: publishedErrors
+      });
+    });
+
+    serviceState.current.panelErrors = publishedErrors;
+    fireEvent.input(getControlByLabel(view.container, 'ID'), {
+      target: { value: 'valid-id' }
+    });
+
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: {}
+      });
+    });
+  });
+
+  it('clears the missing-content error when free text is entered', async () => {
+    const context = await createTestContext({
+      id: 'Task_FormErrorReset',
+      type: 'bpmn:Task',
+      name: 'Form Error Reset Task'
+    });
+
+    const fire = vi.spyOn(context.eventBus, 'fire');
+    setServices(context);
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.click(screen.getByText('Save annotation'));
+
+    expect(screen.getByText('Please provide free text or at least one coding before saving.')).toBeTruthy();
+    await waitFor(() => {
+      expect(fire).toHaveBeenCalledWith('propertiesPanel.setErrors', {
+        errors: {
+          'medical-terminology': 'Please provide free text or at least one coding before saving.',
+          'annotation-form': 'Please provide free text or at least one coding before saving.'
+        }
+      });
+    });
+
+    fireEvent.input(getControlByLabel(view.container, 'Free text'), {
+      target: { value: 'Obviously synthetic annotation' }
+    });
+
+    expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
   });
 
   it('recreates the chemotherapy task without adding unsupported target data', async () => {
@@ -1345,9 +1584,9 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('Task_Chemo', xml);
 
     expect(xml).toContain('id="Task_Chemo"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
-    expect(xml).toContain('<term:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
-    expect(xml).toContain('<term:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
+    expect(xml).toContain('<mt:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
+    expect(xml).toContain('<mt:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
   });
 
   it('recreates the discharge letter data object annotations via the UI', async () => {
@@ -1391,11 +1630,11 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('DataObj_DischargeLetter', xml);
 
     expect(xml).toContain('id="DataObj_DischargeLetter"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="Medical discharge report upon completion of follow-up">');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="18842-5" display="Discharge summary"');
-    expect(xml).toContain('<term:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Medical discharge report"');
-    expect(xml).toContain('<term:annotation id="term-ann-2">');
-    expect(xml).toContain('<term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Physician letters"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Medical discharge report upon completion of follow-up">');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="18842-5" display="Discharge summary"');
+    expect(xml).toContain('<mt:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Medical discharge report"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-2">');
+    expect(xml).toContain('<mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Physician letters"');
   });
 
   it('recreates the MRI data object annotations via the UI', async () => {
@@ -1439,10 +1678,10 @@ describe('terminology properties panel UI', () => {
     maybePrintXml('DataObj_MRI', xml);
 
     expect(xml).toContain('id="DataObj_MRI"');
-    expect(xml).toContain('<term:annotation id="term-ann-1" text="MRI scan report of the thorax as input document for TNM staging">');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="18748-4" display="Diagnostic imaging study"');
-    expect(xml).toContain('<term:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"');
-    expect(xml).toContain('<term:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Clinical reports"');
+    expect(xml).toContain('<mt:annotation id="mt-ann-1" text="MRI scan report of the thorax as input document for TNM staging">');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="18748-4" display="Diagnostic imaging study"');
+    expect(xml).toContain('<mt:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"');
+    expect(xml).toContain('<mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Clinical reports"');
   });
 
   it('recreates the terminology-only reference cross section via the UI', async () => {
@@ -1585,9 +1824,9 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('id="Gateway_Split"');
     expect(xml).toContain('Treatment decision based on TNM stage: Stage I-II (operable) vs. Stage III-IV (inoperable)');
     expect(xml).toContain('id="Task_Surgery"');
-    expect(xml).toContain('<term:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
+    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
     expect(xml).toContain('id="Task_Followup"');
-    expect(xml).toContain('<term:coding system="http://loinc.org" code="18776-5" display="Plan of care note"');
+    expect(xml).toContain('<mt:coding system="http://loinc.org" code="18776-5" display="Plan of care note"');
   });
 });
 
@@ -1603,8 +1842,8 @@ async function createTestContext({ id, type, name }) {
 }
 
 async function createProcessContext(elementDefinitions) {
-  const { default: descriptor } = await import('../../src/moddle/clinical.json');
-  const moddle = new BpmnModdle({ term: descriptor });
+  const { default: descriptor } = await import('../../src/moddle/medical-terminology.json');
+  const moddle = new BpmnModdle({ mt: descriptor });
   const process = moddle.create('bpmn:Process', {
     id: 'Process_1',
     isExecutable: false,
@@ -1671,7 +1910,9 @@ function setServices(context, overrides = {}) {
         Object.values(context.elements).forEach(callback);
       }
     },
-    translate: (value) => value,
+    translate: (value, replacements = {}) => value.replace(/{([^}]+)}/g, (_, key) =>
+      replacements[key] ?? `{${key}}`
+    ),
     terminologyRegistry: {
       listProviders: () => PROVIDERS,
       search: vi.fn(async (term, providerId) => ({

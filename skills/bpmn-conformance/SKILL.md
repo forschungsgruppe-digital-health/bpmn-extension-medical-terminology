@@ -20,7 +20,7 @@ Or individually:
 
 ```bash
 npm run lint:bpmn              # BPMN 2.0 plus configured terminology rules
-npm run check:roundtrip        # lossless/stable serialization of term: data
+npm run check:roundtrip        # lossless/stable serialization of mt: data
 node tools/moddle-roundtrip.mjs --strict   # promote roundtrip warnings to failures
 npm run check:xsd              # BPMN-core XSD validation (informational)
 bash tools/validate-xsd.sh --strict        # fail on a schema-invalid core
@@ -33,8 +33,8 @@ Scope to specific files by appending paths, e.g.
 
 | Layer | Tool | Checks | Blocking? |
 |---|---|---|---|
-| Structure and extension rules | `bpmnlint` | disconnected nodes, start/end events, implicit splits, dangling refs, and configured `term:` rules | **yes** |
-| Extension data | moddle roundtrip | `term:` content survives parse+serialize, stable output | **yes** on instability; warnings non-fatal (use `--strict`) |
+| Structure and extension rules | `bpmnlint` | disconnected nodes, start/end events, implicit splits, dangling refs, and configured `mt:` rules | **yes** |
+| Extension data | moddle roundtrip | `mt:` content survives parse+serialize, stable output | **yes** on instability; warnings non-fatal (use `--strict`) |
 | Standard core | XSD (`xmllint`) | BPMN core matches OMG BPMN20.xsd | **no** (informational) |
 
 ## Interpreting results
@@ -42,8 +42,8 @@ Scope to specific files by appending paths, e.g.
 - **bpmnlint error** → a real structural defect. Fix the diagram.
 - **roundtrip not stable (`stable=false`)** → serialization is not idempotent — a
   real bug; investigate the moddle model or the file. Always blocking.
-- **roundtrip warning `unparsable content <term:…>`** → the file uses an extension
-  element the moddle model does **not** define (e.g. `term:target`). That content
+- **roundtrip warning `unparsable content <mt:…>`** → the file uses an extension
+  element the moddle model does **not** define (e.g. `mt:target`). That content
   is silently dropped on save (data loss). Decide: extend the moddle descriptor, or
   remove the stale content. Non-fatal by default; `--strict` makes it block.
 - **XSD `fails to validate`** → a BPMN-core issue (e.g. a `dataInputAssociation`

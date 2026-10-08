@@ -23,7 +23,7 @@
   },
   "exports": {
     ".": "./src/index.js",
-    "./moddle": "./src/moddle/clinical.json",
+    "./moddle": "./src/moddle/medical-terminology.json",
     "./properties-panel": "./src/properties-panel/index.js",
     "./properties-panel.css": "./src/properties-panel/properties-panel.css",
     "./vite": "./src/vite/plugin.js",
@@ -70,7 +70,7 @@
   "bugs": {
     "url": "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues"
   },
-  "homepage": "https://tu-dresden.de/bu/wirtschaft/winf/digital-health",
+  "homepage": "https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/",
   "funding": [
     {
       "type": "grant",

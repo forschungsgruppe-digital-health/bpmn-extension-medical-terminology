@@ -7,8 +7,8 @@ on:
         required: true
         type: string
     secrets:
-      NPM_STAGING_TOKEN:
-        required: true
+      GH_PACKAGES_TOKEN:
+        required: false
   workflow_dispatch:
     inputs:
       tag:
@@ -26,6 +26,8 @@ on:
 
 permissions:
   contents: read
+  id-token: write
+  packages: write
 
 concurrency:
   group: npm-stage-${{ inputs.tag }}
@@ -88,7 +90,7 @@ jobs:
           npm run check:versions -- --tag "$RELEASE_TAG"
           npm run verify
 
-      - name: Prepare npm-only package copy
+      - name: Prepare shared package archive
         id: package
         env:
           TEST_VERSION: ${{ inputs.test_version }}
@@ -106,21 +108,25 @@ jobs:
               throw new Error("Unexpected package name");
             }
             if (process.env.TEST_VERSION) pkg.version = process.env.TEST_VERSION;
-            pkg.publishConfig = { ...pkg.publishConfig, registry: "https://registry.npmjs.org", access: "public" };
+            pkg.publishConfig = { ...pkg.publishConfig };
+            delete pkg.publishConfig.registry;
+            delete pkg.publishConfig.access;
             const tag = pkg.version.includes("-") ? "rc" : "latest";
             pkg.publishConfig.tag = tag;
             fs.writeFileSync(file, `${JSON.stringify(pkg, null, 2)}\n`);
             fs.appendFileSync(process.env.GITHUB_OUTPUT, `directory=${process.env.STAGE_PACKAGE_DIR}\nversion=${pkg.version}\ntag=${tag}\n`);
           '
+          npm pack "$STAGE_PACKAGE_DIR" --ignore-scripts --pack-destination="$stage_dir" --json > "$stage_dir/shared-pack.json"
+          shared_archive=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))[0].filename)' "$stage_dir/shared-pack.json")
+          echo "archive=$stage_dir/$shared_archive" >> "$GITHUB_OUTPUT"
 
       - name: Stage on npm (never approve automatically)
         working-directory: ${{ steps.package.outputs.directory }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_STAGING_TOKEN }}
           NPM_TAG: ${{ steps.package.outputs.tag }}
+          PACKAGE_ARCHIVE: ${{ steps.package.outputs.archive }}
         run: |
-          test -n "$NODE_AUTH_TOKEN" || { echo 'Missing NPM_STAGING_TOKEN'; exit 1; }
-          npm stage publish --registry=https://registry.npmjs.org --access=public --tag="$NPM_TAG" --ignore-scripts --json | tee "$RUNNER_TEMP/npm-stage-result.json"
+          npm stage publish "$PACKAGE_ARCHIVE" --registry=https://registry.npmjs.org --access=public --tag="$NPM_TAG" --ignore-scripts --json | tee "$RUNNER_TEMP/npm-stage-result.json"
 
       - name: Show stage receipt and test instructions
         env:
@@ -143,3 +149,21 @@ jobs:
             echo '[Maintainer checklist](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/RELEASE-TESTING.md)'
             echo 'Approve or reject interactively with npm account + 2FA; workflow retries do not replace an existing version.'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Configure GitHub Packages authentication for RCs
+        if: steps.package.outputs.tag == 'rc'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24
+          registry-url: https://npm.pkg.github.com
+          scope: '@forschungsgruppe-digital-health'
+
+      - name: Publish the same RC archive to GitHub Packages
+        if: steps.package.outputs.tag == 'rc'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN || github.token }}
+          PACKAGE_ARCHIVE: ${{ steps.package.outputs.archive }}
+          PACKAGE_VERSION: ${{ steps.package.outputs.version }}
+        run: |
+          npm publish "$PACKAGE_ARCHIVE" --registry=https://npm.pkg.github.com --tag=rc --ignore-scripts
+          echo "GitHub Packages: $PACKAGE_VERSION (rc), identical archive to npm stage." >> "$GITHUB_STEP_SUMMARY"

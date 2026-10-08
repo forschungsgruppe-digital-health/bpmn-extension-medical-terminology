@@ -53,7 +53,7 @@ Evaluate each role against each concern. Every finding is tagged with its
   the ESM entry points, wire the moddle descriptor and properties-panel provider, and
   run the example without guessing? Are commands copy-pasteable and current
   (`npm install --legacy-peer-deps`, the `check:*`/`verify` scripts)? Are the
-  `term:` prefix and namespace URI documented to match the moddle
+  `mt:` prefix and namespace URI documented to match the moddle
   descriptors? *release/publishing:* is the GitHub Packages registry/scope install
   story (`@forschungsgruppe-digital-health/*`, `https://npm.pkg.github.com`) clear?
   *usage:* is there one obvious entry point and an accurate doc map?
@@ -140,7 +140,7 @@ Always cite evidence as `file:line`.
      (bpmnlint / moddle roundtrip / XSD core / package conventions) and their
      blocking/informational status; compare doc claims against it (and against the
      `package.json` scripts) rather than re-deriving.
-   - `skills/moddle-extension-review` → whether docs describe the `term:`
+   - `skills/moddle-extension-review` → whether docs describe the `mt:`
      moddle types, prefixes, and namespace URIs as the descriptors actually define them
      (`extension/src/moddle/*.json`).
    - `skills/bpmn-naming-publishing` → whether the publishing/naming docs match the

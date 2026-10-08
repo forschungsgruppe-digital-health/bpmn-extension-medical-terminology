@@ -21,7 +21,7 @@ classification.
 
 This extension adds an optional terminology layer without changing BPMN core
 elements or BPMN-DI data. A BPMN element can carry a collection of
-`term:Annotation` elements. An annotation has an optional text and zero or more
+`mt:Annotation` elements. An annotation has an optional text and zero or more
 codings; each coding records a CodeSystem URI, code, display text, and optional
 version.
 
@@ -31,7 +31,7 @@ and package-backed FHIR `CodeSystem` resources. The same provider contract is
 used by the bpmn-js properties panel and by integrator code.
 
 All extension data is persisted as standard BPMN 2.0 `extensionElements`.
-Applications that do not understand the `term:` namespace can still process the
+Applications that do not understand the `mt:` namespace can still process the
 BPMN core, while applications that register the descriptor can read and edit
 the typed extension objects.
 
@@ -40,7 +40,7 @@ the typed extension objects.
 The repository turns the following goals into deterministic checks:
 
 - **BPMN compatibility:** clinical semantics remain in
-  `bpmn:extensionElements` under the custom `term:` namespace.
+  `bpmn:extensionElements` under the custom `mt:` namespace.
 - **Lossless and stable serialization:** terminology elements survive the
   moddle read/write roundtrip and repeated serialization is idempotent.
 - **Structural conformance:** BPMN fixtures pass the configured bpmnlint rules;

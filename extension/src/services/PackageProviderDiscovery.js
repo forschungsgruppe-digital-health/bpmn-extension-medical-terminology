@@ -218,10 +218,10 @@ function getPackageKeyFromPath(path, packageName, metadata = {}) {
 /**
  * Group Vite glob-loaded CodeSystem modules by explicit package names.
  *
- * @param {Record<string, import('@types/fhir').fhir4.CodeSystem>} modules
+ * @param {Record<string, fhir4.CodeSystem>} modules
  * @param {string[]} packageNames
  * @param {Record<string, { packageName?: string, title?: string, version?: string }>} [metadata]
- * @returns {Record<string, import('@types/fhir').fhir4.CodeSystem[]>}
+ * @returns {Record<string, fhir4.CodeSystem[]>}
  */
 export function collectPackageCodeSystemsFromModules(modules = {}, packageNames = [], metadata = {}) {
   const uniquePackageKeys = [...new Set((packageNames || []).filter(Boolean))];
@@ -268,9 +268,9 @@ export function collectPackageCodeSystemsFromModules(modules = {}, packageNames 
 /**
  * Group Vite glob-loaded CodeSystem modules by package path detection.
  *
- * @param {(pattern: string, options: { eager: true, import: 'default' }) => Record<string, import('@types/fhir').fhir4.CodeSystem>} globFn
+ * @param {(pattern: string, options: { eager: true, import: 'default' }) => Record<string, fhir4.CodeSystem>} globFn
  * @param {{ patterns?: string[], metadata?: Record<string, { packageName?: string, title?: string, version?: string }> }} [config]
- * @returns {Record<string, import('@types/fhir').fhir4.CodeSystem[]>}
+ * @returns {Record<string, fhir4.CodeSystem[]>}
  */
 export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
   if (typeof globFn !== 'function') {
@@ -319,7 +319,7 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
  * Build one searchable package-backed provider per package from consumer-
  * provided CodeSystem collections keyed by package name.
  *
- * @param {Record<string, import('@types/fhir').fhir4.CodeSystem[]>} packages
+ * @param {Record<string, fhir4.CodeSystem[]>} packages
  * @param {{
  *   include?: string[],
  *   exclude?: string[],
@@ -329,7 +329,7 @@ export function collectPackageCodeSystemsFromGlob(globFn, config = {}) {
  *   excludeSystemUris?: Iterable<string>,
  *   excludePackageCodeSystems?: Array<{ packageName: string, version?: string, systemUri: string }>
  * }} [config]
- * @returns {import('../core/TerminologyProvider').TerminologyProvider[]}
+ * @returns {import('../core/TerminologyProvider.js').TerminologyProvider[]}
  */
 export function discoverPackageProviders(packages = {}, config = {}) {
   const includePatterns = config.include || DEFAULT_DISCOVERY_INCLUDE;

@@ -12,6 +12,9 @@ function applyProviderVersion(concept, version) {
   return { ...concept, version };
 }
 
+/**
+ * @category Providers
+ */
 export class SnomedCtProvider extends TerminologyProvider {
 
   /**
@@ -23,19 +26,28 @@ export class SnomedCtProvider extends TerminologyProvider {
    * @param {number} [config.maxResults=15]
    * @param {string} [config.defaultEcl] - Default ECL constraint
    * @param {string} [config.version] - Optional SNOMED edition/release version
-   * @param {import('../core/types').ConnectionConfig['auth']} [config.auth]
+   * @param {import('../core/types.js').ConnectionConfig['auth']} [config.auth]
    * @param {typeof fetch} [config.fetchFn]
    */
   constructor(config) {
     super();
+    /** @internal */
     this._id = 'snomed-ct';
+    /** @internal */
     this._displayName = config.displayName || 'SNOMED CT';
+    /** @internal */
     this._sourceType = 'api';
+    /** @internal */
     this._sourceLabel = new URL(resolveSnowstormBaseUrl(config.baseUrl)).host;
+    /** @internal */
     this._branch = config.branch || 'MAIN';
+    /** @internal */
     this._version = config.version;
+    /** @internal */
     this._maxResults = config.maxResults || 15;
+    /** @internal */
     this._defaultEcl = config.defaultEcl;
+    /** @internal */
     this._adapter = new SnowstormAdapter({
       baseUrl: config.baseUrl,
       branch: this._branch,
@@ -51,10 +63,15 @@ export class SnomedCtProvider extends TerminologyProvider {
   get id() { return this._id; }
   get displayName() { return this._displayName; }
   get systemUri() { return 'http://snomed.info/sct'; }
+  /** Configured SNOMED CT edition or release version, when known. */
   get version() { return this._version; }
+  /** Machine-readable kind of the provider's backing source. */
   get sourceType() { return this._sourceType; }
+  /** Host name shown to users as the provider source. */
   get sourceLabel() { return this._sourceLabel; }
+  /** Human-readable name of the source represented by this provider. */
   get sourceName() { return this._displayName; }
+  /** Operations supported by the SNOMED CT provider. */
   get capabilities() {
     return { search: true, lookup: true, hierarchy: true, validate: true };
   }

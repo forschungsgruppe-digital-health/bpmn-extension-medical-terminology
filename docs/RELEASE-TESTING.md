@@ -143,7 +143,7 @@ const propertiesPanelModule = createTerminologyPropertiesPanelModule({
 Bei allen Änderungen das durch die Host-Anwendung gespeicherte XML prüfen:
 ID, Freitext, System-URI, Code und CodeSystem-Version stimmen; abgebrochene oder
 ungültige Eingaben werden nicht gespeichert. Terminologiedaten stehen unter
-`bpmn:extensionElements` im `term:`-Namensraum. Beispiele: [Generated XML](../README.md#generated-xml).
+`bpmn:extensionElements` im `mt:`-Namensraum. Beispiele: [Generated XML](../README.md#generated-xml).
 
 ## 6. Fehler absichtlich provozieren
 
@@ -185,7 +185,10 @@ npm stage reject <stage-id> --registry=https://registry.npmjs.org
 
 Freigabe veröffentlicht genau die gestagete Version; ein RC wird dadurch nicht
 zur stabilen `1.0.0`. Nach Überarbeitung einen neuen Kandidaten wie
-`1.0.0-rc.2` verwenden. Einzelne GitHub-Paketversionen kann ein Package-Admin
-separat löschen; der GitHub-Release und Git-Tag bleiben davon unberührt.
+`1.0.0-rc.2` verwenden. Derselbe Paket-Tarball wird nach erfolgreichem Staging
+automatisch in GitHub Packages mit dem Tag `rc` veröffentlicht. npm-Reject
+löscht diese GitHub-Kopie nicht. Einzelne GitHub-Paketversionen kann ein
+Package-Admin separat löschen; der GitHub-Release und Git-Tag bleiben davon
+unberührt. Bestehende Paketversionen werden nicht überschrieben.
 
 Referenz: [npm staged publishing](https://docs.npmjs.com/staged-publishing/).

@@ -1,0 +1,28 @@
+{
+  "//": "Type-checking and API-reference configuration. Not used to build or ship anything: the package is plain ESM JavaScript and has no compile step. Two consumers: `npm run docs:types` (tsc --noEmit, the type gate) and `npm run docs:api` (TypeDoc, the generated API reference).",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "target": "ES2022",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "resolveJsonModule": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "skipLibCheck": true,
+    "types": [
+      "fhir",
+      "node"
+    ]
+  },
+  "include": [
+    "extension/src/**/*.js",
+    "extension/src/**/*.d.ts"
+  ]
+}
