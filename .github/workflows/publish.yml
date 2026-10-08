@@ -40,6 +40,16 @@ jobs:
 
       - run: npm ci --legacy-peer-deps
 
+      - name: Ensure XSD validator is available
+        run: |
+          if ! command -v xmllint >/dev/null 2>&1; then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=/dev/null \
+              -o Acquire::Retries=3
+            sudo apt-get install -y --no-install-recommends libxml2-utils
+          fi
+
       - name: Verify release artifacts before publishing
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
