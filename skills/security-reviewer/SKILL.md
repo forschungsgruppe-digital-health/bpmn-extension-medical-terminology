@@ -25,7 +25,7 @@ library plus the data files and CI/publishing pipeline around it.
   registry URL itself is fine; a token is not). `.env`/`.env.*` are gitignored —
   flag any that are nonetheless tracked.
 - **Clinical / PII data leakage.** Real or realistic patient data in `.bpmn`,
-  `  examples/`, tests, fixtures, or docs. `term:` annotations, FHIR
+  `  examples/`, tests, fixtures, or docs. `mt:` annotations, FHIR
   resources, or process documentation are the most likely carriers. The rule is
   **synthetic data only with obviously artificial content** — flag plausible
   names, real MRNs/insurance numbers, dates of birth, or free-text that reads like

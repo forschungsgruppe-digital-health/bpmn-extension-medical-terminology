@@ -1,16 +1,24 @@
 import { loadCodeSystemFromFhir } from './FhirCodeSystemLoader.js';
 
 /**
+ * @typedef {Object} TerminologyProviderLoader - Loads and registers FHIR-backed providers on demand.
+ * @property {string | undefined} baseUrl - FHIR terminology server used for dynamic loading.
+ * @property {(systemUri: string) => Promise<import('../core/TerminologyProvider.js').TerminologyProvider>} ensureProvider - Return an existing provider for a CodeSystem URI or load and register it.
+ * @property {(systemUris: string[], options?: { onError?: (systemUri: string, error: unknown) => void }) => Promise<PromiseSettledResult<import('../core/TerminologyProvider.js').TerminologyProvider>[]>} preload - Attempt to load several providers and report every settled result.
+ */
+
+/**
  * Create a loader that can register FHIR-hosted code systems on demand.
  *
  * The UI can depend on this abstraction instead of knowing any concrete
  * terminology server URL.
  *
  * @param {Object} config
- * @param {import('../core/TerminologyRegistry').TerminologyRegistry} config.terminologyRegistry
+ * @param {import('../core/TerminologyRegistry.js').TerminologyRegistry} config.terminologyRegistry
  * @param {string} config.fhirBaseUrl
  * @param {typeof fetch} [config.fetchFn]
- * @param {(systemUri: string, fhirBaseUrl: string, fetchFn?: typeof fetch) => Promise<import('../core/TerminologyProvider').TerminologyProvider>} [config.loadProvider]
+ * @param {(systemUri: string, fhirBaseUrl: string, fetchFn?: typeof fetch) => Promise<import('../core/TerminologyProvider.js').TerminologyProvider>} [config.loadProvider]
+ * @returns {TerminologyProviderLoader}
  */
 export function createFhirTerminologyProviderLoader(config) {
   const {

@@ -42,7 +42,7 @@ try {
 }
 
 const descriptor = JSON.parse(
-  readFileSync(new URL('../extension/src/moddle/clinical.json', import.meta.url), 'utf8')
+  readFileSync(new URL('../extension/src/moddle/medical-terminology.json', import.meta.url), 'utf8')
 );
 const { xsd, warnings } = generateXsd(descriptor);
 warnings.forEach((w) => console.error(`warning: ${w}`));

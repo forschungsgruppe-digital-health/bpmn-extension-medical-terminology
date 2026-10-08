@@ -27,9 +27,9 @@ graph TD
 |---|---|---|
 | Terminology library | `extension/`, `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` | Published as raw ESM to GitHub Packages |
 | Terminology lint plugin | `extension/lint/bpmnlint-plugin-terminology` | Workspace support for repository linting |
-| Demo application | `demo/`, `clinical-bpmn-demo` | Private workspace; built to `demo/dist` and deployed to GitHub Pages |
+| Demo application | `demo/`, `bpmn-medical-terminology-demo` | Private workspace; built to `demo/dist` and deployed to GitHub Pages |
 | BPMN fixtures | `examples/valid/`, `examples/invalid/` | Repository test/conformance inputs |
-| Schema | `schema/clinical-semantics.xsd` | Repository artifact; generated from the moddle descriptor |
+| Schema | `schema/medical-terminology.xsd` | Repository artifact; generated from the moddle descriptor |
 
 The package exports its source, moddle JSON, properties-panel module and CSS,
 Vite plugin, and public type declarations through `extension/package.json`.

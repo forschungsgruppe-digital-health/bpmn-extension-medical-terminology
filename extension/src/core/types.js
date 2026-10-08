@@ -17,85 +17,85 @@
  * Our internal Concept type is a superset of fhir4.Coding with
  * additional provider-specific properties.
  *
- * @typedef {import('@types/fhir').fhir4.Coding} FhirCoding
+ * @typedef {fhir4.Coding} FhirCoding
  */
 
 /**
  * A FHIR R4 CodeableConcept — wraps one or more Codings.
- * @typedef {import('@types/fhir').fhir4.CodeableConcept} FhirCodeableConcept
+ * @typedef {fhir4.CodeableConcept} FhirCodeableConcept
  */
 
 /**
  * A FHIR R4 ValueSet — used by ValueSet/$expand responses.
- * @typedef {import('@types/fhir').fhir4.ValueSet} FhirValueSet
+ * @typedef {fhir4.ValueSet} FhirValueSet
  */
 
 /**
  * A FHIR R4 ValueSet expansion contains entry.
- * @typedef {import('@types/fhir').fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains
+ * @typedef {fhir4.ValueSetExpansionContains} FhirValueSetExpansionContains - One concept in a FHIR ValueSet expansion response.
+ * @category Core types
  */
 
 /**
  * A FHIR R4 CodeSystem — used by CodeSystem/$lookup responses.
- * @typedef {import('@types/fhir').fhir4.CodeSystem} FhirCodeSystem
+ * @typedef {fhir4.CodeSystem} FhirCodeSystem
  */
 
 /**
  * A FHIR R4 Parameters resource — used for $lookup responses.
- * @typedef {import('@types/fhir').fhir4.Parameters} FhirParameters
+ * @typedef {fhir4.Parameters} FhirParameters
  */
 
 /**
  * A FHIR R4 Bundle — used when searching for CodeSystem resources.
- * @typedef {import('@types/fhir').fhir4.Bundle} FhirBundle
+ * @typedef {fhir4.Bundle} FhirBundle
  */
 
 // ─── Internal Types ─────────────────────────────────────────
 
 /**
- * A terminology concept. Aligns with fhir4.Coding but includes
- * additional properties for provider-specific metadata.
- *
- * To convert to a FHIR Coding:
- *   const /** @type {FhirCoding} *\/ coding = { system: c.system, code: c.code, display: c.display, version: c.version };
- *
- * @typedef {Object} Concept
+ * @typedef {Object} Concept - A terminology concept returned by a provider.
  * @property {string} code - Code value (maps to fhir4.Coding.code)
  * @property {string} display - Display text (maps to fhir4.Coding.display)
  * @property {string} system - CodeSystem URI (maps to fhir4.Coding.system)
  * @property {string} [version] - Code system version (maps to fhir4.Coding.version)
  * @property {boolean} [active] - Whether the concept is active
  * @property {Record<string, unknown>} [properties] - Provider-specific extras
+ * @category Core types
  */
 
 /**
- * @typedef {Object} SearchResult
- * @property {Concept[]} concepts
+ * @typedef {Object} SearchResult - One page of terminology search results.
+ * @property {Concept[]} concepts - Matching concepts in provider order.
  * @property {number} [total] - Total matches when the provider can supply it
+ * @category Core types
  */
 
 /**
- * @typedef {Object} SearchOptions
- * @property {number} [limit]
- * @property {number} [offset]
- * @property {string} [language]
- * @property {boolean} [activeOnly]
+ * @typedef {Object} SearchOptions - Options shared by terminology provider searches.
+ * @property {number} [limit] - Maximum number of concepts to return.
+ * @property {number} [offset] - Zero-based result offset for pagination.
+ * @property {string} [language] - Preferred display language.
+ * @property {boolean} [activeOnly] - Restrict results to active concepts when supported.
  * @property {Record<string, string>} [filter] - Provider-specific filters
+ * @category Core types
  */
 
 /**
- * @typedef {Object} TerminologyCapabilities
- * @property {boolean} search
- * @property {boolean} lookup
- * @property {boolean} hierarchy
- * @property {boolean} validate
+ * @typedef {Object} TerminologyCapabilities - Operations implemented by a terminology provider.
+ * @property {boolean} search - Whether free-text search is supported.
+ * @property {boolean} lookup - Whether lookup by code is supported.
+ * @property {boolean} hierarchy - Whether parent and child navigation is supported.
+ * @property {boolean} validate - Whether code validation is supported.
+ * @category Core types
  */
 
 /**
- * @typedef {Object} ConnectionConfig
- * @property {string} baseUrl
- * @property {{ type: 'Bearer'|'Basic'|'ApiKey', token?: string, credentials?: string, apiKey?: string, headerName?: string }} [auth]
- * @property {typeof fetch} [fetchFn]
- * @property {number} [timeoutMs]
- * @property {Record<string, string>} [headers]
+ * @typedef {Object} ConnectionConfig - Connection settings shared by HTTP terminology adapters.
+ * @property {string} baseUrl - Base URL of the terminology server.
+ * @property {{ type: 'Bearer'|'Basic'|'ApiKey', token?: string, credentials?: string, apiKey?: string, headerName?: string }} [auth] - Authentication applied to requests.
+ * @property {typeof fetch} [fetchFn] - Fetch implementation used for requests, for example a host-owned proxy wrapper.
+ * @property {number} [timeoutMs] - Request timeout in milliseconds.
+ * @property {Record<string, string>} [headers] - Additional HTTP headers.
+ * @category Core types
  */

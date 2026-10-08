@@ -143,7 +143,7 @@ const propertiesPanelModule = createTerminologyPropertiesPanelModule({
 Bei allen Änderungen das durch die Host-Anwendung gespeicherte XML prüfen:
 ID, Freitext, System-URI, Code und CodeSystem-Version stimmen; abgebrochene oder
 ungültige Eingaben werden nicht gespeichert. Terminologiedaten stehen unter
-`bpmn:extensionElements` im `term:`-Namensraum. Beispiele: [Generated XML](../README.md#generated-xml).
+`bpmn:extensionElements` im `mt:`-Namensraum. Beispiele: [Generated XML](../README.md#generated-xml).
 
 ## 6. Fehler absichtlich provozieren
 

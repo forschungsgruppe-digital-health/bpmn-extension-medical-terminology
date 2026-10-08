@@ -1,6 +1,6 @@
 ---
 name: moddle-extension-review
-description: Review the terminology bpmn-moddle extension descriptor (extension/src/moddle/clinical.json) against bpmn.io conventions before merging. Use when adding or changing a moddle type, property, namespace, or prefix. Checks namespace separation, Element superClass, isAttr/isMany, and XSD-extension risks.
+description: Review the terminology bpmn-moddle extension descriptor (extension/src/moddle/medical-terminology.json) against bpmn.io conventions before merging. Use when adding or changing a moddle type, property, namespace, or prefix. Checks namespace separation, Element superClass, isAttr/isMany, and XSD-extension risks.
 ---
 
 # Moddle extension review
@@ -11,7 +11,7 @@ proves the descriptor actually round-trips the example files losslessly).
 
 ## Inputs
 
-- `extension/src/moddle/clinical.json` (`term:` / `https://clinical-bpmn.org/terminology/v1`)
+- `extension/src/moddle/medical-terminology.json` (`mt:` / `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`)
 
 ## Checklist (verify each, cite the line)
 
@@ -31,7 +31,7 @@ proves the descriptor actually round-trips the example files losslessly).
    (known OMG issue), so it will not XSD-validate.
 7. **Drift** — anything used in `docs/`, `examples/`, the README, or the
    properties panel must be defined here. (The roundtrip tool reports
-   `unparsable content <term:…>` for undefined-but-used elements.)
+   `unparsable content <mt:…>` for undefined-but-used elements.)
 
 ## Prove it round-trips
 

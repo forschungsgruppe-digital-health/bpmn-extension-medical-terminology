@@ -10,7 +10,7 @@ export function saveAnnotation(element, moddle, modeling, data, annotation = nul
     throw new Error('The annotation is no longer attached to this element.');
   }
 
-  const target = annotation || moddle.create('term:Annotation');
+  const target = annotation || moddle.create('mt:Annotation');
   const codings = (data.codings || []).map(value => {
     const existing = annotation?.codings?.find(coding =>
       ['system', 'code', 'display', 'version'].every(key =>
@@ -19,7 +19,7 @@ export function saveAnnotation(element, moddle, modeling, data, annotation = nul
     );
     if (existing) return existing;
 
-    const coding = moddle.create('term:Coding', {
+    const coding = moddle.create('mt:Coding', {
       system: value.system,
       code: value.code,
       display: value.display,
@@ -45,7 +45,7 @@ export function saveAnnotation(element, moddle, modeling, data, annotation = nul
   }
 
   const extensionElements = bo.extensionElements || moddle.create('bpmn:ExtensionElements');
-  const newContainer = moddle.create('term:Annotations', { values: [target] });
+  const newContainer = moddle.create('mt:Annotations', { values: [target] });
   newContainer.$parent = extensionElements;
   target.$parent = newContainer;
 

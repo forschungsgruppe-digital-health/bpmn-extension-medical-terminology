@@ -10,9 +10,9 @@ const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const lintPath = 'extension/lint/bpmnlint-plugin-terminology';
 const files = [
   'extension/package.json', `${lintPath}/package.json`,
-  'extension/src/moddle/clinical.json', '.release-please-manifest.json',
+  'extension/src/moddle/medical-terminology.json', '.release-please-manifest.json',
   'package-lock.json', 'demo/package.json', 'CITATION.cff', 'codemeta.json',
-  'schema/clinical-semantics.xsd'
+  'schema/medical-terminology.xsd'
 ];
 
 describe('release version consistency', () => {
@@ -44,7 +44,7 @@ describe('release version consistency', () => {
   it.each([
     ['.release-please-manifest.json', value => { value.extension = '0.0.0'; }],
     [`${lintPath}/package.json`, value => { value.version = '0.0.0'; }],
-    ['extension/src/moddle/clinical.json', value => { value.version = '0.0.0'; }],
+    ['extension/src/moddle/medical-terminology.json', value => { value.version = '0.0.0'; }],
     ['codemeta.json', value => { delete value.version; }],
     ['package-lock.json', value => { value.packages.extension.version = '0.0.0'; }],
     ['package-lock.json', value => { value.packages[lintPath].version = '0.0.0'; }],
@@ -76,11 +76,11 @@ describe('release version consistency', () => {
   });
 
   it('rejects stale or missing XSD version markers', () => {
-    write('schema/clinical-semantics.xsd', read('schema/clinical-semantics.xsd')
+    write('schema/medical-terminology.xsd', read('schema/medical-terminology.xsd')
       .replace(`extension version ${version}`, 'extension version 0.0.0'));
-    expect(checkVersions(root).errors[0]).toContain('schema/clinical-semantics.xsd');
-    write('schema/clinical-semantics.xsd', '<!-- no release metadata -->');
-    expect(checkVersions(root).errors[0]).toContain('schema/clinical-semantics.xsd');
+    expect(checkVersions(root).errors[0]).toContain('schema/medical-terminology.xsd');
+    write('schema/medical-terminology.xsd', '<!-- no release metadata -->');
+    expect(checkVersions(root).errors[0]).toContain('schema/medical-terminology.xsd');
   });
 
   it('allows an independent demo version but rejects its lockfile drift', () => {
@@ -95,7 +95,7 @@ describe('release version consistency', () => {
       write(file, read(file).replaceAll(version, '2.0.0-rc.1'));
     }
     expect(checkVersions(root).errors).toEqual([]);
-    expect(JSON.parse(read('extension/src/moddle/clinical.json')).uri).toContain('/v1');
+    expect(JSON.parse(read('extension/src/moddle/medical-terminology.json')).uri).toContain('/v1');
     expect(read('CITATION.cff')).toContain('cff-version: 1.2.0');
   });
 
