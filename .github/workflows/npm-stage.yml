@@ -9,6 +9,8 @@ on:
     secrets:
       GH_PACKAGES_TOKEN:
         required: false
+      NPM_STAGING_TOKEN:
+        required: false
   workflow_dispatch:
     inputs:
       tag:
@@ -125,6 +127,7 @@ jobs:
         env:
           NPM_TAG: ${{ steps.package.outputs.tag }}
           PACKAGE_ARCHIVE: ${{ steps.package.outputs.archive }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_STAGING_TOKEN }}
         run: |
           npm stage publish "$PACKAGE_ARCHIVE" --registry=https://registry.npmjs.org --access=public --tag="$NPM_TAG" --ignore-scripts --json | tee "$RUNNER_TEMP/npm-stage-result.json"
 
