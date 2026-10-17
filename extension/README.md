@@ -20,6 +20,9 @@ Install the package with npm:
 npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology
 ```
 
+Yarn 4 cannot resolve this package's Simplifier-hosted dependencies. Use npm
+to install the package.
+
 The package resolves its FHIR terminology dependencies directly from Simplifier;
 no additional npm registry configuration is required for those dependencies.
 
