@@ -18,7 +18,11 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
   const config = this._config;
 
   return function (groups) {
-    if (!config.targetTypes.some(type => is(element, type))) return groups;
+    const isTargetType = [...config.targetTypes, ...config.includeTypes]
+      .some(type => is(element, type));
+    const isExcludedType = config.excludeTypes.some(type => is(element, type));
+
+    if (!isTargetType || isExcludedType) return groups;
 
     const entries = [];
 
