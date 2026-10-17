@@ -26,9 +26,10 @@ and npm rejection does not automatically remove the GitHub copy.
 
 ## Initial setup
 
-The initial staging smoke test uses a granular stage-only token stored as
-`NPM_STAGING_TOKEN`. Once the package exists, ongoing staging uses OIDC without
-an npm secret. Configure two stage-only GitHub Trusted Publishers on npm:
+The workflow uses the granular stage-only GitHub Actions secret
+`NPM_STAGING_TOKEN` when it is configured. If the secret is absent, npm Trusted
+Publishing via OIDC is used. Configure two stage-only GitHub Trusted Publishers
+on npm:
 
 - Owner: `forschungsgruppe-digital-health`.
 - Repository: `bpmn-extension-medical-terminology`.
@@ -38,9 +39,9 @@ an npm secret. Configure two stage-only GitHub Trusted Publishers on npm:
 
 npm validates the calling workflow identity for reusable workflows, so the
 automatic and manual entry points each need a publisher. Both caller and
-callee declare `id-token: write`. Revoke the bootstrap token and remove its
-GitHub secret once setup is complete. No second smoke upload is required by
-this procedure; the first future genuine RC run verifies OIDC end to end.
+callee declare `id-token: write`. The `NPM_STAGING_TOKEN` secret may be kept
+as a fallback when OIDC is not available. If staging runs solely through OIDC,
+remove the bootstrap token and secret after verifying both publisher identities.
 
 An initial stage of a new package creates a public `0.0.0-stage` placeholder.
 The candidate's contents remain staged until approval. Rejecting a candidate
