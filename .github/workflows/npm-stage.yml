@@ -123,6 +123,7 @@ jobs:
       - name: Stage on npm (never approve automatically)
         working-directory: ${{ steps.package.outputs.directory }}
         env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_STAGING_TOKEN }}
           NPM_TAG: ${{ steps.package.outputs.tag }}
           PACKAGE_ARCHIVE: ${{ steps.package.outputs.archive }}
         run: |
