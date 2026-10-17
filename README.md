@@ -137,6 +137,12 @@ entries. Import the official bpmn-js and properties-panel styles in the host
 application as usual; the terminology styles inherit its fonts, colors, and
 CSS variables.
 
+To add or exclude annotatable BPMN element types without replacing the package
+defaults, pass `includeTypes` or `excludeTypes` to
+`createTerminologyPropertiesPanelModule`. See
+[Configuring annotatable BPMN elements](demo/ANNOTATIONS.md) for examples and
+the full configuration behavior.
+
 ## Programmatic Usage
 
 > The documentation site carries an expanded version of this section, including the
