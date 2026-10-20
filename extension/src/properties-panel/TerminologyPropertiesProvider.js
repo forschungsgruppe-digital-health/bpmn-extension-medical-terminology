@@ -18,7 +18,7 @@ TerminologyPropertiesProvider.$inject = ['propertiesPanel', 'translate', 'termin
 TerminologyPropertiesProvider.prototype.getGroups = function (element) {
   const translate = this._translate;
   const config = this._config;
-  const hasCommentSwitch = Boolean(this._injector?.has('terminologyCommentVisibility', false));
+  const hasCommentSwitch = Boolean(this._injector?.get('terminologyCommentVisibility', false));
 
   return function (groups) {
     // The comment switch is global, so it shows for every element, not only annotatable ones.

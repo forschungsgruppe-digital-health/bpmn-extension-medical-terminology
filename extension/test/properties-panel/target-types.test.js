@@ -65,7 +65,7 @@ describe('annotation target types', () => {
   });
 
   it('offers the global comment switch for every element when the diagram module is installed', () => {
-    const injector = { has: (name) => name === 'terminologyCommentVisibility' };
+    const injector = { get: (name) => (name === 'terminologyCommentVisibility' ? {} : null) };
     const provider = new TerminologyPropertiesProvider(
       { registerProvider() {} }, text => text, undefined, injector
     );
