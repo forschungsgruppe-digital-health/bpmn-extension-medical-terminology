@@ -1,5 +1,6 @@
 import { is } from 'bpmn-js/lib/util/ModelUtil.js';
 import { AnnotationListEntry } from './entries/AnnotationListEntry.js';
+import { ShowAsCommentEntry, SHOW_AS_COMMENT_ENTRY_ID } from './entries/ShowAsCommentEntry.js';
 import { resolveTerminologyPropertiesConfig } from './config.js';
 import { MEDICAL_TERMINOLOGY_ENTRY_ID } from './error-contract.js';
 
@@ -34,6 +35,10 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
           const ext = element.businessObject.extensionElements;
           return ext?.values?.some(v => v.$type === 'mt:Annotations' && v.values?.length > 0);
         }
+      });
+      entries.push({
+        id: SHOW_AS_COMMENT_ENTRY_ID,
+        component: ShowAsCommentEntry
       });
     }
 

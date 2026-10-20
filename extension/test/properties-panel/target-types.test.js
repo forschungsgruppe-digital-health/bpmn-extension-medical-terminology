@@ -5,6 +5,11 @@ vi.mock('../../src/properties-panel/entries/AnnotationListEntry.js', () => ({
   AnnotationListEntry: () => null
 }));
 
+vi.mock('../../src/properties-panel/entries/ShowAsCommentEntry.js', () => ({
+  ShowAsCommentEntry: () => null,
+  SHOW_AS_COMMENT_ENTRY_ID: 'show-as-comment'
+}));
+
 import TerminologyPropertiesProvider from '../../src/properties-panel/TerminologyPropertiesProvider.js';
 
 const moddle = new BpmnModdle();

@@ -135,4 +135,49 @@ describe('TerminologyBadgeRenderer', () => {
     await modeler.importXML(xml);
     expect(badgeText('A')).toBe('MT+2');
   });
+
+  describe('comment block', () => {
+    const commentLines = (id) => [ ...gfx(id).querySelectorAll('.mt-comment text') ]
+      .map((node) => node.textContent);
+
+    it('is hidden by default and shown for all annotated shapes via the global switch', async () => {
+      await createModeler();
+      annotate('A', 2);
+      annotate('B', 1);
+      expect(gfx('A').querySelector('.mt-comment')).toBeNull();
+
+      const visibility = modeler.get('terminologyCommentVisibility');
+      visibility.setVisible(true);
+      expect(commentLines('A')).toEqual([ '0 – Term 0', '1 – Term 1' ]);
+      expect(commentLines('B')).toEqual([ '0 – Term 0' ]);
+      expect(gfx('A').querySelector('.mt-badge text').textContent).toBe('MT+2');
+
+      visibility.setVisible(false);
+      expect(gfx('A').querySelector('.mt-comment')).toBeNull();
+    });
+
+    it('stays in sync with changes and appears in the SVG export, not in the XML', async () => {
+      await createModeler();
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+      annotate('A', 1);
+      expect(commentLines('A')).toEqual([ '0 – Term 0' ]);
+
+      const { svg } = await modeler.saveSVG();
+      expect(svg).toContain('0 – Term 0');
+      const { xml } = await modeler.saveXML();
+      expect(xml).not.toContain('mt-comment');
+
+      modeler.get('commandStack').undo();
+      expect(gfx('A').querySelector('.mt-comment')).toBeNull();
+    });
+
+    it('limits the number of lines', async () => {
+      await createModeler();
+      annotate('A', 9);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+      const lines = commentLines('A');
+      expect(lines).toHaveLength(7);
+      expect(lines.at(-1)).toBe('+3 more');
+    });
+  });
 });

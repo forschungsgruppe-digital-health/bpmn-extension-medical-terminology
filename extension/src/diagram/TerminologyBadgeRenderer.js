@@ -10,6 +10,13 @@ const BADGE_OFFSET = 6;
 // other renderers draw without replacing them.
 const BADGE_RENDER_PRIORITY = 2000;
 
+const COMMENT_MAX_LINES = 6;
+const COMMENT_MAX_CHARS = 42;
+const COMMENT_LINE_HEIGHT = 14;
+const COMMENT_CHAR_WIDTH = 6;
+const COMMENT_PADDING = 6;
+const COMMENT_GAP = 8;
+
 /**
  * Format the badge text for an annotation count.
  *
@@ -30,10 +37,12 @@ export function formatBadgeText(count) {
  *
  * @param {import('diagram-js/lib/core/EventBus').default} eventBus
  * @param {Function} translate - Host `translate(template, replacements)` service.
+ * @param {import('./TerminologyCommentVisibility.js').default} commentVisibility
  */
-export default function TerminologyBadgeRenderer(eventBus, translate) {
+export default function TerminologyBadgeRenderer(eventBus, translate, commentVisibility) {
   this._eventBus = eventBus;
   this._translate = translate;
+  this._commentVisibility = commentVisibility;
   this._drawing = false;
 
   eventBus.on('render.shape', BADGE_RENDER_PRIORITY, (event, context) => {
@@ -45,7 +54,7 @@ export default function TerminologyBadgeRenderer(eventBus, translate) {
   });
 }
 
-TerminologyBadgeRenderer.$inject = [ 'eventBus', 'translate' ];
+TerminologyBadgeRenderer.$inject = [ 'eventBus', 'translate', 'terminologyCommentVisibility' ];
 
 TerminologyBadgeRenderer.prototype.canRender = function(element) {
   return Boolean(
@@ -66,8 +75,12 @@ TerminologyBadgeRenderer.prototype.drawShape = function(gfx, element, attrs) {
     this._drawing = false;
   }
 
-  const count = getAnnotations(element.businessObject).length;
-  gfx.appendChild(this._createBadge(element, count));
+  const annotations = getAnnotations(element.businessObject);
+  gfx.appendChild(this._createBadge(element, annotations.length));
+
+  if (this._commentVisibility.isVisible()) {
+    gfx.appendChild(this._createComment(element, annotations));
+  }
 
   return shape;
 };
@@ -107,5 +120,69 @@ TerminologyBadgeRenderer.prototype._createBadge = function(element, count) {
   textNode.textContent = text;
 
   group.append(title, rect, textNode);
+  return group;
+};
+
+function truncate(text) {
+  return text.length > COMMENT_MAX_CHARS ? `${text.slice(0, COMMENT_MAX_CHARS - 1)}…` : text;
+}
+
+/**
+ * One line per coding of every annotation: `code – display`.
+ *
+ * @param {object[]} annotations
+ * @returns {{ lines: string[], details: string[] }} Visible lines and the full
+ *   `system|code – display` list for the tooltip.
+ */
+export function getCommentLines(annotations) {
+  const codings = annotations.flatMap((annotation) => annotation.codings || []);
+  const lines = codings.map((coding) =>
+    coding.display ? `${coding.code} – ${coding.display}` : `${coding.code}`);
+  const details = codings.map((coding) =>
+    `${coding.system || ''}|${coding.code}${coding.display ? ` – ${coding.display}` : ''}`);
+  return { lines, details };
+}
+
+TerminologyBadgeRenderer.prototype._createComment = function(element, annotations) {
+  const { lines, details } = getCommentLines(annotations);
+  const hidden = Math.max(0, lines.length - COMMENT_MAX_LINES);
+  const visible = lines.slice(0, COMMENT_MAX_LINES).map(truncate);
+  if (hidden) {
+    visible.push(this._translate('+{count} more', { count: hidden }));
+  }
+
+  const width = Math.max(...visible.map((line) => line.length), 1) * COMMENT_CHAR_WIDTH
+    + COMMENT_PADDING * 2;
+  const height = visible.length * COMMENT_LINE_HEIGHT + COMMENT_PADDING * 2;
+
+  const group = document.createElementNS(SVG_NS, 'g');
+  group.setAttribute('class', 'mt-comment');
+  group.setAttribute('transform', `translate(0, ${element.height + COMMENT_GAP})`);
+  group.setAttribute('pointer-events', 'none');
+
+  const title = document.createElementNS(SVG_NS, 'title');
+  title.textContent = details.join('\n');
+
+  const rect = document.createElementNS(SVG_NS, 'rect');
+  rect.setAttribute('width', width);
+  rect.setAttribute('height', height);
+  rect.setAttribute('rx', 4);
+  rect.setAttribute('fill', '#ffffff');
+  rect.setAttribute('stroke', '#333333');
+  rect.setAttribute('stroke-width', 1);
+
+  group.append(title, rect);
+
+  visible.forEach((line, index) => {
+    const text = document.createElementNS(SVG_NS, 'text');
+    text.setAttribute('x', COMMENT_PADDING);
+    text.setAttribute('y', COMMENT_PADDING + COMMENT_LINE_HEIGHT * (index + 1) - 3);
+    text.setAttribute('font-family', 'Arial, sans-serif');
+    text.setAttribute('font-size', 11);
+    text.setAttribute('fill', '#222222');
+    text.textContent = line;
+    group.appendChild(text);
+  });
+
   return group;
 };

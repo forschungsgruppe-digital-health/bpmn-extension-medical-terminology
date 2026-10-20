@@ -141,7 +141,9 @@ To show an `MT+n` badge on annotated shapes, add the optional
 `TerminologyBadgeModule` to `additionalModules`. It is drawn as SVG, so it is
 part of the SVG export, and it works alongside other bpmn-js renderers. The
 badge is a visual hint only; details stay in the properties panel and nothing is
-written to the BPMN XML.
+written to the BPMN XML. The properties panel then offers a global "Show as
+comment" checkbox that lists the codings of all annotated elements below them
+in the diagram. It is view state only and is not saved with the model.
 
 To add or exclude annotatable BPMN element types without replacing the package
 defaults, pass `includeTypes` or `excludeTypes` to
