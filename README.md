@@ -137,6 +137,12 @@ entries. Import the official bpmn-js and properties-panel styles in the host
 application as usual; the terminology styles inherit its fonts, colors, and
 CSS variables.
 
+To show an `MT+n` badge on annotated shapes, add the optional
+`TerminologyBadgeModule` to `additionalModules`. It is drawn as SVG, so it is
+part of the SVG export, and it works alongside other bpmn-js renderers. The
+badge is a visual hint only; details stay in the properties panel and nothing is
+written to the BPMN XML.
+
 To add or exclude annotatable BPMN element types without replacing the package
 defaults, pass `includeTypes` or `excludeTypes` to
 `createTerminologyPropertiesPanelModule`. See

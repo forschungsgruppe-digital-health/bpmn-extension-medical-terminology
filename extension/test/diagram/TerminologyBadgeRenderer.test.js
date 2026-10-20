@@ -1,0 +1,138 @@
+// @vitest-environment jsdom
+
+import { afterEach, describe, expect, it } from 'vitest';
+import BpmnModeler from 'bpmn-js/lib/Modeler.js';
+import TerminologyBadgeModule from '../../src/diagram/index.js';
+import TerminologyModdleDescriptor from '../../src/moddle/medical-terminology.json' with { type: 'json' };
+
+const DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Defs">
+  <bpmn:process id="P" isExecutable="false">
+    <bpmn:task id="A" /><bpmn:task id="B" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="D"><bpmndi:BPMNPlane id="PL" bpmnElement="P">
+    <bpmndi:BPMNShape id="A_di" bpmnElement="A"><dc:Bounds x="100" y="100" width="100" height="80"/></bpmndi:BPMNShape>
+    <bpmndi:BPMNShape id="B_di" bpmnElement="B"><dc:Bounds x="300" y="100" width="100" height="80"/></bpmndi:BPMNShape>
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
+// jsdom implements neither CSS.escape nor SVG layout, both used by diagram-js.
+globalThis.CSS ??= { escape: (value) => String(value) };
+SVGElement.prototype.getBBox ??= () => ({ x: 0, y: 0, width: 0, height: 0 });
+SVGSVGElement.prototype.createSVGMatrix ??= () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
+SVGSVGElement.prototype.createSVGTransform ??= () => ({ setMatrix() {}, setTranslate() {}, setScale() {}, setRotate() {}, matrix: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 } });
+globalThis.SVGMatrix ??= class SVGMatrix {};
+if (!('transform' in SVGElement.prototype)) {
+  Object.defineProperty(SVGElement.prototype, 'transform', {
+    get() {
+      return { baseVal: { consolidate: () => null, numberOfItems: 0, appendItem() {}, clear() {} } };
+    }
+  });
+}
+
+let modeler;
+
+async function createModeler() {
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  modeler = new BpmnModeler({
+    container,
+    additionalModules: [ TerminologyBadgeModule ],
+    moddleExtensions: { mt: TerminologyModdleDescriptor }
+  });
+  await modeler.importXML(DIAGRAM);
+}
+
+function annotate(id, count) {
+  const moddle = modeler.get('moddle');
+  const element = modeler.get('elementRegistry').get(id);
+
+  modeler.get('commandStack').execute('element.updateModdleProperties', {
+    element,
+    moddleElement: element.businessObject,
+    properties: {
+      extensionElements: moddle.create('bpmn:ExtensionElements', {
+        values: [
+          moddle.create('mt:Annotations', {
+            values: Array.from({ length: count }, (_, i) => moddle.create('mt:Annotation', {
+              id: `a${i}`,
+              codings: [ moddle.create('mt:Coding', {
+                system: 'http://example.org/cs', code: `${i}`, display: `Term ${i}`
+              }) ]
+            }))
+          })
+        ]
+      })
+    }
+  });
+}
+
+function gfx(id) {
+  return modeler.get('elementRegistry').getGraphics(id);
+}
+
+function badgeText(id) {
+  return gfx(id).querySelector('.mt-badge text')?.textContent;
+}
+
+afterEach(() => {
+  modeler?.destroy();
+  document.body.innerHTML = '';
+});
+
+describe('TerminologyBadgeRenderer', () => {
+  it('draws no badge without annotations and still renders the shape', async () => {
+    await createModeler();
+    expect(gfx('A').querySelector('.mt-badge')).toBeNull();
+    expect(gfx('A').querySelector('rect')).not.toBeNull();
+  });
+
+  it('shows MT+n and updates on change and undo/redo', async () => {
+    await createModeler();
+
+    annotate('A', 1);
+    expect(badgeText('A')).toBe('MT+1');
+    expect(badgeText('B')).toBeUndefined();
+
+    annotate('A', 3);
+    expect(badgeText('A')).toBe('MT+3');
+
+    modeler.get('commandStack').undo();
+    expect(badgeText('A')).toBe('MT+1');
+    modeler.get('commandStack').redo();
+    expect(badgeText('A')).toBe('MT+3');
+  });
+
+  it('draws one badge per render with an accessible name', async () => {
+    await createModeler();
+    annotate('A', 2);
+    annotate('A', 2);
+
+    const badges = gfx('A').querySelectorAll('.mt-badge');
+    expect(badges).toHaveLength(1);
+    expect(badges[0].getAttribute('aria-label')).toBe('2 terminology annotation(s)');
+  });
+
+  it('is part of the SVG export and leaves the XML free of badge data', async () => {
+    await createModeler();
+    annotate('A', 1);
+
+    const { svg } = await modeler.saveSVG();
+    expect(svg).toContain('MT+1');
+
+    const { xml } = await modeler.saveXML();
+    expect(xml).not.toContain('MT+1');
+    expect(xml).not.toContain('mt-badge');
+  });
+
+  it('shows the badge after importing an annotated diagram', async () => {
+    await createModeler();
+    annotate('A', 2);
+    const { xml } = await modeler.saveXML();
+
+    await modeler.importXML(xml);
+    expect(badgeText('A')).toBe('MT+2');
+  });
+});
