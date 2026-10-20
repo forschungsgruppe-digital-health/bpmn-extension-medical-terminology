@@ -1,4 +1,5 @@
 import { getAnnotations } from '../services/AnnotationHelper.js';
+import { getSystemShortName } from '../services/SystemLabel.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const BADGE_HEIGHT = 20;
@@ -38,8 +39,10 @@ export function formatBadgeText(count) {
  * @param {import('diagram-js/lib/core/EventBus').default} eventBus
  * @param {Function} translate - Host `translate(template, replacements)` service.
  * @param {import('./TerminologyCommentVisibility.js').default} commentVisibility
+ * @param {import('didi').Injector} injector - Resolves the optional terminology registry.
  */
-export default function TerminologyBadgeRenderer(eventBus, translate, commentVisibility) {
+export default function TerminologyBadgeRenderer(eventBus, translate, commentVisibility, injector) {
+  this._injector = injector;
   this._eventBus = eventBus;
   this._translate = translate;
   this._commentVisibility = commentVisibility;
@@ -54,7 +57,7 @@ export default function TerminologyBadgeRenderer(eventBus, translate, commentVis
   });
 }
 
-TerminologyBadgeRenderer.$inject = [ 'eventBus', 'translate', 'terminologyCommentVisibility' ];
+TerminologyBadgeRenderer.$inject = [ 'eventBus', 'translate', 'terminologyCommentVisibility', 'injector' ];
 
 TerminologyBadgeRenderer.prototype.canRender = function(element) {
   return Boolean(
@@ -130,22 +133,24 @@ function truncate(text) {
 }
 
 /**
- * One line per coding of every annotation: `system|code – display`.
+ * One line per coding of every annotation: `system name: code – display`.
  *
  * @param {object[]} annotations
+ * @param {object} [registry] - Terminology registry used to resolve system names.
  * @returns {{ lines: string[], details: string[] }} Visible lines and the full
  *   list for the tooltip.
  */
-export function getCommentLines(annotations) {
+export function getCommentLines(annotations, registry) {
   const codings = annotations.flatMap((annotation) => annotation.codings || []);
   const lines = codings.map((coding) =>
-    `${coding.system ? `${coding.system}|` : ''}${coding.code}${coding.display ? ` – ${coding.display}` : ''}`);
-  const details = lines;
+    `${coding.system ? `${getSystemShortName(coding.system, registry)}: ` : ''}${coding.code}${coding.display ? ` – ${coding.display}` : ''}`);
+  const details = codings.map((coding) =>
+    `${coding.system || ''}|${coding.code}${coding.display ? ` – ${coding.display}` : ''}`);
   return { lines, details };
 }
 
 TerminologyBadgeRenderer.prototype._createComment = function(element, annotations) {
-  const { lines, details } = getCommentLines(annotations);
+  const { lines, details } = getCommentLines(annotations, this._injector.get('terminologyRegistry', false));
   const hidden = Math.max(0, lines.length - COMMENT_MAX_LINES);
   const visible = lines.slice(0, COMMENT_MAX_LINES).map(truncate);
   if (hidden) {

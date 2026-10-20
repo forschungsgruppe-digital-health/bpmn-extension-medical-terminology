@@ -64,13 +64,15 @@ describe('annotation target types', () => {
     expect(groupsFor('bpmn:Task', { showAnnotations: false })).toHaveLength(0);
   });
 
-  it('offers the global comment switch for every element when the diagram module is installed', () => {
+  it('adds the global comment switch to the General group for every element', () => {
     const injector = { get: (name) => (name === 'terminologyCommentVisibility' ? {} : null) };
     const provider = new TerminologyPropertiesProvider(
       { registerProvider() {} }, text => text, undefined, injector
     );
-    const groups = provider.getGroups({ businessObject: moddle.create('bpmn:Participant') })([]);
+    const general = { id: 'general', entries: [] };
+    const groups = provider.getGroups({ businessObject: moddle.create('bpmn:Participant') })([ general ]);
 
-    expect(groups.map(group => group.id)).toEqual(['medical-terminology-diagram']);
+    expect(groups).toHaveLength(1);
+    expect(general.entries.map(entry => entry.id)).toEqual(['show-as-comment']);
   });
 });

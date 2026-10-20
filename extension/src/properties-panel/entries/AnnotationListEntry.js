@@ -9,6 +9,7 @@ import {
   isValidId
 } from '../../services/AnnotationHelper.js';
 import { saveAnnotation, deleteAnnotation } from '../../services/AnnotationModeling.js';
+import { getSystemShortName } from '../../services/SystemLabel.js';
 import {
   normalizeConcepts,
   getSearchResultSummary,
@@ -1005,15 +1006,4 @@ function CodingDetails({ coding, registry, outdated, tooltipId }) {
       direction="left"
     >${content}<//>
   ` : content;
-}
-
-function getSystemShortName(uri, registry) {
-  if (!uri) return '';
-  if (registry) {
-    // Sucht den registrierten Namen dynamisch heraus
-    const provider = registry.listProviders().find(p => p.systemUri === uri);
-    if (provider && provider.displayName) return provider.displayName;
-  }
-  // Fallback: Zeigt einfach den letzten Teil der URL, wenn der Provider nicht registriert ist
-  return uri.split('/').pop();
 }

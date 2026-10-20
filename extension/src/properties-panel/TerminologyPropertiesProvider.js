@@ -21,16 +21,20 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
   const hasCommentSwitch = Boolean(this._injector?.get('terminologyCommentVisibility', false));
 
   return function (groups) {
-    // The comment switch is global, so it shows for every element, not only annotatable ones.
+    // The comment switch is global, so it goes into the always-present
+    // General group instead of an extra group.
     if (config.showAnnotations && hasCommentSwitch) {
-      groups.push({
-        id: 'medical-terminology-diagram',
-        label: translate('Medical terminology diagram'),
-        entries: [{
-          id: SHOW_AS_COMMENT_ENTRY_ID,
-          component: ShowAsCommentEntry
-        }]
-      });
+      const general = groups.find((group) => group.id === 'general');
+      const commentEntry = { id: SHOW_AS_COMMENT_ENTRY_ID, component: ShowAsCommentEntry };
+      if (general) {
+        general.entries.push(commentEntry);
+      } else {
+        groups.push({
+          id: 'medical-terminology-diagram',
+          label: translate('Medical terminology diagram'),
+          entries: [commentEntry]
+        });
+      }
     }
 
     const isTargetType = [...config.targetTypes, ...config.includeTypes]
