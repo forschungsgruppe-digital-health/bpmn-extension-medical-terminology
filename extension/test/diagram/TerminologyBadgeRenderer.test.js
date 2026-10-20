@@ -148,8 +148,8 @@ describe('TerminologyBadgeRenderer', () => {
 
       const visibility = modeler.get('terminologyCommentVisibility');
       visibility.setVisible(true);
-      expect(commentLines('A')).toEqual([ '0 – Term 0', '1 – Term 1' ]);
-      expect(commentLines('B')).toEqual([ '0 – Term 0' ]);
+      expect(commentLines('A')).toEqual([ 'http://example.org/cs|0 – Term 0', 'http://example.org/cs|1 – Term 1' ]);
+      expect(commentLines('B')).toEqual([ 'http://example.org/cs|0 – Term 0' ]);
       expect(gfx('A').querySelector('.mt-badge text').textContent).toBe('MT+2');
 
       visibility.setVisible(false);
@@ -160,10 +160,10 @@ describe('TerminologyBadgeRenderer', () => {
       await createModeler();
       modeler.get('terminologyCommentVisibility').setVisible(true);
       annotate('A', 1);
-      expect(commentLines('A')).toEqual([ '0 – Term 0' ]);
+      expect(commentLines('A')).toEqual([ 'http://example.org/cs|0 – Term 0' ]);
 
       const { svg } = await modeler.saveSVG();
-      expect(svg).toContain('0 – Term 0');
+      expect(svg).toContain('http://example.org/cs|0 – Term 0');
       const { xml } = await modeler.saveXML();
       expect(xml).not.toContain('mt-comment');
 

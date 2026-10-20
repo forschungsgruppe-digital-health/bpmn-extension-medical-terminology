@@ -1,12 +1,12 @@
 import { html } from 'htm/preact';
 import { useEffect, useState } from '@bpmn-io/properties-panel/preact/hooks';
-import { CheckboxEntry } from '@bpmn-io/properties-panel';
+import { ToggleSwitchEntry } from '@bpmn-io/properties-panel';
 import { useService } from 'bpmn-js-properties-panel';
 
 export const SHOW_AS_COMMENT_ENTRY_ID = 'medical-terminology-show-as-comment';
 
 /**
- * Global checkbox that shows the codings of all annotated shapes as a comment
+ * Global switch that shows the codings of all annotated shapes as a comment
  * block on the diagram. Renders nothing when the optional diagram module is not
  * installed.
  */
@@ -30,10 +30,11 @@ export function ShowAsCommentEntry(props) {
     return null;
   }
 
-  return html`<${CheckboxEntry}
+  return html`<${ToggleSwitchEntry}
     id=${id}
     element=${element}
     label=${translate('Show as comment')}
+    inline=${true}
     description=${translate('Lists the codings of all annotated elements next to them in the diagram.')}
     getValue=${() => visibility.isVisible()}
     setValue=${(value) => visibility.setVisible(value)}

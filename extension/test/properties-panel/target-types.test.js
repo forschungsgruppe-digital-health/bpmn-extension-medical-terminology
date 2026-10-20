@@ -63,4 +63,14 @@ describe('annotation target types', () => {
     expect(groupsFor('bpmn:Task', { targetTypes: [] })).toHaveLength(0);
     expect(groupsFor('bpmn:Task', { showAnnotations: false })).toHaveLength(0);
   });
+
+  it('offers the global comment switch for every element when the diagram module is installed', () => {
+    const injector = { has: (name) => name === 'terminologyCommentVisibility' };
+    const provider = new TerminologyPropertiesProvider(
+      { registerProvider() {} }, text => text, undefined, injector
+    );
+    const groups = provider.getGroups({ businessObject: moddle.create('bpmn:Participant') })([]);
+
+    expect(groups.map(group => group.id)).toEqual(['medical-terminology-diagram']);
+  });
 });

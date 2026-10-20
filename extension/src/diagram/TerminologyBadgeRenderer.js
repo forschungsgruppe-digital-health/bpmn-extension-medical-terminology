@@ -11,9 +11,9 @@ const BADGE_OFFSET = 6;
 const BADGE_RENDER_PRIORITY = 2000;
 
 const COMMENT_MAX_LINES = 6;
-const COMMENT_MAX_CHARS = 42;
+const COMMENT_MAX_CHARS = 60;
 const COMMENT_LINE_HEIGHT = 14;
-const COMMENT_CHAR_WIDTH = 6;
+const COMMENT_CHAR_WIDTH = 5.6;
 const COMMENT_PADDING = 6;
 const COMMENT_GAP = 8;
 
@@ -79,7 +79,9 @@ TerminologyBadgeRenderer.prototype.drawShape = function(gfx, element, attrs) {
   gfx.appendChild(this._createBadge(element, annotations.length));
 
   if (this._commentVisibility.isVisible()) {
-    gfx.appendChild(this._createComment(element, annotations));
+    const comment = this._createComment(element, annotations);
+    gfx.appendChild(comment);
+    comment.fitToText();
   }
 
   return shape;
@@ -128,18 +130,17 @@ function truncate(text) {
 }
 
 /**
- * One line per coding of every annotation: `code – display`.
+ * One line per coding of every annotation: `system|code – display`.
  *
  * @param {object[]} annotations
  * @returns {{ lines: string[], details: string[] }} Visible lines and the full
- *   `system|code – display` list for the tooltip.
+ *   list for the tooltip.
  */
 export function getCommentLines(annotations) {
   const codings = annotations.flatMap((annotation) => annotation.codings || []);
   const lines = codings.map((coding) =>
-    coding.display ? `${coding.code} – ${coding.display}` : `${coding.code}`);
-  const details = codings.map((coding) =>
-    `${coding.system || ''}|${coding.code}${coding.display ? ` – ${coding.display}` : ''}`);
+    `${coding.system ? `${coding.system}|` : ''}${coding.code}${coding.display ? ` – ${coding.display}` : ''}`);
+  const details = lines;
   return { lines, details };
 }
 
@@ -151,7 +152,7 @@ TerminologyBadgeRenderer.prototype._createComment = function(element, annotation
     visible.push(this._translate('+{count} more', { count: hidden }));
   }
 
-  const width = Math.max(...visible.map((line) => line.length), 1) * COMMENT_CHAR_WIDTH
+  const estimatedWidth = Math.max(...visible.map((line) => line.length), 1) * COMMENT_CHAR_WIDTH
     + COMMENT_PADDING * 2;
   const height = visible.length * COMMENT_LINE_HEIGHT + COMMENT_PADDING * 2;
 
@@ -164,7 +165,7 @@ TerminologyBadgeRenderer.prototype._createComment = function(element, annotation
   title.textContent = details.join('\n');
 
   const rect = document.createElementNS(SVG_NS, 'rect');
-  rect.setAttribute('width', width);
+  rect.setAttribute('width', estimatedWidth);
   rect.setAttribute('height', height);
   rect.setAttribute('rx', 4);
   rect.setAttribute('fill', '#ffffff');
@@ -183,6 +184,15 @@ TerminologyBadgeRenderer.prototype._createComment = function(element, annotation
     text.textContent = line;
     group.appendChild(text);
   });
+
+  // Fit the box to the rendered text when the browser can measure it.
+  group.fitToText = () => {
+    const measured = Math.max(0, ...[ ...group.querySelectorAll('text') ]
+      .map((node) => node.getBBox?.().width || 0));
+    if (measured > 0) {
+      rect.setAttribute('width', Math.ceil(measured) + COMMENT_PADDING * 2);
+    }
+  };
 
   return group;
 };
