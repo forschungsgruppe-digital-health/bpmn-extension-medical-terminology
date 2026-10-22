@@ -2,11 +2,8 @@ import { getAnnotations } from '../services/AnnotationHelper.js';
 import { getSystemShortName } from '../services/SystemLabel.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const BADGE_HEIGHT = 20;
-const BADGE_MIN_WIDTH = 36;
-const BADGE_CHAR_WIDTH = 7;
-const BADGE_PADDING = 14;
-const BADGE_OFFSET = 6;
+const BADGE_RADIUS = 12;
+const BADGE_TEXT = 'MT';
 // Above bpmn-js' own renderer (1000), so the badge is added to whatever the
 // other renderers draw without replacing them.
 const BADGE_RENDER_PRIORITY = 2000;
@@ -19,17 +16,7 @@ const COMMENT_PADDING = 6;
 const COMMENT_GAP = 8;
 
 /**
- * Format the badge text for an annotation count.
- *
- * @param {number} count
- * @returns {string} `MT+<count>`
- */
-export function formatBadgeText(count) {
-  return `MT+${count}`;
-}
-
-/**
- * Draws a small `MT+n` badge on every shape that carries terminology
+ * Draws a small round `MT` badge on every shape that carries terminology
  * annotations.
  *
  * The badge is real SVG inside the shape's graphics, so it is part of the SVG
@@ -91,40 +78,35 @@ TerminologyBadgeRenderer.prototype.drawShape = function(gfx, element, attrs) {
 };
 
 TerminologyBadgeRenderer.prototype._createBadge = function(element, count) {
-  const text = formatBadgeText(count);
-  const width = Math.max(BADGE_MIN_WIDTH, text.length * BADGE_CHAR_WIDTH + BADGE_PADDING);
   const label = this._translate('{count} terminology annotation(s)', { count });
 
   const group = document.createElementNS(SVG_NS, 'g');
   group.setAttribute('class', 'mt-badge');
   group.setAttribute('role', 'img');
   group.setAttribute('aria-label', label);
-  group.setAttribute('transform',
-    `translate(${element.width - width + BADGE_OFFSET}, ${-BADGE_HEIGHT + BADGE_OFFSET - 2})`);
-  group.setAttribute('pointer-events', 'none');
+  // Centered on the top-right corner; events still reach the shape underneath
+  // and the <title> tooltip shows the count.
+  group.setAttribute('transform', `translate(${element.width}, 0)`);
 
   const title = document.createElementNS(SVG_NS, 'title');
   title.textContent = label;
 
-  const rect = document.createElementNS(SVG_NS, 'rect');
-  rect.setAttribute('width', width);
-  rect.setAttribute('height', BADGE_HEIGHT);
-  rect.setAttribute('rx', BADGE_HEIGHT / 2);
-  rect.setAttribute('fill', '#ffffff');
-  rect.setAttribute('stroke', '#333333');
-  rect.setAttribute('stroke-width', 1.5);
+  const circle = document.createElementNS(SVG_NS, 'circle');
+  circle.setAttribute('r', BADGE_RADIUS);
+  circle.setAttribute('fill', '#ffffff');
+  circle.setAttribute('stroke', '#333333');
+  circle.setAttribute('stroke-width', 1.5);
 
   const textNode = document.createElementNS(SVG_NS, 'text');
-  textNode.setAttribute('x', width / 2);
-  textNode.setAttribute('y', BADGE_HEIGHT / 2 + 4);
+  textNode.setAttribute('y', 4);
   textNode.setAttribute('text-anchor', 'middle');
   textNode.setAttribute('font-family', 'Arial, sans-serif');
   textNode.setAttribute('font-size', 11);
   textNode.setAttribute('font-weight', 'bold');
   textNode.setAttribute('fill', '#222222');
-  textNode.textContent = text;
+  textNode.textContent = BADGE_TEXT;
 
-  group.append(title, rect, textNode);
+  group.append(title, circle, textNode);
   return group;
 };
 

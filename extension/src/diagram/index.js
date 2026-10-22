@@ -9,7 +9,7 @@ import TerminologyCommentVisibility from './TerminologyCommentVisibility.js';
  */
 
 /**
- * bpmn-js module that draws an `MT+n` badge on annotated shapes. Opt-in:
+ * bpmn-js module that draws an round `MT` badge on annotated shapes. Opt-in:
  * add it to `additionalModules` next to the properties-panel module.
  *
  * @type {TerminologyBadgeModuleDefinition}

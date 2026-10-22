@@ -73,8 +73,9 @@ function gfx(id) {
   return modeler.get('elementRegistry').getGraphics(id);
 }
 
-function badgeText(id) {
-  return gfx(id).querySelector('.mt-badge text')?.textContent;
+function badgeCount(id) {
+  const label = gfx(id).querySelector('.mt-badge')?.getAttribute('aria-label');
+  return label?.split(' ')[0];
 }
 
 afterEach(() => {
@@ -89,20 +90,20 @@ describe('TerminologyBadgeRenderer', () => {
     expect(gfx('A').querySelector('rect')).not.toBeNull();
   });
 
-  it('shows MT+n and updates on change and undo/redo', async () => {
+  it('shows the count and updates on change and undo/redo', async () => {
     await createModeler();
 
     annotate('A', 1);
-    expect(badgeText('A')).toBe('MT+1');
-    expect(badgeText('B')).toBeUndefined();
+    expect(badgeCount('A')).toBe('1');
+    expect(badgeCount('B')).toBeUndefined();
 
     annotate('A', 3);
-    expect(badgeText('A')).toBe('MT+3');
+    expect(badgeCount('A')).toBe('3');
 
     modeler.get('commandStack').undo();
-    expect(badgeText('A')).toBe('MT+1');
+    expect(badgeCount('A')).toBe('1');
     modeler.get('commandStack').redo();
-    expect(badgeText('A')).toBe('MT+3');
+    expect(badgeCount('A')).toBe('3');
   });
 
   it('draws one badge per render with an accessible name', async () => {
@@ -120,10 +121,10 @@ describe('TerminologyBadgeRenderer', () => {
     annotate('A', 1);
 
     const { svg } = await modeler.saveSVG();
-    expect(svg).toContain('MT+1');
+    expect(svg).toContain('mt-badge');
 
     const { xml } = await modeler.saveXML();
-    expect(xml).not.toContain('MT+1');
+    expect(xml).not.toContain('MT');
     expect(xml).not.toContain('mt-badge');
   });
 
@@ -133,7 +134,7 @@ describe('TerminologyBadgeRenderer', () => {
     const { xml } = await modeler.saveXML();
 
     await modeler.importXML(xml);
-    expect(badgeText('A')).toBe('MT+2');
+    expect(badgeCount('A')).toBe('2');
   });
 
   describe('comment block', () => {
@@ -150,7 +151,7 @@ describe('TerminologyBadgeRenderer', () => {
       visibility.setVisible(true);
       expect(commentLines('A')).toEqual([ 'cs: 0 – Term 0', 'cs: 1 – Term 1' ]);
       expect(commentLines('B')).toEqual([ 'cs: 0 – Term 0' ]);
-      expect(gfx('A').querySelector('.mt-badge text').textContent).toBe('MT+2');
+      expect(badgeCount('A')).toBe('2');
 
       visibility.setVisible(false);
       expect(gfx('A').querySelector('.mt-comment')).toBeNull();

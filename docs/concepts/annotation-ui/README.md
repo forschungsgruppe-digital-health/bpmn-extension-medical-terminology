@@ -2,7 +2,7 @@
 
 ![Entwurf 1](./concept-1-badge-indicator.svg)
 
-Badge (`MT+n`, weißer Hintergrund mit Kontur) zeigt nur *dass* annotiert wurde; Inhalte
+Badge (`MT`, weißer Hintergrund mit Kontur) zeigt nur *dass* annotiert wurde; Inhalte
 nur im Eigenschaftenpanel (Klick/Tastatur). Technisch als eigener `BaseRenderer` (wie
 bpmn-js es für Boundary-Event-Marker macht) statt als HTML-Overlay – dadurch Teil der
 normalen Element-Grafik, automatisch im SVG-/PNG-Export enthalten, Update über dieselben

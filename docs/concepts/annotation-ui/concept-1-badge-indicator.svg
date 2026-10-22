@@ -32,15 +32,15 @@
   <rect x="260" y="105" width="180" height="80" class="task"/>
   <text x="350" y="150" text-anchor="middle" class="caption">Task B</text>
   <rect x="415" y="94" width="50" height="22" rx="11" class="badge"/>
-  <text x="440" y="109" text-anchor="middle" class="badge-text">MT+1</text>
-  <text x="350" y="205" text-anchor="middle" class="step-label">eine Annotation: Badge "MT+1"</text>
+  <text x="440" y="109" text-anchor="middle" class="badge-text">MT</text>
+  <text x="350" y="205" text-anchor="middle" class="step-label">eine Annotation: Badge "MT"</text>
 
   <!-- state: many -->
   <rect x="500" y="105" width="180" height="80" class="task"/>
   <text x="590" y="150" text-anchor="middle" class="caption">Task C</text>
   <rect x="655" y="94" width="50" height="22" rx="11" class="badge"/>
-  <text x="680" y="109" text-anchor="middle" class="badge-text">MT+3</text>
-  <text x="590" y="205" text-anchor="middle" class="step-label">mehrere Annotationen: Badge "MT+n"</text>
+  <text x="680" y="109" text-anchor="middle" class="badge-text">MT</text>
+  <text x="590" y="205" text-anchor="middle" class="step-label">mehrere Annotationen: Badge "MT"</text>
 
   <!-- collision / small zoom note -->
   <rect x="740" y="105" width="180" height="80" class="task"/>
