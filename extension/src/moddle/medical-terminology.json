@@ -21,6 +21,12 @@
       ]
     },
     {
+      "name": "GeneratedComment",
+      "superClass": [
+        "Element"
+      ]
+    },
+    {
       "name": "Annotation",
       "superClass": [
         "Element"

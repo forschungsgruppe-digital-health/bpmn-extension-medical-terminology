@@ -137,13 +137,19 @@ entries. Import the official bpmn-js and properties-panel styles in the host
 application as usual; the terminology styles inherit its fonts, colors, and
 CSS variables.
 
-To show an round `MT` badge on annotated shapes, add the optional
-`TerminologyBadgeModule` to `additionalModules`. It is drawn as SVG, so it is
-part of the SVG export, and it works alongside other bpmn-js renderers. The
-badge is a visual hint only; details stay in the properties panel and nothing is
-written to the BPMN XML. The properties panel then offers a global "Show as
-comment" checkbox that lists the codings of all annotated elements below them
-in the diagram. It is view state only and is not saved with the model.
+To show round `MT` badges and terminology comments, add the optional
+`TerminologyBadgeModule` to `additionalModules`. The module renders SVG alongside
+the standard bpmn-js shapes. Its global "Show as comment" switch creates
+standard `bpmn:TextAnnotation` and `bpmn:Association` elements for annotated
+shapes. Generated comments contain a plain-text snapshot of the connected
+shape's `mt:` data in `<bpmn:text>`, so editors without this extension can
+display them as ordinary BPMN comments. An `mt:GeneratedComment` marker lets
+the extension identify comments it owns and refresh them when terminology data
+changes. With comments enabled, they are part of BPMN XML and SVG exports.
+Turning the switch off removes generated comments; turning it on again
+recreates them from the current `mt:` data. The Medical terminology properties
+group is available for all selected elements; only configured target types show
+the annotation editor in addition to the global switch.
 
 To add or exclude annotatable BPMN element types without replacing the package
 defaults, pass `includeTypes` or `excludeTypes` to

@@ -6,9 +6,8 @@ import { useService } from 'bpmn-js-properties-panel';
 export const SHOW_AS_COMMENT_ENTRY_ID = 'medical-terminology-show-as-comment';
 
 /**
- * Global switch that shows the codings of all annotated shapes as a comment
- * block on the diagram. Renders nothing when the optional diagram module is not
- * installed.
+ * Global switch that creates or removes BPMN TextAnnotations for terminology
+ * data. Renders nothing when the optional diagram module is not installed.
  */
 export function ShowAsCommentEntry(props) {
   const { element, id = SHOW_AS_COMMENT_ENTRY_ID } = props;
@@ -35,7 +34,7 @@ export function ShowAsCommentEntry(props) {
     element=${element}
     label=${translate('Show as comment')}
     inline=${true}
-    description=${translate('Lists the codings of all annotated elements next to them in the diagram.')}
+    description=${translate('Creates or removes linked BPMN comments from the terminology annotations.')}
     getValue=${() => visibility.isVisible()}
     setValue=${(value) => visibility.setVisible(value)}
   />`;

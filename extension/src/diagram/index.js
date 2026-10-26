@@ -2,15 +2,15 @@ import TerminologyBadgeRenderer from './TerminologyBadgeRenderer.js';
 import TerminologyCommentVisibility from './TerminologyCommentVisibility.js';
 
 /**
- * @typedef {Object} TerminologyBadgeModuleDefinition - bpmn-js dependency-injection module for the annotation badge.
+ * @typedef {Object} TerminologyBadgeModuleDefinition - bpmn-js module for terminology badges and generated comments.
  * @property {string[]} __init__ - Services initialized when the modeler starts.
  * @property {[string, Function]} terminologyBadgeRenderer - Badge renderer registration.
- * @property {[string, Function]} terminologyCommentVisibility - Global comment-block switch.
+ * @property {[string, Function]} terminologyCommentVisibility - Global generated-comment manager.
  */
 
 /**
- * bpmn-js module that draws an round `MT` badge on annotated shapes. Opt-in:
- * add it to `additionalModules` next to the properties-panel module.
+ * bpmn-js module that draws round `MT` badges and manages generated BPMN
+ * TextAnnotations. Add it to `additionalModules` to enable diagram comments.
  *
  * @type {TerminologyBadgeModuleDefinition}
  */

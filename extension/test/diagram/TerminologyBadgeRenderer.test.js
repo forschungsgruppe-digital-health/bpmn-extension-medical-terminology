@@ -3,6 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import BpmnModeler from 'bpmn-js/lib/Modeler.js';
 import TerminologyBadgeModule from '../../src/diagram/index.js';
+import { isGeneratedComment } from '../../src/diagram/generated-comment.js';
 import TerminologyModdleDescriptor from '../../src/moddle/medical-terminology.json' with { type: 'json' };
 
 const DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
@@ -45,7 +46,7 @@ async function createModeler() {
   await modeler.importXML(DIAGRAM);
 }
 
-function annotate(id, count) {
+function annotate(id, count, annotationText) {
   const moddle = modeler.get('moddle');
   const element = modeler.get('elementRegistry').get(id);
 
@@ -58,6 +59,7 @@ function annotate(id, count) {
           moddle.create('mt:Annotations', {
             values: Array.from({ length: count }, (_, i) => moddle.create('mt:Annotation', {
               id: `a${i}`,
+              text: i === 0 ? annotationText : undefined,
               codings: [ moddle.create('mt:Coding', {
                 system: 'http://example.org/cs', code: `${i}`, display: `Term ${i}`
               }) ]
@@ -138,47 +140,149 @@ describe('TerminologyBadgeRenderer', () => {
   });
 
   describe('comment block', () => {
-    const commentLines = (id) => [ ...gfx(id).querySelectorAll('.mt-comment text') ]
-      .map((node) => node.textContent);
+    const generatedComments = () => modeler.get('elementRegistry').getAll()
+      .filter(element => isGeneratedComment(element.businessObject));
+    const annotationFor = (targetId) => {
+      const target = modeler.get('elementRegistry').get(targetId);
+      const association = [ ...target.incoming, ...target.outgoing ]
+        .find(connection => connection.businessObject.$type === 'bpmn:Association');
+      return association.source === target ? association.target : association.source;
+    };
+    const commentLines = (targetId) => annotationFor(targetId).businessObject.text.split('\n');
 
-    it('is hidden by default and shown for all annotated shapes via the global switch', async () => {
+    it('creates real linked BPMN TextAnnotations from all annotated elements', async () => {
       await createModeler();
       annotate('A', 2);
       annotate('B', 1);
-      expect(gfx('A').querySelector('.mt-comment')).toBeNull();
 
+      const originalBPosition = modeler.get('elementRegistry').get('B').x;
       const visibility = modeler.get('terminologyCommentVisibility');
       visibility.setVisible(true);
-      expect(commentLines('A')).toEqual([ 'cs: 0 – Term 0', 'cs: 1 – Term 1' ]);
-      expect(commentLines('B')).toEqual([ 'cs: 0 – Term 0' ]);
-      expect(badgeCount('A')).toBe('2');
 
-      visibility.setVisible(false);
-      expect(gfx('A').querySelector('.mt-comment')).toBeNull();
+      expect(generatedComments()).toHaveLength(2);
+      expect(modeler.get('elementRegistry').get('B').x).toBe(originalBPosition);
+      expect(commentLines('A')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0', '\u00a0\u00a0cs: 1 – Term 1' ]);
+      expect(commentLines('B')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0' ]);
+      const target = modeler.get('elementRegistry').get('A');
+      const comment = annotationFor('A');
+      expect(comment.x + comment.width / 2).toBeCloseTo(target.x + target.width + comment.width / 2, 0);
+      expect(comment.y + comment.height / 2).toBeCloseTo(target.y - 50 - comment.height / 2, 0);
+      expect(gfx('A').querySelector('.mt-badge')).not.toBeNull();
+      expect(gfx(annotationFor('A').id).querySelector('.mt-badge')?.getAttribute('transform'))
+        .toBe('translate(0, 0)');
+      expect(gfx('A').querySelector('.mt-badge')?.getAttribute('transform'))
+        .toBe(`translate(${modeler.get('elementRegistry').get('A').width}, 0)`);
     });
 
-    it('stays in sync with changes and appears in the SVG export, not in the XML', async () => {
+    it('includes annotation text as well as codings in the generated comment', async () => {
       await createModeler();
+      annotate('A', 1, 'Clinical note');
       modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      expect(commentLines('A')).toEqual([ '\u00a0\u00a0Clinical note', '\u00a0\u00a0cs: 0 – Term 0' ]);
+    });
+
+    it('prints annotation text in full while limiting only coding lines', async () => {
+      await createModeler();
+      const fullText = 'This annotation text must remain complete in the generated BPMN comment.';
+      annotate('A', 8, fullText);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      const lines = commentLines('A');
+      expect(lines[0]).toBe(`\u00a0\u00a0${fullText}`);
+      expect(lines.at(-1)).toBe('\u00a0\u00a0+2 more');
+      expect(annotationFor('A').width).toBeGreaterThan(400);
+    });
+
+    it('stores plain-text BPMN comments and includes them in SVG export', async () => {
+      await createModeler();
       annotate('A', 1);
-      expect(commentLines('A')).toEqual([ 'cs: 0 – Term 0' ]);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
 
       const { svg } = await modeler.saveSVG();
       expect(svg).toContain('cs: 0 – Term 0');
-      const { xml } = await modeler.saveXML();
-      expect(xml).not.toContain('mt-comment');
 
-      modeler.get('commandStack').undo();
-      expect(gfx('A').querySelector('.mt-comment')).toBeNull();
+      const { xml } = await modeler.saveXML();
+      expect(xml).toContain('<bpmn:textAnnotation');
+      expect(xml).toContain('<bpmn:association');
+      expect(xml).toContain('cs: 0 – Term 0');
+      expect(xml).toContain('<mt:generatedComment');
+      expect(xml).not.toContain('application/x-mt-terminology-reference');
     });
 
-    it('limits the number of lines', async () => {
+    it('renders the stored BPMN comment in a modeler without the terminology extension', async () => {
+      await createModeler();
+      annotate('A', 1);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+      const { xml } = await modeler.saveXML();
+
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const plainModeler = new BpmnModeler({ container });
+      try {
+        await plainModeler.importXML(xml);
+        const comment = plainModeler.get('elementRegistry').getAll()
+          .find(element => element.businessObject?.$type === 'bpmn:TextAnnotation');
+
+        expect(comment.businessObject.text).toContain('cs: 0 – Term 0');
+        expect(plainModeler.get('elementRegistry').getGraphics(comment).textContent)
+          .toContain('cs: 0 – Term 0');
+      } finally {
+        plainModeler.destroy();
+      }
+    });
+
+    it('regenerates generated comments from current mt data when toggled again', async () => {
+      await createModeler();
+      annotate('A', 1);
+      const visibility = modeler.get('terminologyCommentVisibility');
+      visibility.setVisible(true);
+      const firstId = generatedComments()[0].id;
+
+      visibility.setVisible(false);
+      expect(generatedComments()).toHaveLength(0);
+      expect(modeler.get('elementRegistry').getAll()
+        .filter(element => element.businessObject?.$type === 'bpmn:Association')).toHaveLength(0);
+
+      visibility.setVisible(true);
+      expect(generatedComments()).toHaveLength(1);
+      expect(generatedComments()[0].id).not.toBe(firstId);
+      expect(commentLines('A')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0' ]);
+    });
+
+    it('keeps comments synchronized when terminology data changes', async () => {
+      await createModeler();
+      annotate('A', 1);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      annotate('A', 2);
+      expect(generatedComments()).toHaveLength(1);
+      expect(commentLines('A')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0', '\u00a0\u00a0cs: 1 – Term 1' ]);
+
+      annotate('A', 0);
+      expect(generatedComments()).toHaveLength(0);
+    });
+
+    it('restores the global switch when importing generated comments', async () => {
+      await createModeler();
+      annotate('A', 1);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+      const { xml } = await modeler.saveXML();
+
+      await modeler.importXML(xml);
+
+      expect(modeler.get('terminologyCommentVisibility').isVisible()).toBe(true);
+      expect(generatedComments()).toHaveLength(1);
+      expect(commentLines('A')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0' ]);
+    });
+
+    it('limits the number of rendered coding lines', async () => {
       await createModeler();
       annotate('A', 9);
       modeler.get('terminologyCommentVisibility').setVisible(true);
       const lines = commentLines('A');
       expect(lines).toHaveLength(7);
-      expect(lines.at(-1)).toBe('+3 more');
+      expect(lines.at(-1)).toBe('\u00a0\u00a0+3 more');
     });
   });
 });

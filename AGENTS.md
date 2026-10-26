@@ -20,7 +20,13 @@ Install dependencies with `npm install --legacy-peer-deps`.
 ## Hard rules
 
 - Store clinical semantics only in `mt:` elements under
-  `bpmn:extensionElements`; never alter BPMN core or BPMN-DI structures.
+  `bpmn:extensionElements`. The extension may generate `bpmn:TextAnnotation`
+  and `bpmn:Association` artifacts as comments. Generated TextAnnotations copy
+  a plain-text snapshot of the linked element's `mt:` data into `bpmn:text` for
+  visibility in other BPMN editors; an `mt:GeneratedComment` marker identifies
+  them for regeneration. Refresh generated comments from `mt:` when annotations
+  change or the global switch is toggled. Do not otherwise alter BPMN process
+  semantics or BPMN-DI structures.
 - Commit only obviously synthetic clinical data.
 - Renaming or removing a terminology moddle type or property is a breaking
   change and requires human sign-off.

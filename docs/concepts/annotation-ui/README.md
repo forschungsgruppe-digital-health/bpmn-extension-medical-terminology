@@ -1,27 +1,33 @@
-## Entwurf 1 – Badge + Panel
+## Gewählte Lösung – BPMN-Kommentar aus Terminologiedaten
 
 ![Entwurf 1](./concept-1-badge-indicator.svg)
 
-Badge (`MT`, weißer Hintergrund mit Kontur) zeigt nur *dass* annotiert wurde; Inhalte
-nur im Eigenschaftenpanel (Klick/Tastatur). Technisch als eigener `BaseRenderer` (wie
-bpmn-js es für Boundary-Event-Marker macht) statt als HTML-Overlay – dadurch Teil der
-normalen Element-Grafik, automatisch im SVG-/PNG-Export enthalten, Update über dieselben
-`eventBus`-Hooks (Import, Ändern, Undo/Redo).
+Die Extension erzeugt für annotierte Elemente echte BPMN-`TextAnnotation`s und
+verbindet sie über `bpmn:Association`. Der Kommentartext wird als
+`text/plain`-Snapshot in `bpmn:text` gespeichert, damit auch Editoren ohne die
+Extension ihn als normalen BPMN-Kommentar anzeigen können. Die `mt:`-Daten
+bleiben die Quelle der Terminologie; ein `mt:GeneratedComment`-Marker
+identifiziert automatisch erzeugte Kommentare zur Synchronisierung. Ein rundes
+`MT`-Badge am Kommentarblock kennzeichnet sie zusätzlich als
+Extension-Darstellung.
 
-- ➕ geringe Diagrammlast, robust bei dichten Diagrammen, SVG-exportierbar
-- ➖ keine automatische Kollisionsvermeidung mit Labels/Kontextmenüs
+Der globale Schalter im Eigenschaftenpanel erzeugt bzw. entfernt diese
+TextAnnotations. Beim erneuten Einschalten werden sie aus dem aktuellen
+`mt:`-Stand neu aufgebaut. Änderungen an Terminologiedaten aktualisieren die
+zugehörigen Kommentar-Snapshots. Bei eingeschaltetem Schalter sind
+BPMN-TextAnnotations, Kommentartext und Associations im BPMN-XML enthalten; der
+Kommentar ist auch im SVG-Export enthalten. Der Properties-Panel-Eintrag ist
+bei allen Elementen sichtbar; nur konfigurierte Zieltypen erhalten zusätzlich
+den Annotation-Editor.
 
-### Erweiterung: Checkbox „Show as comment“
+Die Kommentare nutzen die eingebaute bpmn-js-Positionierung für
+TextAnnotations: In horizontalen Prozessen starten sie rechts oberhalb des
+Elements, in vertikalen Pools rechts darunter. Die Standardlogik sucht entlang
+der jeweiligen Achse eine freie Stelle relativ zu verbundenen Elementen.
+Unverbundene Formen werden dabei nicht global berücksichtigt und das
+Diagrammlayout wird nicht automatisch verschoben.
 
-Zusätzliche Panel-Checkbox pro Element schaltet neben dem Badge einen Kommentarblock mit
-der Auflistung aller Codings (`system: code – display`) ein/aus. Technisch: neues
-optionales Attribut (z. B. `showAsComment`, additive Moddle-Erweiterung, keine Breaking
-Change); Renderer zeichnet den Block nur bei `true`, gleiche Formatierungslogik wie im
-Panel. Macht die Entwurf-1/2-Entscheidung pro Element statt global: Standard bleibt
-ruhig, Aufklappen ist Nutzerwahl. Offen: Persistenz als Modellattribut vs. reiner
-Editor-View-State; SVG-`<text>` braucht `<title>`/`<desc>` für Screenreader-Zugang.
-
-## Entwurf 2 – Kurzinhalt am Element
+## Alternative – Kurzinhalt am Element
 
 ![Entwurf 2](./concept-2-inline-label.svg)
 
@@ -30,14 +36,15 @@ Kurztext (`Beispielterm`, bei mehreren `+2`) direkt am Element; Details im Panel
 - ➕ Inhalt sofort im Diagramm sichtbar, SVG-exportierbar
 - ➖ höhere Infodichte, Überlappungsrisiko, braucht Kürzungsregeln
 
-## Gemeinsame Anforderungen
+## Weiterhin geltende Anforderungen
 
-- Daten nur aus `mt:` unter `bpmn:extensionElements`; BPMN-Core/DI unverändert
+- Klinische Terminologiedaten bleiben strukturiert in `mt:` unter
+  `bpmn:extensionElements`; `bpmn:text` enthält nur die lesbare Kommentar-Kopie
 - Update bei Import, Ändern, Undo/Redo, Entfernen
 - Tastaturzugang + Name/Rolle/Zustand programmatisch bestimmbar (Hover reicht laut
   [WCAG 4.1.2](https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html) nicht)
-- Kein Missbrauch von `TextAnnotation`/`Association` für klinische Inhalte
-- Export-/SVG-Verhalten vor technischer Auswahl testen
+- BPMN-TextAnnotations sind BPMN-Artefakte; die medizinische Semantik bleibt in `mt:`
+- Export-/SVG-Verhalten überprüfen
 
 ## HL7 Field Guide (Fassung 2025-10-31)
 
