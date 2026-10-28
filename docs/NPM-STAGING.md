@@ -32,6 +32,8 @@ and npm rejection does not automatically remove the GitHub copy.
 ## Initial setup
 
 The workflow uses npm Trusted Publishing via OIDC; no npm token secret is used.
+The staging step explicitly clears `NODE_AUTH_TOKEN` so any runner-level token
+cannot override OIDC authentication.
 Configure two stage-only GitHub Trusted Publishers on npm:
 
 - Owner: `forschungsgruppe-digital-health`.
