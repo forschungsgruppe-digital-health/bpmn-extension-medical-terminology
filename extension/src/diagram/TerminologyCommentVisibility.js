@@ -30,6 +30,7 @@ export default function TerminologyCommentVisibility(eventBus, elementRegistry, 
   this._moddle = injector.get('moddle');
   this._canvas = injector.get('canvas');
   this._spaceTool = injector.get('spaceTool', false);
+  this._textRenderer = injector.get('textRenderer');
   this._visible = false;
   this._syncing = false;
 
@@ -111,8 +112,13 @@ TerminologyCommentVisibility.prototype._createGeneratedComments = function() {
 
 TerminologyCommentVisibility.prototype._createGeneratedComment = function(target) {
   const annotations = getAnnotations(target.businessObject);
-  const text = getGeneratedCommentText(annotations, this._terminologyRegistry, this._translate);
-  const dimensions = getGeneratedCommentDimensions(text);
+  const text = getGeneratedCommentText(
+    annotations,
+    this._terminologyRegistry,
+    this._translate,
+    this._textRenderer
+  );
+  const dimensions = getGeneratedCommentDimensions(text, this._textRenderer);
   const businessObject = this._bpmnFactory.create('bpmn:TextAnnotation', {
     text,
     textFormat: 'text/plain'
@@ -179,7 +185,12 @@ TerminologyCommentVisibility.prototype._syncGeneratedCommentFor = function(eleme
   const annotations = getAnnotations(element.businessObject);
   const hasAnnotations = annotations.length > 0;
   const expectedText = hasAnnotations
-    ? getGeneratedCommentText(annotations, this._terminologyRegistry, this._translate)
+    ? getGeneratedCommentText(
+      annotations,
+      this._terminologyRegistry,
+      this._translate,
+      this._textRenderer
+    )
     : '';
   if (generatedComments.length === 1 && generatedComments[0].businessObject.text === expectedText) {
     return;

@@ -21,13 +21,15 @@ Install dependencies with `npm install --legacy-peer-deps`.
 
 - Store clinical semantics only in `mt:` elements under
   `bpmn:extensionElements`. The extension may generate `bpmn:TextAnnotation`
-  and `bpmn:Association` artifacts as comments. Generated TextAnnotations copy
-  a plain-text snapshot of the linked element's `mt:` data into `bpmn:text` for
-  visibility in other BPMN editors; an `mt:GeneratedComment` marker identifies
-  them for regeneration. Refresh generated comments from `mt:` when annotations
-  change or the global switch is toggled. Their layout may adjust BPMN-DI
-  bounds to avoid collisions; do not alter BPMN process semantics or store
-  clinical meaning in BPMN-DI.
+  and `bpmn:Association` artifacts as comments. Generated TextAnnotations
+  contain a readable plain-text preview of linked `mt:` data in `bpmn:text`,
+  limited to five rendered lines and at most 350 diagram units wide; an
+  overflow marker indicates omitted content. The complete clinical data
+  remains in `mt:`. An `mt:GeneratedComment` marker identifies generated
+  comments for regeneration. Refresh them from `mt:` when annotations change
+  or the global switch is toggled. Their layout may adjust BPMN-DI bounds to
+  avoid collisions; do not alter BPMN process semantics or store clinical
+  meaning in BPMN-DI.
 - Commit only obviously synthetic clinical data.
 - Renaming or removing a terminology moddle type or property is a breaking
   change and requires human sign-off.

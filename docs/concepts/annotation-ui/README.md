@@ -4,12 +4,13 @@
 
 Die Extension erzeugt für annotierte Elemente echte BPMN-`TextAnnotation`s und
 verbindet sie über `bpmn:Association`. Der Kommentartext wird als
-`text/plain`-Snapshot in `bpmn:text` gespeichert, damit auch Editoren ohne die
-Extension ihn als normalen BPMN-Kommentar anzeigen können. Die `mt:`-Daten
-bleiben die Quelle der Terminologie; ein `mt:GeneratedComment`-Marker
-identifiziert automatisch erzeugte Kommentare zur Synchronisierung. Ein rundes
-`MT`-Badge am Kommentarblock kennzeichnet sie zusätzlich als
-Extension-Darstellung.
+`text/plain`-Vorschau in `bpmn:text` gespeichert, damit auch Editoren ohne die
+Extension ihn als normalen BPMN-Kommentar anzeigen können. Die Vorschau ist auf
+fünf gerenderte Zeilen und maximal 350 Diagrammeinheiten Breite begrenzt; ein
+Hinweis kennzeichnet ausgelassene Inhalte. Die vollständigen `mt:`-Daten bleiben
+die Quelle der Terminologie. Ein `mt:GeneratedComment`-Marker identifiziert
+automatisch erzeugte Kommentare zur Synchronisierung. Ein rundes `MT`-Badge am
+Kommentarblock kennzeichnet sie zusätzlich als Extension-Darstellung.
 
 Der globale Schalter im Eigenschaftenpanel erzeugt bzw. entfernt diese
 TextAnnotations. Beim erneuten Einschalten werden sie aus dem aktuellen

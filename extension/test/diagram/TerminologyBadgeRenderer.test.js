@@ -24,7 +24,14 @@ const DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
 
 // jsdom implements neither CSS.escape nor SVG layout, both used by diagram-js.
 globalThis.CSS ??= { escape: (value) => String(value) };
-SVGElement.prototype.getBBox ??= () => ({ x: 0, y: 0, width: 0, height: 0 });
+SVGElement.prototype.getBBox ??= function() {
+  return {
+    x: 0,
+    y: 0,
+    width: Array.from(this.textContent || '').length * 6.2,
+    height: 14
+  };
+};
 SVGSVGElement.prototype.createSVGMatrix ??= () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
 SVGSVGElement.prototype.createSVGTransform ??= () => ({ setMatrix() {}, setTranslate() {}, setScale() {}, setRotate() {}, matrix: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 } });
 globalThis.SVGMatrix ??= class SVGMatrix {};
@@ -88,6 +95,21 @@ function overlaps(first, second) {
     && first.x + first.width > second.x
     && first.y < second.y + second.height
     && first.y + first.height > second.y;
+}
+
+function hasClearance(first, second, padding) {
+  const horizontalGap = Math.max(
+    second.x - (first.x + first.width),
+    first.x - (second.x + second.width),
+    0
+  );
+  const verticalGap = Math.max(
+    second.y - (first.y + first.height),
+    first.y - (second.y + second.height),
+    0
+  );
+
+  return horizontalGap >= padding || verticalGap >= padding;
 }
 
 function overlapsConnection(shape, connection) {
@@ -300,7 +322,10 @@ describe('TerminologyBadgeRenderer', () => {
         })
       });
       modeling.createShape(target, { x: 100, y: 400 }, modeler.get('canvas').getRootElement());
-      const commentDimensions = getGeneratedCommentDimensions('\u00a0\u00a0cs: 0 – Term 0');
+      const commentDimensions = getGeneratedCommentDimensions(
+        '\u00a0\u00a0cs: 0 – Term 0',
+        modeler.get('textRenderer')
+      );
       const stepX = commentDimensions.width + 24;
       const stepY = commentDimensions.height + 24;
       const commentLeft = target.x + target.width + 24;
@@ -324,7 +349,8 @@ describe('TerminologyBadgeRenderer', () => {
       const gatewayName = target.label;
       expect(generatedComments()).toHaveLength(1);
       expect(overlaps(comment, gatewayName)).toBe(false);
-      expect(comment.x).toBeCloseTo(commentLeft + stepX, 0);
+      expect(hasClearance(comment, gatewayName, 10)).toBe(true);
+      expect(comment.x - (commentLeft + commentDimensions.width)).toBeLessThan(30);
       expect(comment.y + comment.height / 2).toBe(target.y + target.height / 2);
       expect(otherElement.x).toBe(700);
     });
@@ -369,18 +395,66 @@ describe('TerminologyBadgeRenderer', () => {
       modeler.get('terminologyCommentVisibility').setVisible(true);
 
       expect(commentLines('A')).toEqual([ '\u00a0\u00a0Clinical note', '\u00a0\u00a0cs: 0 – Term 0' ]);
+      expect(annotationFor('A').width).toBeLessThan(350);
     });
 
-    it('prints annotation text in full while limiting only coding lines', async () => {
+    it('caps comment width and visible lines without truncating short entries', async () => {
       await createModeler();
       const fullText = 'This annotation text must remain complete in the generated BPMN comment.';
       annotate('A', 8, fullText);
       modeler.get('terminologyCommentVisibility').setVisible(true);
 
-      const lines = commentLines('A');
-      expect(lines[0]).toBe(`\u00a0\u00a0${fullText}`);
-      expect(lines.at(-1)).toBe('\u00a0\u00a0+2 more');
-      expect(annotationFor('A').width).toBeGreaterThan(400);
+      const comment = annotationFor('A');
+      const textRenderer = modeler.get('textRenderer');
+      const fiveLinesHeight = textRenderer.getTextAnnotationBounds(
+        { x: 0, y: 0, width: 350, height: 30 },
+        Array(5).fill('\u00a0\u00a0x').join('\n')
+      ).height;
+
+      expect(comment.width).toBeLessThanOrEqual(350);
+      expect(comment.height).toBeLessThanOrEqual(fiveLinesHeight);
+      expect(comment.businessObject.text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim())
+        .toContain(fullText);
+      expect(comment.businessObject.text).toContain('… +');
+    });
+
+    it('truncates a long annotation at a readable boundary and reports hidden content', async () => {
+      await createModeler();
+      const fullText = Array(80).fill('synthetic clinical note').join(' ');
+      annotate('A', 1, fullText);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      const comment = annotationFor('A');
+      const textRenderer = modeler.get('textRenderer');
+      const fiveLinesHeight = textRenderer.getTextAnnotationBounds(
+        { x: 0, y: 0, width: 350, height: 30 },
+        Array(5).fill('\u00a0\u00a0x').join('\n')
+      ).height;
+
+      expect(comment.width).toBeLessThanOrEqual(350);
+      expect(comment.height).toBeLessThanOrEqual(fiveLinesHeight);
+      expect(comment.businessObject.text).not.toContain(fullText);
+      expect(comment.businessObject.text).toContain('…');
+      expect(comment.businessObject.text).toMatch(/\+\d+ more/);
+      expect(comment.businessObject.text.split('\n').every(line => line.startsWith('\u00a0\u00a0'))).toBe(true);
+
+      const { xml } = await modeler.saveXML();
+      expect(xml).toContain(`text="${fullText}"`);
+    });
+
+    it('indents every wrapped line consistently', async () => {
+      await createModeler();
+      const fullText = Array(30).fill('synthetic clinical note').join(' ');
+      annotate('A', 1, fullText);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      const comment = annotationFor('A');
+      const lines = comment.businessObject.text.split('\n');
+      const renderedLines = gfx(comment.id).querySelectorAll('.djs-visual > text.djs-label tspan');
+
+      expect(lines.length).toBeGreaterThan(1);
+      expect(lines.every(line => line.startsWith('\u00a0\u00a0'))).toBe(true);
+      expect(new Set([ ...renderedLines ].map(line => line.getAttribute('x'))).size).toBe(1);
     });
 
     it('stores plain-text BPMN comments and includes them in SVG export', async () => {
@@ -465,13 +539,13 @@ describe('TerminologyBadgeRenderer', () => {
       expect(commentLines('A')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0' ]);
     });
 
-    it('limits the number of rendered coding lines', async () => {
+    it('limits the number of displayed coding lines and reports the remainder', async () => {
       await createModeler();
       annotate('A', 9);
       modeler.get('terminologyCommentVisibility').setVisible(true);
       const lines = commentLines('A');
-      expect(lines).toHaveLength(7);
-      expect(lines.at(-1)).toBe('\u00a0\u00a0+3 more');
+      expect(lines).toHaveLength(5);
+      expect(lines.at(-1)).toBe('\u00a0\u00a0… +5 more');
     });
   });
 });

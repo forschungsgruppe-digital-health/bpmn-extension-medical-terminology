@@ -1,7 +1,12 @@
 import { selfAndAllChildren } from 'diagram-js/lib/util/Elements.js';
 
-const COMMENT_GAP = 24;
-const MAX_SEARCH_RINGS = 6;
+const COMMENT_GAP = 30;
+const COMMENT_PADDING = 10;
+const BADGE_RADIUS = 12;
+const SEARCH_STEP = 10;
+const MAX_SEARCH_STEPS_X = 40;
+const MAX_SEARCH_STEPS_Y = 30;
+const HORIZONTAL_COST = 3;
 
 const MAX_SPACE_ATTEMPTS = 4;
 
@@ -53,45 +58,29 @@ function findFreePosition(target, comment, elementRegistry) {
   );
   const pathObstacles = obstacles.filter(element => !element.labelTarget);
   const containerBounds = getContainerBounds(target);
-  const stepX = comment.width + COMMENT_GAP;
-  const stepY = comment.height + COMMENT_GAP;
   const preferredPosition = {
     x: target.x + target.width + COMMENT_GAP + comment.width / 2,
     y: target.y + target.height / 2
   };
   const candidates = [];
 
-  for (let horizontalRing = 0; horizontalRing <= MAX_SEARCH_RINGS; horizontalRing++) {
-    for (let verticalRing = 0; verticalRing <= MAX_SEARCH_RINGS; verticalRing++) {
-      const verticalOffsets = verticalRing === 0
-        ? [ 0 ]
-        : [ -verticalRing * stepY, verticalRing * stepY ];
-      for (const verticalOffset of verticalOffsets) {
-        const candidate = {
-          x: preferredPosition.x + horizontalRing * stepX,
-          y: preferredPosition.y + verticalOffset
-        };
-
-        candidates.push(candidate);
-      }
+  for (let stepX = 0; stepX <= MAX_SEARCH_STEPS_X; stepX++) {
+    for (let stepY = -MAX_SEARCH_STEPS_Y; stepY <= MAX_SEARCH_STEPS_Y; stepY++) {
+      candidates.push({
+        x: preferredPosition.x + stepX * SEARCH_STEP,
+        y: preferredPosition.y + stepY * SEARCH_STEP,
+        cost: stepX * HORIZONTAL_COST + Math.abs(stepY)
+      });
     }
   }
 
-  candidates.sort((first, second) =>
-    distanceSquared(first, preferredPosition) - distanceSquared(second, preferredPosition)
-  );
+  candidates.sort((first, second) => first.cost - second.cost);
 
   return candidates.find(candidate =>
     fitsInContainer(candidate, comment, containerBounds)
       && !obstacles.some(obstacle => overlaps(candidate, comment, obstacle))
       && hasClearAssociationPath(target, candidate, comment, pathObstacles)
   );
-}
-
-function distanceSquared(first, second) {
-  const deltaX = first.x - second.x;
-  const deltaY = first.y - second.y;
-  return deltaX * deltaX + deltaY * deltaY;
 }
 
 function getSpaceRoot(target, canvasRoot) {
@@ -141,16 +130,15 @@ function fitsInContainer(position, comment, bounds) {
     return true;
   }
 
-  const left = position.x - comment.width / 2;
-  const top = position.y - comment.height / 2;
-  return left >= bounds.left
-    && top >= bounds.top
-    && left + comment.width <= bounds.right
-    && top + comment.height <= bounds.bottom;
+  const commentBounds = getBounds(position, comment, COMMENT_PADDING, BADGE_RADIUS);
+  return commentBounds.left >= bounds.left
+    && commentBounds.top >= bounds.top
+    && commentBounds.right <= bounds.right
+    && commentBounds.bottom <= bounds.bottom;
 }
 
 function overlaps(position, comment, obstacle) {
-  const bounds = getBounds(position, comment);
+  const bounds = getBounds(position, comment, COMMENT_PADDING, BADGE_RADIUS);
 
   if (obstacle.waypoints) {
     return connectionIntersectsBounds(obstacle.waypoints, bounds);
@@ -162,12 +150,12 @@ function overlaps(position, comment, obstacle) {
     && bounds.bottom > obstacle.y;
 }
 
-function getBounds(position, shape) {
+function getBounds(position, shape, padding = 0, badge = 0) {
   return {
-    left: position.x - shape.width / 2,
-    right: position.x + shape.width / 2,
-    top: position.y - shape.height / 2,
-    bottom: position.y + shape.height / 2
+    left: position.x - shape.width / 2 - Math.max(padding, badge),
+    right: position.x + shape.width / 2 + padding,
+    top: position.y - shape.height / 2 - Math.max(padding, badge),
+    bottom: position.y + shape.height / 2 + padding
   };
 }
 
