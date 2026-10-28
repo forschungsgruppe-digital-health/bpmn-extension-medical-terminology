@@ -33,11 +33,10 @@ vi.mock('@bpmn-io/properties-panel/preact/hooks', () => ({
 }));
 
 vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
-  const { TooltipEntry } = await importOriginal();
-  const { createRequire } = await import('node:module');
-  const panelPreact = createRequire(import.meta.url)('@bpmn-io/properties-panel/preact');
+  const original = await importOriginal();
 
   return {
+    ...original,
     ToggleSwitchEntry(props) {
       return h('div', {
         class: 'bio-properties-panel-entry bio-properties-panel-toggle-switch-entry',
@@ -61,19 +60,6 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
           ])
         ])
       ]);
-    },
-    // The panel bundles its own Preact runtime. Mount the real tooltip with that
-    // runtime while the existing field stubs use the test renderer's Preact.
-    TooltipEntry(props) {
-      const container = useRef(null);
-      useEffect(() => {
-        panelPreact.render(panelPreact.h(TooltipEntry, props), container.current);
-      });
-      useEffect(() => {
-        const node = container.current;
-        return () => panelPreact.render(null, node);
-      }, []);
-      return h('div', { ref: container });
     },
     TextFieldEntry(props) {
       const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
@@ -1254,13 +1240,9 @@ describe('terminology properties panel UI', () => {
     expect(warning).toBeTruthy();
     expect(warning.textContent).toBe('⚠');
     expect(warning.getAttribute('aria-label')).toBe('Version unavailable');
-    expect(screen.queryByRole('tooltip')).toBeNull();
-    const savedTooltipTrigger = outdatedCoding.querySelector('.bio-properties-panel-tooltip-wrapper');
-    fireEvent.mouseEnter(savedTooltipTrigger);
-    expect((await screen.findByRole('tooltip')).textContent)
+    const savedTooltip = outdatedCoding.querySelector('.coding-details');
+    expect(savedTooltip.getAttribute('title'))
       .toBe('Version unavailable: "SNOMED CT 2024-09" is not installed.');
-    fireEvent.mouseLeave(savedTooltipTrigger);
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
     expect(isCodeSystemVersionOutdated).toHaveBeenCalledWith(
       'http://snomed.info/sct',
       '2024-09'
@@ -1272,13 +1254,9 @@ describe('terminology properties panel UI', () => {
     expect(selectedCoding).toBeTruthy();
     expect(selectedCoding.querySelector('.coding-version-warning').textContent)
       .toBe('⚠');
-    const selectedTooltipTrigger = selectedCoding.querySelector('.bio-properties-panel-tooltip-wrapper');
-    expect(selectedTooltipTrigger.getAttribute('tabindex')).toBe('0');
-    selectedTooltipTrigger.focus();
-    expect((await screen.findByRole('tooltip')).textContent)
+    const selectedTooltip = selectedCoding.querySelector('.coding-details');
+    expect(selectedTooltip.getAttribute('title'))
       .toBe('Version unavailable: "SNOMED CT 2024-09" is not installed.');
-    fireEvent.keyDown(selectedTooltipTrigger, { key: 'Escape', code: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
   });
 
   it('keeps saved Codings normal when their CodeSystem version remains available', async () => {

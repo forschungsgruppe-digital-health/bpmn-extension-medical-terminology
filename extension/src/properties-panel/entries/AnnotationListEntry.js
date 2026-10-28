@@ -1,6 +1,6 @@
 import { html } from 'htm/preact';
 import { useEffect, useRef, useState } from '@bpmn-io/properties-panel/preact/hooks';
-import { TextAreaEntry, TextFieldEntry, TooltipEntry } from '@bpmn-io/properties-panel';
+import { TextAreaEntry, TextFieldEntry } from '@bpmn-io/properties-panel';
 import { useService } from 'bpmn-js-properties-panel';
 import {
   getAnnotations,
@@ -785,7 +785,6 @@ export function AnnotationListEntry(props) {
                     coding=${c}
                     registry=${terminologyRegistry}
                     outdated=${isCodingVersionOutdated(c)}
-                    tooltipId=${`${element.id}-${ann.id}-coding-${index}`}
                   />
                 </div>
               `)}
@@ -877,7 +876,6 @@ export function AnnotationListEntry(props) {
                           coding=${coding}
                           registry=${terminologyRegistry}
                           outdated=${isCodingVersionOutdated(coding)}
-                          tooltipId=${`${element.id}-selected-coding-${index}`}
                         />
                       </div>
                       <button
@@ -989,21 +987,23 @@ export function AnnotationListEntry(props) {
   `;
 }
 
-function CodingDetails({ coding, registry, outdated, tooltipId }) {
-  const content = html`
-    <div class="coding-details" id=${`bio-properties-panel-${tooltipId}`}>
+function CodingDetails({ coding, registry, outdated }) {
+  const unavailableMessage = outdated
+    ? `Version unavailable: "${getSystemShortName(coding.system, registry)} ${coding.version}" is not installed.`
+    : '';
+
+  return html`
+    <div
+      class="coding-details"
+      title=${unavailableMessage || undefined}
+      tabIndex=${outdated ? 0 : undefined}
+    >
       <span class="coding-system">${getSystemShortName(coding.system, registry)}</span>
       <code class="coding-code">${coding.code}</code>
       ${coding.display && html`<span class="coding-display">${coding.display}</span>`}
-      ${outdated && html`<span class="coding-version-warning" role="img" aria-label="Version unavailable">⚠</span>`}
+      ${outdated && html`
+        <span class="coding-version-warning" role="img" aria-label="Version unavailable">⚠</span>
+      `}
     </div>
   `;
-
-  return outdated ? html`
-    <${TooltipEntry}
-      forId=${tooltipId}
-      value=${`Version unavailable: "${getSystemShortName(coding.system, registry)} ${coding.version}" is not installed.`}
-      direction="left"
-    >${content}<//>
-  ` : content;
 }

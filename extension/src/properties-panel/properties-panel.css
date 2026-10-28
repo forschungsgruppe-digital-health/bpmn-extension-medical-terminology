@@ -167,7 +167,7 @@
   flex-wrap: wrap;
 }
 
-.medical-terminology .coding-details:has(.coding-version-warning) {
+.medical-terminology .coding-details[title] {
   cursor: help;
 }
 
