@@ -6,8 +6,7 @@ on:
       - main
 
 # release-please maintains the release PR and tags releases.
-# Stable GitHub publishing stays in publish.yml. RC publishing follows successful
-# npm staging, using the identical package archive.
+# Stable GitHub publishing stays in publish.yml. Only RC releases are staged on npm.
 permissions:
   contents: write # create tags + GitHub Releases, commit version bumps
   pull-requests: write # open/update the release PR
@@ -28,7 +27,7 @@ jobs:
 
   npm-stage:
     needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
+    if: needs.release-please.outputs.release_created == 'true' && contains(needs.release-please.outputs.tag_name, '-rc.')
     permissions:
       contents: read
       id-token: write
@@ -38,4 +37,3 @@ jobs:
       tag: ${{ needs.release-please.outputs.tag_name }}
     secrets:
       GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-      NPM_STAGING_TOKEN: ${{ secrets.NPM_STAGING_TOKEN }}

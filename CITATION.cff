@@ -15,10 +15,9 @@ authors:
     affiliation: Technische Universität Dresden, Forschungsgruppe Digital Health
     website: https://github.com/JostHickmann
 license: MIT
-repository-code: >-
-  https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology
-url: https://tu-dresden.de/bu/wirtschaft/winf/digital-health
-version: 0.10.0
+repository-code: "https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology"
+url: "https://tu-dresden.de/bu/wirtschaft/winf/digital-health"
+version: "1.0.0-rc.2"
 keywords:
   - BPMN
   - bpmn-js

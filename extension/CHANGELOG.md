@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.0-rc.2](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.10.0...terminology-v1.0.0-rc.2) (2026-10-28)
+
+Release candidate based on 0.10.0; no functional changes.
+
 ## [0.10.0](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v1.0.0-rc.1...terminology-v0.10.0) (2026-10-28)
 
 
