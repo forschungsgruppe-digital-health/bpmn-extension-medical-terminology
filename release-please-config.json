@@ -5,9 +5,7 @@
     "extension": {
       "component": "terminology",
       "release-type": "node",
-      "release-as": "1.0.0-rc.1",
-      "prerelease": true,
-      "prerelease-type": "rc",
+      "release-as": "0.10.0",
       "extra-files": [
         {
           "type": "json",
