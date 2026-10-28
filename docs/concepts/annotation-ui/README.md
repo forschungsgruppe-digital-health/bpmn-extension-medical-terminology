@@ -20,12 +20,14 @@ Kommentar ist auch im SVG-Export enthalten. Der Properties-Panel-Eintrag ist
 bei allen Elementen sichtbar; nur konfigurierte Zieltypen erhalten zusätzlich
 den Annotation-Editor.
 
-Die Kommentare nutzen die eingebaute bpmn-js-Positionierung für
-TextAnnotations: In horizontalen Prozessen starten sie rechts oberhalb des
-Elements, in vertikalen Pools rechts darunter. Die Standardlogik sucht entlang
-der jeweiligen Achse eine freie Stelle relativ zu verbundenen Elementen.
-Unverbundene Formen werden dabei nicht global berücksichtigt und das
-Diagrammlayout wird nicht automatisch verschoben.
+Die Positionierung prüft Formen, Beschriftungen, generierte Kommentare und
+Verbindungen im Diagramm. Beschriftungen blockieren Kommentarflächen, aber
+nicht den direkten Association-Pfad vom Ursprungselement. Die Suche prüft zuerst
+nahe freie Positionen rechts, unten, oben und links vom annotierten Element. Wenn der lokale Bereich belegt ist, öffnet die
+diagram-js-Space-Tool-Logik an der bevorzugten Seite Platz und verschiebt
+betroffene Elemente bzw. vergrößert übergreifende Container. Diese
+Layoutänderung bleibt bestehen, auch wenn der globale Schalter die Kommentare
+wieder entfernt.
 
 ## Alternative – Kurzinhalt am Element
 

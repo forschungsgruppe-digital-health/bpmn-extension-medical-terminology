@@ -22,6 +22,7 @@ Hard rules (see `AGENTS.md`): canonical structured clinical data lives in
 generate `bpmn:TextAnnotation` and `bpmn:Association` artifacts as comments;
 their `bpmn:text` may contain a derived plain-text snapshot so other BPMN
 editors can render it. An `mt:GeneratedComment` marker identifies generated
-annotations for synchronization. Do not change BPMN process semantics or
-BPMN-DI structures. Renaming or removing an `mt:` type/property is a breaking
-(MAJOR) change and needs human sign-off.
+annotations for synchronization. Generated-comment layout may adjust BPMN-DI
+bounds to avoid collisions, but must not change BPMN process semantics or store
+clinical meaning in BPMN-DI. Renaming or removing an `mt:` type/property is a
+breaking (MAJOR) change and needs human sign-off.

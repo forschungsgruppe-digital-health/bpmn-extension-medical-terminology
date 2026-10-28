@@ -32,9 +32,8 @@ export function ShowAsCommentEntry(props) {
   return html`<${ToggleSwitchEntry}
     id=${id}
     element=${element}
-    label=${translate('Show as comment')}
+    label=${translate('Show terminology as BPMN comments')}
     inline=${true}
-    description=${translate('Creates or removes linked BPMN comments from the terminology annotations.')}
     getValue=${() => visibility.isVisible()}
     setValue=${(value) => visibility.setVisible(value)}
   />`;

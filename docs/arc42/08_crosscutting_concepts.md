@@ -87,10 +87,11 @@ reserved for additional packages.
 ## Namespace and preservation rule
 
 Clinical semantics must be represented by `mt:` values under
-`bpmn:extensionElements`; BPMN core and BPMN-DI structures remain untouched.
-The descriptor extends supported BPMN types for the optional attribute and uses
-`Element` subclasses for nested annotation data. This is the central
-interoperability rule.
+`bpmn:extensionElements`; they are not stored in BPMN-DI. The extension may add
+standard BPMN comments from those values and adjust diagram bounds to avoid
+overlaps, without changing BPMN process semantics. The descriptor extends
+supported BPMN types for the optional attribute and uses `Element` subclasses
+for nested annotation data. This is the central interoperability rule.
 
 ## Conformance and maintenance
 

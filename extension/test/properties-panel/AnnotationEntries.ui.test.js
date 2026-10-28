@@ -38,6 +38,30 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
   const panelPreact = createRequire(import.meta.url)('@bpmn-io/properties-panel/preact');
 
   return {
+    ToggleSwitchEntry(props) {
+      return h('div', {
+        class: 'bio-properties-panel-entry bio-properties-panel-toggle-switch-entry',
+        'data-entry-id': props.id,
+        'data-inline': String(props.inline)
+      }, [
+        h('div', { class: 'bio-properties-panel-toggle-switch inline' }, [
+          h('label', {
+            class: 'bio-properties-panel-label',
+            htmlFor: `bio-properties-panel-${props.id}`
+          }, props.label || 'Hidden toggle label'),
+          h('div', { class: 'bio-properties-panel-field-wrapper' }, [
+            h('label', { class: 'bio-properties-panel-toggle-switch__switcher' }, [
+              h('input', {
+                id: `bio-properties-panel-${props.id}`,
+                type: 'checkbox',
+                checked: props.getValue(props.element),
+                onChange: (event) => props.setValue(event.target.checked)
+              })
+            ])
+          ])
+        ])
+      ]);
+    },
     // The panel bundles its own Preact runtime. Mount the real tooltip with that
     // runtime while the existing field stubs use the test renderer's Preact.
     TooltipEntry(props) {
@@ -172,10 +196,12 @@ const SEARCH_RESULTS = {
 };
 
 let AnnotationListEntry;
+let ShowAsCommentEntry;
 
 describe('terminology properties panel UI', () => {
   beforeAll(async () => {
     ({ AnnotationListEntry } = await import('../../src/properties-panel/entries/AnnotationListEntry.js'));
+    ({ ShowAsCommentEntry } = await import('../../src/properties-panel/entries/ShowAsCommentEntry.js'));
   });
 
   beforeEach(() => {
@@ -191,6 +217,26 @@ describe('terminology properties panel UI', () => {
   afterEach(() => {
     cleanup();
     serviceState.current = {};
+  });
+
+  it('presents the global comment switch with the standard inline panel layout', () => {
+    const visibility = {
+      isVisible: vi.fn(() => false),
+      setVisible: vi.fn()
+    };
+    serviceState.current = {
+      translate: (text) => text,
+      terminologyCommentVisibility: visibility
+    };
+    const view = render(h(ShowAsCommentEntry, { element: {} }));
+
+    expect(view.container.querySelector('[data-inline="true"]')).not.toBeNull();
+    expect(screen.getByText('Show terminology as BPMN comments')).not.toBeNull();
+    expect(view.container.querySelector('.bio-properties-panel-description')).toBeNull();
+
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    expect(visibility.setVisible).toHaveBeenCalledWith(true);
   });
 
   it('adds and removes annotations through undo and redo, updating the panel', async () => {

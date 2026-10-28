@@ -194,11 +194,13 @@ references, not directly under `<definitions>`.
 
 ### Preserve a valid BPMN core
 
-An extension must not change the BPMN core or BPMN-DI structures. The model
-must remain readable by a consumer that ignores `mt:` content.
-`mustUnderstand="false"` (the default) communicates that an extension may be
-ignored; this repository does not require a consumer to understand terminology
-annotations in order to open the BPMN process.
+An extension must not change BPMN process semantics. This extension adds
+standard BPMN `TextAnnotation` and `Association` artifacts for generated
+comments; their displayed text is a snapshot of `mt:` data. To prevent
+overlaps, comment placement may also adjust BPMN-DI bounds, without storing
+clinical meaning there. A consumer that ignores `mt:` content can still open
+the process and display the standard comments. `mustUnderstand="false"` (the
+default) communicates that the extension data may be ignored.
 
 ### BPMN conformance classes
 

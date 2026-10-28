@@ -3,7 +3,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import BpmnModeler from 'bpmn-js/lib/Modeler.js';
 import TerminologyBadgeModule from '../../src/diagram/index.js';
-import { isGeneratedComment } from '../../src/diagram/generated-comment.js';
+import {
+  getGeneratedCommentDimensions,
+  isGeneratedComment
+} from '../../src/diagram/generated-comment.js';
 import TerminologyModdleDescriptor from '../../src/moddle/medical-terminology.json' with { type: 'json' };
 
 const DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
@@ -78,6 +81,76 @@ function gfx(id) {
 function badgeCount(id) {
   const label = gfx(id).querySelector('.mt-badge')?.getAttribute('aria-label');
   return label?.split(' ')[0];
+}
+
+function overlaps(first, second) {
+  return first.x < second.x + second.width
+    && first.x + first.width > second.x
+    && first.y < second.y + second.height
+    && first.y + first.height > second.y;
+}
+
+function overlapsConnection(shape, connection) {
+  return connection.waypoints.slice(1).some((point, index) => {
+    const previous = connection.waypoints[index];
+    return lineIntersectsShape(previous, point, shape);
+  });
+}
+
+function lineIntersectsShape(start, end, shape) {
+  const bounds = {
+    left: shape.x,
+    right: shape.x + shape.width,
+    top: shape.y,
+    bottom: shape.y + shape.height
+  };
+  const deltaX = end.x - start.x;
+  const deltaY = end.y - start.y;
+  let lower = 0;
+  let upper = 1;
+
+  for (const [ p, q ] of [
+    [ -deltaX, start.x - bounds.left ],
+    [ deltaX, bounds.right - start.x ],
+    [ -deltaY, start.y - bounds.top ],
+    [ deltaY, bounds.bottom - start.y ]
+  ]) {
+    if (p === 0) {
+      if (q < 0) {
+        return false;
+      }
+      continue;
+    }
+
+    const ratio = q / p;
+    if (p < 0) {
+      lower = Math.max(lower, ratio);
+    } else {
+      upper = Math.min(upper, ratio);
+    }
+
+    if (lower > upper) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function addObstacle(id, bounds) {
+  const moddle = modeler.get('moddle');
+  const businessObject = moddle.create('bpmn:Task', { id });
+  const shape = modeler.get('elementFactory').createShape({
+    type: 'bpmn:Task',
+    businessObject,
+    width: bounds.width,
+    height: bounds.height
+  });
+
+  return modeler.get('modeling').createShape(shape, {
+    x: bounds.x + bounds.width / 2,
+    y: bounds.y + bounds.height / 2
+  }, modeler.get('canvas').getRootElement());
 }
 
 afterEach(() => {
@@ -155,23 +228,139 @@ describe('TerminologyBadgeRenderer', () => {
       annotate('A', 2);
       annotate('B', 1);
 
-      const originalBPosition = modeler.get('elementRegistry').get('B').x;
+      const targetB = modeler.get('elementRegistry').get('B');
+      modeler.get('modeling').moveShape(targetB, { x: -90, y: -45 });
       const visibility = modeler.get('terminologyCommentVisibility');
       visibility.setVisible(true);
 
       expect(generatedComments()).toHaveLength(2);
-      expect(modeler.get('elementRegistry').get('B').x).toBe(originalBPosition);
       expect(commentLines('A')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0', '\u00a0\u00a0cs: 1 – Term 1' ]);
       expect(commentLines('B')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0' ]);
-      const target = modeler.get('elementRegistry').get('A');
-      const comment = annotationFor('A');
-      expect(comment.x + comment.width / 2).toBeCloseTo(target.x + target.width + comment.width / 2, 0);
-      expect(comment.y + comment.height / 2).toBeCloseTo(target.y - 50 - comment.height / 2, 0);
+      const registryElements = modeler.get('elementRegistry').getAll();
+      for (const comment of generatedComments()) {
+        const overlapping = registryElements.filter(element =>
+          element !== comment
+              && !element.labelTarget
+              && element.width > 0
+              && element.height > 0
+              && overlaps(comment, element)
+        );
+        expect(overlapping).toEqual([]);
+      }
       expect(gfx('A').querySelector('.mt-badge')).not.toBeNull();
       expect(gfx(annotationFor('A').id).querySelector('.mt-badge')?.getAttribute('transform'))
         .toBe('translate(0, 0)');
       expect(gfx('A').querySelector('.mt-badge')?.getAttribute('transform'))
         .toBe(`translate(${modeler.get('elementRegistry').get('A').width}, 0)`);
+    });
+
+    it('creates space when every nearby position is occupied', async () => {
+      await createModeler();
+      annotate('A', 1);
+      const target = modeler.get('elementRegistry').get('A');
+      const originalB = modeler.get('elementRegistry').get('B').x;
+      const blocker = addObstacle('eastBlocker', {
+        x: 224, y: -1000, width: 1000, height: 2000
+      });
+      const originalBlockerX = blocker.x;
+
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      const comment = annotationFor('A');
+      expect(modeler.get('elementRegistry').get('B').x).toBeGreaterThan(originalB);
+      expect(blocker.x).toBeGreaterThan(originalBlockerX);
+      expect(overlaps(comment, blocker)).toBe(false);
+      expect(overlaps(comment, target)).toBe(false);
+      expect(comment.x).toBeGreaterThan(target.x + target.width);
+    });
+
+    it('avoids existing connections as well as shapes', async () => {
+      await createModeler();
+      annotate('A', 1);
+      const elements = modeler.get('elementRegistry');
+      const connection = modeler.get('modeling').connect(
+        elements.get('A'),
+        elements.get('B'),
+        { type: 'bpmn:SequenceFlow' }
+      );
+
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      expect(overlapsConnection(annotationFor('A'), connection)).toBe(false);
+    });
+
+    it('chooses a nearby position around a gateway name label', async () => {
+      await createModeler();
+      const modeling = modeler.get('modeling');
+      const target = modeler.get('elementFactory').createShape({
+        type: 'bpmn:ExclusiveGateway',
+        businessObject: modeler.get('moddle').create('bpmn:ExclusiveGateway', {
+          id: 'namedGateway',
+          name: 'Gateway name'
+        })
+      });
+      modeling.createShape(target, { x: 100, y: 400 }, modeler.get('canvas').getRootElement());
+      const commentDimensions = getGeneratedCommentDimensions('\u00a0\u00a0cs: 0 – Term 0');
+      const stepX = commentDimensions.width + 24;
+      const stepY = commentDimensions.height + 24;
+      const commentLeft = target.x + target.width + 24;
+      modeling.updateLabel(target, 'Gateway name', {
+        x: commentLeft,
+        y: target.y + target.height / 2 - 5 * stepY - commentDimensions.height / 2,
+        width: commentDimensions.width,
+        height: 10 * stepY + commentDimensions.height
+      });
+      modeling.moveShape(target.label, {
+        x: commentLeft - target.label.x,
+        y: target.y + target.height / 2 - 5 * stepY - commentDimensions.height / 2 - target.label.y
+      });
+      annotate('namedGateway', 1);
+      const otherElement = modeler.get('elementRegistry').get('B');
+      modeling.moveShape(otherElement, { x: 400, y: 0 });
+
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      const comment = annotationFor('namedGateway');
+      const gatewayName = target.label;
+      expect(generatedComments()).toHaveLength(1);
+      expect(overlaps(comment, gatewayName)).toBe(false);
+      expect(comment.x).toBeCloseTo(commentLeft + stepX, 0);
+      expect(comment.y + comment.height / 2).toBe(target.y + target.height / 2);
+      expect(otherElement.x).toBe(700);
+    });
+
+    it('avoids obstacles in the association path even when the comment box is clear', async () => {
+      await createModeler();
+      annotate('A', 1);
+      const blocker = addObstacle('pathBlocker', {
+        x: 205, y: 130, width: 15, height: 20
+      });
+
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      const target = modeler.get('elementRegistry').get('A');
+      const association = [ ...target.incoming, ...target.outgoing ]
+        .find(connection => connection.businessObject.$type === 'bpmn:Association');
+      expect(overlapsConnection(blocker, association)).toBe(false);
+    });
+
+    it('keeps generated comments to the right and docks the association at the marker center', async () => {
+      await createModeler();
+      annotate('A', 1);
+      const target = modeler.get('elementRegistry').get('A');
+
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      const comment = annotationFor('A');
+      const association = [ ...target.incoming, ...target.outgoing ]
+        .find(connection => connection.businessObject.$type === 'bpmn:Association');
+      const commentEndpoint = association.source === comment
+        ? association.waypoints[0]
+        : association.waypoints.at(-1);
+
+      expect(comment.x).toBeGreaterThan(target.x + target.width);
+      expect(commentEndpoint.x).toBe(comment.x);
+      expect(commentEndpoint.y).toBe(comment.y + comment.height / 2);
     });
 
     it('includes annotation text as well as codings in the generated comment', async () => {

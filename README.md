@@ -738,7 +738,9 @@ Terminology annotations are persisted as standard BPMN 2.0 extension elements:
 ```
 
 Clinical data belongs only in `mt:` elements under
-`bpmn:extensionElements`. It must not change BPMN core or BPMN-DI structures.
+`bpmn:extensionElements`; it must not change BPMN process semantics or be
+stored in BPMN-DI. The extension may add standard BPMN comments and adjust
+diagram bounds to keep generated comments from overlapping existing content.
 
 ## Demo
 

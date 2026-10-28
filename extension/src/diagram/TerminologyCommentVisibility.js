@@ -1,5 +1,8 @@
 import { getAnnotations } from '../services/AnnotationHelper.js';
-import { getNewShapePosition } from 'bpmn-js/lib/features/auto-place/BpmnAutoPlaceUtil.js';
+import {
+  getGeneratedCommentAssociationWaypoints,
+  placeGeneratedComment
+} from './comment-placement.js';
 import {
   GENERATED_COMMENT_TYPE,
   getGeneratedCommentDimensions,
@@ -25,6 +28,8 @@ export default function TerminologyCommentVisibility(eventBus, elementRegistry, 
   this._elementFactory = injector.get('elementFactory', false);
   this._bpmnFactory = injector.get('bpmnFactory', false);
   this._moddle = injector.get('moddle');
+  this._canvas = injector.get('canvas');
+  this._spaceTool = injector.get('spaceTool', false);
   this._visible = false;
   this._syncing = false;
 
@@ -127,13 +132,31 @@ TerminologyCommentVisibility.prototype._createGeneratedComment = function(target
   });
   const position = this._placeComment(target, shape);
 
-  this._modeling.appendShape(target, shape, position, target.parent, {
+  const comment = this._modeling.appendShape(target, shape, position, target.parent, {
     connection: { type: 'bpmn:Association' }
   });
+  const association = [ ...comment.incoming, ...comment.outgoing ]
+    .find(connection => connection.businessObject.$type === 'bpmn:Association');
+  if (!association) {
+    throw new Error('Failed to create the association for a generated terminology comment.');
+  }
+
+  const waypoints = getGeneratedCommentAssociationWaypoints(target, comment);
+  this._modeling.updateWaypoints(
+    association,
+    association.source === comment ? [ ...waypoints ].reverse() : waypoints
+  );
 };
 
 TerminologyCommentVisibility.prototype._placeComment = function(target, shape) {
-  return getNewShapePosition(target, shape, this._elementRegistry);
+  return placeGeneratedComment(
+    target,
+    shape,
+    this._elementRegistry,
+    this._canvas,
+    this._spaceTool,
+    this._modeling
+  );
 };
 
 TerminologyCommentVisibility.prototype._assertModelingServices = function() {
