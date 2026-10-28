@@ -53,7 +53,7 @@ jobs:
             if (process.env.TEST_VERSION && !/^\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(process.env.TEST_VERSION)) {
               throw new Error("Smoke-test version must be X.Y.Z-rc.N");
             }
-            if (!process.env.TEST_VERSION && !/-rc\.[1-9]\d+$/.test(process.env.RELEASE_TAG)) {
+            if (!process.env.TEST_VERSION && !/-rc\.[1-9]\d*$/.test(process.env.RELEASE_TAG)) {
               throw new Error("Only RC releases may be staged on npm");
             }
             if (process.env.SMOKE_COMMIT && (!process.env.TEST_VERSION || !/^[0-9a-f]{40}$/.test(process.env.SMOKE_COMMIT))) {
