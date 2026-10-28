@@ -1,5 +1,54 @@
 # Changelog
 
+## [1.0.0-rc.2](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v1.0.0-rc.2...terminology-v1.0.0-rc.2) (2026-10-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **terminology:** publish renamed extension package ([#18](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/18))
+* **terminology:** consumers must install and import the renamed terminology package.
+
+### Features
+
+* add global 'Show as comment' switch for annotation badges ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([a93cf98](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/a93cf98bbea4a1f694fb6362b16491804a58a5d4))
+* add opt-in MT+n annotation badge renderer ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([f2865a7](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/f2865a7cafde0256d60c7d9c34a36cf4ce9c5972))
+* configure annotatable BPMN elements through JSON ([35dc7d0](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/35dc7d04e935b2724dbe6cd92ce25cd757f700e6))
+* establish controlled terminology namespace ([649eeeb](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/649eeeb68fbdfbbda85304ae194b537eee07ff00))
+* refine comment block and switch ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([358bbe0](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/358bbe061be19385c10a9302db9ca9bf1fdf3f1c))
+* show code system names in comments, move switch to General group ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([da76ea9](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/da76ea931ef237f2911a8dd4bc5684ce13db14a3))
+* support additive annotation target filters ([e81b95f](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/e81b95f4b4b3a6f855223ffdc6622480cf2de65e))
+* **terminology:** add package metadata and restore examples ([3b8b5b4](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/3b8b5b4fbcfc7e7864af6206f4799102798f90e6))
+* **terminology:** prepare first public release ([e6bcdca](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/e6bcdca76c81d91c87e33bc4295057b0c606e928))
+* **terminology:** prepare first public release ([a30ab77](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/a30ab77dd3ae23f1ee3724b8d6c4d0d11ad1a511))
+* **terminology:** publish renamed extension package ([0fde219](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/0fde219ae0f24a109ce78042f81538d162aef7dc))
+* **terminology:** publish renamed extension package ([#18](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/18)) ([84f8bae](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/84f8bae461649b0427844a98659591fc9aba5cb4))
+* **terminology:** split terminology package into standalone repository ([55fc9cb](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/55fc9cb3e7658badb13e29c5e8b5d87cdf74f42c))
+
+
+### Bug Fixes
+
+* **demo:** proxy Snowstorm requests to avoid CORS ([0e8471a](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/0e8471aea36c7e32473174bb5a00ef069a43e98e))
+* **docs:** validate imported site links ([d73b31f](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/d73b31f514e8a7fa7a29d20cd4504760e91d4ba0))
+* filter technical terminology dependencies ([20aca2a](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/20aca2a159f98e99e0c20a9ef0dbf3b93e78bd57))
+* keep release metadata and lockfile versions consistent ([5c02f0f](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/5c02f0f544375c0022aee8c6b25daa71b19f0f98))
+* resolve comment switch via injector.get ([987365c](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/987365c77253339c6b7cfc896c7710f57c7d493f))
+* synchronize release versions and enforce metadata consistency ([2c9c092](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/2c9c092d5a35db8ee27d666e753970dff086dcd2))
+* **terminology:** configure Vite Snowstorm proxy ([6f63690](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/6f6369048fd00164dca4cdb7e2dee997360fdac8))
+* **terminology:** configure Vite Snowstorm proxy ([7dd1d66](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/7dd1d666265f79cb4083ba3efae6a66e219ca54e))
+* **terminology:** document Simplifier FHIR dependencies ([161df60](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/161df60a2f5ff7c56fd0a345630a744349bbd601))
+* **terminology:** document Simplifier FHIR dependencies ([e51616f](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/e51616f9448812373707e0e3138d59e77e43b40e))
+* **terminology:** flag unavailable coding versions ([74f7459](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/74f7459047b3b25ece04833c125d45ba47b7ac90))
+* **terminology:** harden provider configuration ([4e51653](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/4e516535ce939f8f787b1e58f6ab1370bc8e5e43))
+* **terminology:** harden provider configuration ([cc3739b](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/cc3739befad511313d5401f4f6f025f4a732a1d1))
+* **terminology:** harden provider discovery ([a32ce45](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/a32ce4599472e8bda7cfd24b0505f48241f91e5e))
+* **terminology:** preserve parallel package versions ([064c6eb](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/064c6ebfe36e265b044e539d49816e3316fe9161))
+* **terminology:** publish with Node 24 ([b9407d1](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/b9407d1a64312f8ebc307edc1a9b7b2f7c9af34e))
+* **terminology:** publish with Node 24 ([2910919](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/2910919bf983f28291bf59100385ec899c469b02))
+* **terminology:** remove bundled Vite proxy ([3419b33](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/3419b33c76815c58a091225e197f75581bd4099a))
+* **terminology:** restrict package discovery and normalize labels ([02c8f7b](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/02c8f7b9811a68faade0b356684430f79a09e055))
+* **terminology:** support package dependency and KDL variants ([a4d34a5](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/a4d34a526f1788382283498a9eb36e07f3a80e4d))
+* **test:** resolve the temporary directory to its real path ([07fb8c4](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/07fb8c45a9fb47722feae63e53e8f1c9a5bc55b2))
+
 ## [1.0.0-rc.2](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.10.0...terminology-v1.0.0-rc.2) (2026-10-28)
 
 Release candidate based on 0.10.0; no functional changes.
