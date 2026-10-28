@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.10.0](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v1.0.0-rc.1...terminology-v0.10.0) (2026-10-28)
+
+
+### Features
+
+* add global 'Show as comment' switch for annotation badges ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([a93cf98](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/a93cf98bbea4a1f694fb6362b16491804a58a5d4))
+* add opt-in MT+n annotation badge renderer ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([f2865a7](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/f2865a7cafde0256d60c7d9c34a36cf4ce9c5972))
+* refine comment block and switch ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([358bbe0](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/358bbe061be19385c10a9302db9ca9bf1fdf3f1c))
+* show code system names in comments, move switch to General group ([#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17)) ([da76ea9](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/da76ea931ef237f2911a8dd4bc5684ce13db14a3))
+* support additive annotation target filters ([e81b95f](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/e81b95f4b4b3a6f855223ffdc6622480cf2de65e))
+
+
+### Bug Fixes
+
+* resolve comment switch via injector.get ([987365c](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/987365c77253339c6b7cfc896c7710f57c7d493f))
+
 ## [1.0.0-rc.1](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v1.0.0-rc.1...terminology-v1.0.0-rc.1) (2026-10-05)
 
 
