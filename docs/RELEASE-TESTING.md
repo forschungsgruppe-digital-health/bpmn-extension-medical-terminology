@@ -104,6 +104,7 @@ Server-Platzhalter durch eigene erreichbare Endpunkte ersetzen.
 - [ ] **Sprache:** `language: 'en'` und `languageStrategy: 'param'` im Snowstorm-Beispiel testen; Request-Parameter prüfen. Übersetzung hängt vom Server ab.
 - [ ] **Zusätzliche Anbieter und Labels:** Beispiele unter [Default service configuration](../README.md#default-service-configuration) und [external overrides](../README.md#out-of-the-box-defaults-and-external-overrides) testen; Anbieter und Labels stimmen.
 - [ ] **Dynamischer Loader:** Mit `loaderConfig: false` deaktivieren; anschließend nach [Programmatic Usage](../README.md#programmatic-usage) aktivieren und einen CodeSystem-Anbieter laden.
+- [ ] **Annotierbare BPMN-Typen:** In `createTerminologyPropertiesPanelModule` einen Typ mit `includeTypes` ergänzen und einen Default-Typ mit `excludeTypes` ausschließen. Ausschlüsse haben Vorrang; BPMN-Vererbung gilt. `targetTypes` ersetzt weiterhin die Default-Liste. Siehe [Konfiguration annotierbarer Elemente](../demo/ANNOTATIONS.md).
 - [ ] **Annotationen ausblenden:** Im Quick Start `TerminologyPropertiesPanelModule` durch das folgende Modul ersetzen. UI ist ausgeblendet; gespeicherte XML-Daten bleiben erhalten:
 
 ```js

@@ -120,6 +120,7 @@ describe('@forschungsgruppe-digital-health/bpmn-extension-medical-terminology â€
     expect(descriptor.uri).toBe('https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1');
     expect(descriptor.types.map(type => type.name)).toEqual([
       'Annotations',
+      'GeneratedComment',
       'Annotation',
       'Coding'
     ]);

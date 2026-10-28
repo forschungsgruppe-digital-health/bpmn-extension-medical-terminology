@@ -33,23 +33,33 @@ vi.mock('@bpmn-io/properties-panel/preact/hooks', () => ({
 }));
 
 vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
-  const { TooltipEntry } = await importOriginal();
-  const { createRequire } = await import('node:module');
-  const panelPreact = createRequire(import.meta.url)('@bpmn-io/properties-panel/preact');
+  const original = await importOriginal();
 
   return {
-    // The panel bundles its own Preact runtime. Mount the real tooltip with that
-    // runtime while the existing field stubs use the test renderer's Preact.
-    TooltipEntry(props) {
-      const container = useRef(null);
-      useEffect(() => {
-        panelPreact.render(panelPreact.h(TooltipEntry, props), container.current);
-      });
-      useEffect(() => {
-        const node = container.current;
-        return () => panelPreact.render(null, node);
-      }, []);
-      return h('div', { ref: container });
+    ...original,
+    ToggleSwitchEntry(props) {
+      return h('div', {
+        class: 'bio-properties-panel-entry bio-properties-panel-toggle-switch-entry',
+        'data-entry-id': props.id,
+        'data-inline': String(props.inline)
+      }, [
+        h('div', { class: 'bio-properties-panel-toggle-switch inline' }, [
+          h('label', {
+            class: 'bio-properties-panel-label',
+            htmlFor: `bio-properties-panel-${props.id}`
+          }, props.label || 'Hidden toggle label'),
+          h('div', { class: 'bio-properties-panel-field-wrapper' }, [
+            h('label', { class: 'bio-properties-panel-toggle-switch__switcher' }, [
+              h('input', {
+                id: `bio-properties-panel-${props.id}`,
+                type: 'checkbox',
+                checked: props.getValue(props.element),
+                onChange: (event) => props.setValue(event.target.checked)
+              })
+            ])
+          ])
+        ])
+      ]);
     },
     TextFieldEntry(props) {
       const [localValue, setLocalValue] = useState(props.getValue(props.element) || '');
@@ -172,10 +182,12 @@ const SEARCH_RESULTS = {
 };
 
 let AnnotationListEntry;
+let ShowAsCommentEntry;
 
 describe('terminology properties panel UI', () => {
   beforeAll(async () => {
     ({ AnnotationListEntry } = await import('../../src/properties-panel/entries/AnnotationListEntry.js'));
+    ({ ShowAsCommentEntry } = await import('../../src/properties-panel/entries/ShowAsCommentEntry.js'));
   });
 
   beforeEach(() => {
@@ -191,6 +203,26 @@ describe('terminology properties panel UI', () => {
   afterEach(() => {
     cleanup();
     serviceState.current = {};
+  });
+
+  it('presents the global comment switch with the standard inline panel layout', () => {
+    const visibility = {
+      isVisible: vi.fn(() => false),
+      setVisible: vi.fn()
+    };
+    serviceState.current = {
+      translate: (text) => text,
+      terminologyCommentVisibility: visibility
+    };
+    const view = render(h(ShowAsCommentEntry, { element: {} }));
+
+    expect(view.container.querySelector('[data-inline="true"]')).not.toBeNull();
+    expect(screen.getByText('Show terminology as BPMN comments')).not.toBeNull();
+    expect(view.container.querySelector('.bio-properties-panel-description')).toBeNull();
+
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    expect(visibility.setVisible).toHaveBeenCalledWith(true);
   });
 
   it('adds and removes annotations through undo and redo, updating the panel', async () => {
@@ -1208,13 +1240,9 @@ describe('terminology properties panel UI', () => {
     expect(warning).toBeTruthy();
     expect(warning.textContent).toBe('⚠');
     expect(warning.getAttribute('aria-label')).toBe('Version unavailable');
-    expect(screen.queryByRole('tooltip')).toBeNull();
-    const savedTooltipTrigger = outdatedCoding.querySelector('.bio-properties-panel-tooltip-wrapper');
-    fireEvent.mouseEnter(savedTooltipTrigger);
-    expect((await screen.findByRole('tooltip')).textContent)
+    const savedTooltip = outdatedCoding.querySelector('.coding-details');
+    expect(savedTooltip.getAttribute('title'))
       .toBe('Version unavailable: "SNOMED CT 2024-09" is not installed.');
-    fireEvent.mouseLeave(savedTooltipTrigger);
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
     expect(isCodeSystemVersionOutdated).toHaveBeenCalledWith(
       'http://snomed.info/sct',
       '2024-09'
@@ -1226,13 +1254,9 @@ describe('terminology properties panel UI', () => {
     expect(selectedCoding).toBeTruthy();
     expect(selectedCoding.querySelector('.coding-version-warning').textContent)
       .toBe('⚠');
-    const selectedTooltipTrigger = selectedCoding.querySelector('.bio-properties-panel-tooltip-wrapper');
-    expect(selectedTooltipTrigger.getAttribute('tabindex')).toBe('0');
-    selectedTooltipTrigger.focus();
-    expect((await screen.findByRole('tooltip')).textContent)
+    const selectedTooltip = selectedCoding.querySelector('.coding-details');
+    expect(selectedTooltip.getAttribute('title'))
       .toBe('Version unavailable: "SNOMED CT 2024-09" is not installed.');
-    fireEvent.keyDown(selectedTooltipTrigger, { key: 'Escape', code: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('tooltip')).toBeNull());
   });
 
   it('keeps saved Codings normal when their CodeSystem version remains available', async () => {

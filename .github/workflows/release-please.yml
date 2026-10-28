@@ -38,3 +38,4 @@ jobs:
       tag: ${{ needs.release-please.outputs.tag_name }}
     secrets:
       GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+      NPM_STAGING_TOKEN: ${{ secrets.NPM_STAGING_TOKEN }}

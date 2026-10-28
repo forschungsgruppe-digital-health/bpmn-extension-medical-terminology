@@ -1,5 +1,6 @@
 import { is } from 'bpmn-js/lib/util/ModelUtil.js';
 import { AnnotationListEntry } from './entries/AnnotationListEntry.js';
+import { ShowAsCommentEntry, SHOW_AS_COMMENT_ENTRY_ID } from './entries/ShowAsCommentEntry.js';
 import { resolveTerminologyPropertiesConfig } from './config.js';
 import { MEDICAL_TERMINOLOGY_ENTRY_ID } from './error-contract.js';
 
@@ -18,11 +19,14 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
   const config = this._config;
 
   return function (groups) {
-    if (!config.targetTypes.some(type => is(element, type))) return groups;
+    const isTargetType = [...config.targetTypes, ...config.includeTypes]
+      .some(type => is(element, type));
+    const isExcludedType = config.excludeTypes.some(type => is(element, type));
+    const entries = [
+      { id: SHOW_AS_COMMENT_ENTRY_ID, component: ShowAsCommentEntry }
+    ];
 
-    const entries = [];
-
-    if (config.showAnnotations) {
+    if (config.showAnnotations && isTargetType && !isExcludedType) {
       entries.push({
         id: MEDICAL_TERMINOLOGY_ENTRY_ID,
         component: AnnotationListEntry,
@@ -31,10 +35,6 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
           return ext?.values?.some(v => v.$type === 'mt:Annotations' && v.values?.length > 0);
         }
       });
-    }
-
-    if (!entries.length) {
-      return groups;
     }
 
     groups.push({

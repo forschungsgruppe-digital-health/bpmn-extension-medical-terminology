@@ -178,6 +178,17 @@ export interface SnomedProviderConfig {
   headers?: Record<string, string>;
 }
 
+export interface TerminologyPropertiesPanelConfig {
+  /** Show or hide the terminology annotation entry on matching elements. */
+  showAnnotations?: boolean;
+  /** Replace the package's default annotatable BPMN types. */
+  targetTypes?: string[];
+  /** Add BPMN types to the defaults, or to the `targetTypes` override. */
+  includeTypes?: string[];
+  /** Exclude matching BPMN types; exclusions take precedence over inclusions. */
+  excludeTypes?: string[];
+}
+
 export interface DefaultTerminologyConfig {
   serverConfig?: {
     fhirBaseUrl?: string;

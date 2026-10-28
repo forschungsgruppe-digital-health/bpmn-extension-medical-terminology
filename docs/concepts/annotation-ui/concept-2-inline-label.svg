@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 760" font-size="16">
+  <rect x="0" y="0" width="1500" height="760" fill="#ffffff"/>
+  <style>
+    .task { fill: #fffdf5; stroke: #333; stroke-width: 2; rx: 10; }
+    .task-sel { fill: #fffdf5; stroke: #1a66ff; stroke-width: 3; stroke-dasharray: 2 3; rx: 10; }
+    .inline-label { fill: #eaf6ea; stroke: #2f7a2f; stroke-width: 1.3; }
+    .inline-text { fill: #184d18; font-size: 12px; }
+    .panel { fill: #f5f5f5; stroke: #555; stroke-width: 1.5; stroke-dasharray: 3 3; }
+    .field { fill: none; stroke: #999; stroke-width: 1.2; }
+    .btn { fill: #e8e8e8; stroke: #666; stroke-width: 1.2; }
+    .caption { fill: #222; font-size: 15px; }
+    .step-label { fill: #444; font-size: 13px; font-style: italic; }
+    .arrow { stroke: #333; stroke-width: 2; marker-end: url(#arrowhead2); fill: none; }
+    .title { fill: #111; font-size: 20px; font-weight: bold; }
+    .note { fill: #555; font-size: 12px; }
+  </style>
+  <defs>
+    <marker id="arrowhead2" markerWidth="10" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 Z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- ===== Row 1: states none / one / many ===== -->
+  <text x="20" y="90" class="caption" font-weight="bold">Zustände am Element:</text>
+
+  <!-- state: none -->
+  <rect x="20" y="105" width="180" height="80" class="task"/>
+  <text x="110" y="150" text-anchor="middle" class="caption">Task A</text>
+  <text x="110" y="205" text-anchor="middle" class="step-label">ohne Annotation: kein Label</text>
+
+  <!-- state: one -->
+  <rect x="260" y="105" width="180" height="80" class="task"/>
+  <text x="350" y="140" text-anchor="middle" class="caption">Task B</text>
+  <rect x="270" y="155" width="160" height="20" class="inline-label"/>
+  <text x="350" y="169" text-anchor="middle" class="inline-text">SNOMED: Beispielterm</text>
+  <text x="350" y="205" text-anchor="middle" class="step-label">eine Annotation: Kurzlabel</text>
+
+  <!-- state: many -->
+  <rect x="500" y="105" width="180" height="80" class="task"/>
+  <text x="590" y="140" text-anchor="middle" class="caption">Task C</text>
+  <rect x="510" y="155" width="160" height="20" class="inline-label"/>
+  <text x="590" y="169" text-anchor="middle" class="inline-text">Beispielterm +2</text>
+  <text x="590" y="205" text-anchor="middle" class="step-label">mehrere: Erster Term + Zähler</text>
+
+  <!-- dense / small zoom collision -->
+  <rect x="740" y="105" width="180" height="80" class="task"/>
+  <text x="830" y="135" text-anchor="middle" class="caption">Task D</text>
+  <rect x="750" y="150" width="160" height="16" class="inline-label"/>
+  <text x="830" y="162" text-anchor="middle" class="inline-text" font-size="10">Beisp… (gekürzt)</text>
+  <text x="830" y="205" text-anchor="middle" class="step-label">dicht/klein: Text gekürzt,</text>
+  <text x="830" y="222" text-anchor="middle" class="step-label">volle Angabe im Panel</text>
+
+  <!-- ===== Row 3: notes ===== -->
+  <text x="35" y="520" class="note" font-size="13">• Inhalt im Diagramm unmittelbar sichtbar – erfüllt HL7-Hinweis (S. 82), dass annotierte Konzepte erkennbar mit ihrer Terminologie/Kategorie verknüpft sein sollen.</text>
+  <text x="35" y="542" class="note" font-size="13">• Risiko: bei dichten Diagrammen und vielen Annotationen überlagern sich Kurzlabels mit Sequenzflüssen, anderen Labels und Kontextmenüs.</text>
+  <text x="35" y="564" class="note" font-size="13">• Bei kleinem Zoom muss der Text gekürzt oder ausgeblendet werden (vgl. Entwurf 1, Task D); Zugriff auf volle Angabe bleibt über das Panel erhalten.</text>
+  <text x="35" y="586" class="note" font-size="13">• Tastaturzugang und Screenreader-Beschriftung weiterhin nötig; Hover allein reicht laut WCAG 4.1.2 nicht aus.</text>
+  <text x="35" y="608" class="note" font-size="13">• Als SVG-Grafik im aktiven Diagrammlayer exportierbar – wie Entwurf 1 (dort ebenfalls Custom-Renderer statt HTML-Overlay); Export muss trotzdem getestet werden.</text>
+  <text x="35" y="630" class="note" font-size="13">• HL7 Field Guide S. 26: die native BPMN/DMN-"Annotation" ist nur erläuternder Text – unser Kurzlabel ersetzt sie nicht und bleibt rein visuelle Projektion aus mt:-Daten.</text>
+  <text x="35" y="652" class="note" font-size="13">• HL7 Field Guide S. 15–16: BPMN soll mit minimalem Training lesbar bleiben – zusätzlicher Text am Element erhöht die Informationsdichte stärker als Entwurf 1.</text>
+  <text x="35" y="674" class="note" font-size="13">• Offene Frage: Kürzungsregel für lange Display-Namen und Reihenfolge bei mehreren Annotationen am selben Element.</text>
+</svg>
