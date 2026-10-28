@@ -13,9 +13,9 @@ import {
 /**
  * Global switch for BPMN TextAnnotations generated from terminology data.
  *
- * @param {import('diagram-js/lib/core/EventBus').default} eventBus
- * @param {import('diagram-js/lib/core/ElementRegistry').default} elementRegistry
- * @param {import('diagram-js/lib/core/GraphicsFactory').default} graphicsFactory
+ * @param {import('diagram-js/lib/core/EventBus.js').default} eventBus
+ * @param {import('diagram-js/lib/core/ElementRegistry.js').default} elementRegistry
+ * @param {import('diagram-js/lib/core/GraphicsFactory.js').default} graphicsFactory
  * @param {import('didi').Injector} injector
  */
 export default function TerminologyCommentVisibility(eventBus, elementRegistry, graphicsFactory, injector) {

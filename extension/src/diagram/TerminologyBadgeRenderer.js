@@ -17,9 +17,8 @@ const BADGE_RENDER_PRIORITY = 2000;
  * export. It does not replace any renderer: it re-fires `render.shape` to let
  * the other renderers draw the shape first and appends the badge afterwards.
  *
- * @param {import('diagram-js/lib/core/EventBus').default} eventBus
+ * @param {import('diagram-js/lib/core/EventBus.js').default} eventBus
  * @param {Function} translate - Host `translate(template, replacements)` service.
- * @param {import('didi').Injector} injector - Resolves the optional terminology registry.
  */
 export default function TerminologyBadgeRenderer(eventBus, translate) {
   this._eventBus = eventBus;
