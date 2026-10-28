@@ -130,7 +130,7 @@ jobs:
           PACKAGE_ARCHIVE: ${{ steps.package.outputs.archive }}
           NODE_AUTH_TOKEN: ''
         run: |
-          npm stage publish "$PACKAGE_ARCHIVE" --registry=https://registry.npmjs.org --access=public --tag="$NPM_TAG" --ignore-scripts --json | tee "$RUNNER_TEMP/npm-stage-result.json"
+          npm stage publish "$PACKAGE_ARCHIVE" --registry=https://registry.npmjs.org --access=public --tag="$NPM_TAG" --ignore-scripts --loglevel=verbose --json | tee "$RUNNER_TEMP/npm-stage-result.json"
 
       - name: Show stage receipt and test instructions
         env:
