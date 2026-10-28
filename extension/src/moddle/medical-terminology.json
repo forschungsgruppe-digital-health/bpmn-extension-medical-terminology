@@ -2,7 +2,7 @@
   "name": "MedicalTerminology",
   "uri": "https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1",
   "prefix": "mt",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "xml": {
     "tagAlias": "lowerCase"
   },
