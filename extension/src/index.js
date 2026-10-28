@@ -45,6 +45,9 @@
  * @categoryDescription Properties panel
  * The bpmn-js properties-panel integration and its configuration.
  *
+ * @categoryDescription Diagram
+ * The opt-in bpmn-js module that draws `MT` badges and generated BPMN comments.
+ *
  * @categoryDescription Discovery
  * Finding terminology packages at build time, and labelling what was found.
  *
@@ -175,6 +178,9 @@ export { createTerminologyPropertiesPanelModule } from './properties-panel/index
 /** @category Properties panel */
 export { DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG } from './properties-panel/config.js';
 export { TERMINOLOGY_ERROR_EVENT } from './properties-panel/error-contract.js';
+
+/** @category Diagram */
+export { default as TerminologyBadgeModule } from './diagram/index.js';
 
 /** @category Annotations */
 export {

@@ -25,6 +25,7 @@
     ".": "./src/index.js",
     "./moddle": "./src/moddle/medical-terminology.json",
     "./properties-panel": "./src/properties-panel/index.js",
+    "./diagram": "./src/diagram/index.js",
     "./properties-panel.css": "./src/properties-panel/properties-panel.css",
     "./vite": "./src/vite/plugin.js",
     "./vite/types": "./src/vite/types.d.ts",

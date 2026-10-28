@@ -15,6 +15,9 @@
     </xsd:sequence>
   </xsd:complexType>
 
+  <xsd:element name="generatedComment" type="mt:tGeneratedComment"/>
+  <xsd:complexType name="tGeneratedComment"/>
+
   <xsd:element name="annotation" type="mt:tAnnotation"/>
   <xsd:complexType name="tAnnotation">
     <xsd:sequence>

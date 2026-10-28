@@ -137,6 +137,23 @@ entries. Import the official bpmn-js and properties-panel styles in the host
 application as usual; the terminology styles inherit its fonts, colors, and
 CSS variables.
 
+To show round `MT` badges and terminology comments, add the optional
+`TerminologyBadgeModule` to `additionalModules`. The module renders SVG alongside
+the standard bpmn-js shapes. Its global "Show as comment" switch creates
+standard `bpmn:TextAnnotation` and `bpmn:Association` elements for annotated
+shapes. Generated comments contain a plain-text preview of the connected
+shape's `mt:` data in `<bpmn:text>`, so editors without this extension can
+display them as ordinary BPMN comments. The preview is limited to five
+rendered lines and at most 350 diagram units wide; an overflow marker signals
+omitted content, while the full data remains in `mt:`. An `mt:GeneratedComment`
+marker lets the extension identify comments it owns and refresh them when
+terminology data changes. With comments enabled, they are part of BPMN XML and
+SVG exports.
+Turning the switch off removes generated comments; turning it on again
+recreates them from the current `mt:` data. The Medical terminology properties
+group is available for all selected elements; only configured target types show
+the annotation editor in addition to the global switch.
+
 To add or exclude annotatable BPMN element types without replacing the package
 defaults, pass `includeTypes` or `excludeTypes` to
 `createTerminologyPropertiesPanelModule`. See
@@ -724,7 +741,9 @@ Terminology annotations are persisted as standard BPMN 2.0 extension elements:
 ```
 
 Clinical data belongs only in `mt:` elements under
-`bpmn:extensionElements`. It must not change BPMN core or BPMN-DI structures.
+`bpmn:extensionElements`; it must not change BPMN process semantics or be
+stored in BPMN-DI. The extension may add standard BPMN comments and adjust
+diagram bounds to keep generated comments from overlapping existing content.
 
 ## Demo
 

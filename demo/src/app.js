@@ -7,6 +7,7 @@ import {
 import {
   createTerminologyModule,
   TerminologyModdleDescriptor,
+  TerminologyBadgeModule,
   createTerminologyPropertiesPanelModule
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
@@ -92,6 +93,7 @@ async function bootstrap() {
       createTerminologyPropertiesPanelModule({
         showAnnotations: DEMO_FEATURES.showTerminologyAnnotations
       }),
+      TerminologyBadgeModule,
       terminologyServicesModule
     );
 

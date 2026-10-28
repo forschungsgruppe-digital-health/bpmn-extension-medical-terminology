@@ -710,6 +710,10 @@ body {
   margin-bottom: 3px;
 }
 
+.bio-properties-panel-toggle-switch.inline > .bio-properties-panel-label {
+  font-size: 11px;
+}
+
 .bio-properties-panel-description,
 .bio-properties-panel-description p,
 .bio-properties-panel-description span,
