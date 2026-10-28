@@ -6,6 +6,14 @@ on:
       tag:
         required: true
         type: string
+      test_version:
+        description: Optional smoke-test RC version; changes only the staged tarball
+        required: false
+        type: string
+      smoke_commit:
+        description: Optional full commit SHA for smoke tests before a new release exists
+        required: false
+        type: string
     secrets:
       GH_PACKAGES_TOKEN:
         required: false
