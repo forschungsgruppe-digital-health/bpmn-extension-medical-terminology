@@ -1,12 +1,17 @@
 # npm staging automation
 
-`release-please.yml` calls `npm-stage.yml` after creating a package release.
+`release-please.yml` calls `npm-stage.yml` only after creating an RC release.
 The staging workflow checks out the exact release tag, checks coupled versions,
 and runs `npm run verify`. It prepares one registry-neutral archive in a
 temporary directory. RCs are first staged on npm and then the identical archive
 is published to GitHub Packages under `rc`. The source `publishConfig` remains
 unchanged. Stable GitHub publishing stays in `publish.yml`; RC release events
 are excluded there to avoid duplicate uploads.
+
+Stable releases are not staged on npm. They are published to GitHub Packages by
+`publish.yml`. If the release was created by Release Please and the release
+event does not start that workflow, run `publish.yml` manually on `main` with
+the exact stable release tag.
 
 GitHub publishing uses `GH_PACKAGES_TOKEN` if configured, otherwise the job's
 `GITHUB_TOKEN` with package write access. If GitHub publishing fails after npm
@@ -26,10 +31,8 @@ and npm rejection does not automatically remove the GitHub copy.
 
 ## Initial setup
 
-The workflow uses the granular stage-only GitHub Actions secret
-`NPM_STAGING_TOKEN` when it is configured. If the secret is absent, npm Trusted
-Publishing via OIDC is used. Configure two stage-only GitHub Trusted Publishers
-on npm:
+The workflow uses npm Trusted Publishing via OIDC; no npm token secret is used.
+Configure two stage-only GitHub Trusted Publishers on npm:
 
 - Owner: `forschungsgruppe-digital-health`.
 - Repository: `bpmn-extension-medical-terminology`.
@@ -39,9 +42,7 @@ on npm:
 
 npm validates the calling workflow identity for reusable workflows, so the
 automatic and manual entry points each need a publisher. Both caller and
-callee declare `id-token: write`. The `NPM_STAGING_TOKEN` secret may be kept
-as a fallback when OIDC is not available. If staging runs solely through OIDC,
-remove the bootstrap token and secret after verifying both publisher identities.
+callee declare `id-token: write`.
 
 An initial stage of a new package creates a public `0.0.0-stage` placeholder.
 The candidate's contents remain staged until approval. Rejecting a candidate
@@ -52,23 +53,11 @@ workflow cannot approve its own stages.
 
 ## Manual smoke test
 
-The prepared package and coupled release metadata use `1.0.0-rc.1`.
-Release Please is explicitly configured for that first RC. After its real
-release, remove or advance `release-as`; before a stable release also disable
-prerelease mode. Do not merge a release PR as part of the staging smoke test.
-
-After this workflow is available on the default branch, run `npm-stage` in
-GitHub Actions with an existing tag (for example `terminology-v0.1.9`) and
-`test_version: 1.0.0-rc.1`. For old tags without `check:versions`, also supply
-`smoke_commit` with the full SHA of a verified current `dev` commit and supply
-the matching version tag (for this preparation: `terminology-v1.0.0-rc.1`).
-That tag need not exist in smoke mode. The workflow verifies that commit
-instead of the old tag. Normal release calls always check out the release tag.
-This overrides only the npm copy's package version;
-it does not create a release or change source metadata. It also publishes the
-RC archive to GitHub Packages after successful staging. It is an
-authentication/transport test, not an actual RC. The initial bootstrap test
-predated this coupling and uploaded only to npm; do not repeat it.
+An optional smoke test may use `test_version: X.Y.Z-rc.N` and, when needed,
+`smoke_commit` with the full SHA of a verified commit. It stages an RC tarball
+for authentication/transport testing; it does not create a release or change
+source metadata. A normal staging run leaves both overrides empty and requires
+an actual `terminology-vX.Y.Z-rc.N` tag.
 
 Download and inspect the stage following the [checklist](RELEASE-TESTING.md).
 Then an authenticated maintainer rejects the exact stage ID:
