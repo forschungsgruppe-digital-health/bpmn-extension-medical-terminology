@@ -4,16 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      smoke_tag:
-        description: Existing RC release tag to use for publisher validation
-        required: true
-        type: string
-      test_version:
-        description: Temporary RC version to stage and then reject
-        required: true
-        type: string
 
 # release-please maintains the release PR and tags releases.
 # Stable GitHub publishing stays in publish.yml. Only RC releases are staged on npm.
@@ -23,7 +13,6 @@ permissions:
 
 jobs:
   release-please:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     outputs:
       release_created: ${{ steps.release.outputs['extension--release_created'] }}
@@ -48,14 +37,3 @@ jobs:
       tag: ${{ needs.release-please.outputs.tag_name }}
     secrets:
       GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-
-  npm-stage-smoke:
-    if: github.event_name == 'workflow_dispatch'
-    permissions:
-      contents: read
-      id-token: write
-      packages: write
-    uses: ./.github/workflows/npm-stage.yml
-    with:
-      tag: ${{ inputs.smoke_tag }}
-      test_version: ${{ inputs.test_version }}
