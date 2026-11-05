@@ -2,7 +2,9 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import BpmnModeler from 'bpmn-js/lib/Modeler.js';
+import { TerminologyRegistry } from '../../src/core/TerminologyRegistry.js';
 import TerminologyBadgeModule from '../../src/diagram/index.js';
+import { createTerminologyModule } from '../../src/services/TerminologyServices.js';
 import {
   getGeneratedCommentDimensions,
   isGeneratedComment
@@ -45,12 +47,12 @@ if (!('transform' in SVGElement.prototype)) {
 
 let modeler;
 
-async function createModeler() {
+async function createModeler(additionalModules = [ TerminologyBadgeModule ]) {
   const container = document.createElement('div');
   document.body.appendChild(container);
   modeler = new BpmnModeler({
     container,
-    additionalModules: [ TerminologyBadgeModule ],
+    additionalModules,
     moddleExtensions: { mt: TerminologyModdleDescriptor }
   });
   await modeler.importXML(DIAGRAM);
@@ -69,7 +71,9 @@ function annotate(id, count, annotationText) {
           moddle.create('mt:Annotations', {
             values: Array.from({ length: count }, (_, i) => moddle.create('mt:Annotation', {
               id: `a${i}`,
-              text: i === 0 ? annotationText : undefined,
+              text: Array.isArray(annotationText)
+                ? annotationText[i]
+                : i === 0 ? annotationText : undefined,
               codings: [ moddle.create('mt:Coding', {
                 system: 'http://example.org/cs', code: `${i}`, display: `Term ${i}`
               }) ]
@@ -181,6 +185,24 @@ afterEach(() => {
 });
 
 describe('TerminologyBadgeRenderer', () => {
+  it('is included with the terminology services module', async () => {
+    await createModeler([
+      createTerminologyModule({
+        terminologyRegistry: new TerminologyRegistry()
+      })
+    ]);
+    annotate('A', 1, 'note');
+
+    expect(badgeCount('A')).toBe('1');
+    expect(modeler.get('terminologyCommentVisibility')).toBeDefined();
+
+    modeler.get('terminologyCommentVisibility').setVisible(true);
+
+    expect(modeler.get('elementRegistry').getAll().filter(element =>
+      isGeneratedComment(element.businessObject)
+    )).toHaveLength(1);
+  });
+
   it('draws no badge without annotations and still renders the shape', async () => {
     await createModeler();
     expect(gfx('A').querySelector('.mt-badge')).toBeNull();
@@ -398,7 +420,20 @@ describe('TerminologyBadgeRenderer', () => {
       expect(annotationFor('A').width).toBeLessThan(350);
     });
 
-    it('caps comment width and visible lines without truncating short entries', async () => {
+    it('keeps annotations in creation order, with text before each annotation coding', async () => {
+      await createModeler();
+      annotate('A', 2, [ 'First note', 'Second note' ]);
+      modeler.get('terminologyCommentVisibility').setVisible(true);
+
+      expect(commentLines('A')).toEqual([
+        '\u00a0\u00a0First note',
+        '\u00a0\u00a0cs: 0 – Term 0',
+        '\u00a0\u00a0Second note',
+        '\u00a0\u00a0cs: 1 – Term 1'
+      ]);
+    });
+
+    it('keeps the comment width capped and renders every annotation line', async () => {
       await createModeler();
       const fullText = 'This annotation text must remain complete in the generated BPMN comment.';
       annotate('A', 8, fullText);
@@ -406,19 +441,20 @@ describe('TerminologyBadgeRenderer', () => {
 
       const comment = annotationFor('A');
       const textRenderer = modeler.get('textRenderer');
-      const fiveLinesHeight = textRenderer.getTextAnnotationBounds(
+      const nineLinesHeight = textRenderer.getTextAnnotationBounds(
         { x: 0, y: 0, width: 350, height: 30 },
-        Array(5).fill('\u00a0\u00a0x').join('\n')
+        Array(9).fill('\u00a0\u00a0x').join('\n')
       ).height;
 
       expect(comment.width).toBeLessThanOrEqual(350);
-      expect(comment.height).toBeLessThanOrEqual(fiveLinesHeight);
+      expect(comment.height).toBeGreaterThan(nineLinesHeight);
       expect(comment.businessObject.text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim())
         .toContain(fullText);
-      expect(comment.businessObject.text).toContain('… +');
+      expect(comment.businessObject.text).not.toContain('…');
+      expect(commentLines('A')).toHaveLength(10);
     });
 
-    it('truncates a long annotation at a readable boundary and reports hidden content', async () => {
+    it('wraps long annotations without truncating their content', async () => {
       await createModeler();
       const fullText = Array(80).fill('synthetic clinical note').join(' ');
       annotate('A', 1, fullText);
@@ -432,10 +468,10 @@ describe('TerminologyBadgeRenderer', () => {
       ).height;
 
       expect(comment.width).toBeLessThanOrEqual(350);
-      expect(comment.height).toBeLessThanOrEqual(fiveLinesHeight);
-      expect(comment.businessObject.text).not.toContain(fullText);
-      expect(comment.businessObject.text).toContain('…');
-      expect(comment.businessObject.text).toMatch(/\+\d+ more/);
+      expect(comment.height).toBeGreaterThan(fiveLinesHeight);
+      expect(comment.businessObject.text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim())
+        .toContain(fullText);
+      expect(comment.businessObject.text).not.toContain('…');
       expect(comment.businessObject.text.split('\n').every(line => line.startsWith('\u00a0\u00a0'))).toBe(true);
 
       const { xml } = await modeler.saveXML();
@@ -539,13 +575,13 @@ describe('TerminologyBadgeRenderer', () => {
       expect(commentLines('A')).toEqual([ '\u00a0\u00a0cs: 0 – Term 0' ]);
     });
 
-    it('limits the number of displayed coding lines and reports the remainder', async () => {
+    it('renders every displayed coding line', async () => {
       await createModeler();
       annotate('A', 9);
       modeler.get('terminologyCommentVisibility').setVisible(true);
       const lines = commentLines('A');
-      expect(lines).toHaveLength(5);
-      expect(lines.at(-1)).toBe('\u00a0\u00a0… +5 more');
+      expect(lines).toHaveLength(9);
+      expect(lines.at(-1)).toBe('\u00a0\u00a0cs: 8 – Term 8');
     });
   });
 });

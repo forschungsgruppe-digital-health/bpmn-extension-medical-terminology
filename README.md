@@ -137,15 +137,15 @@ entries. Import the official bpmn-js and properties-panel styles in the host
 application as usual; the terminology styles inherit its fonts, colors, and
 CSS variables.
 
-To show round `MT` badges and terminology comments, add the optional
-`TerminologyBadgeModule` to `additionalModules`. The module renders SVG alongside
-the standard bpmn-js shapes. Its global "Show as comment" switch creates
+The terminology services module also enables round `MT` badges and terminology
+comments; no separate diagram module is needed. It renders SVG alongside the
+standard bpmn-js shapes. Its global "Show as comment" switch creates
 standard `bpmn:TextAnnotation` and `bpmn:Association` elements for annotated
-shapes. Generated comments contain a plain-text preview of the connected
+shapes. Generated comments contain a plain-text rendering of the connected
 shape's `mt:` data in `<bpmn:text>`, so editors without this extension can
-display them as ordinary BPMN comments. The preview is limited to five
-rendered lines and at most 350 diagram units wide; an overflow marker signals
-omitted content, while the full data remains in `mt:`. An `mt:GeneratedComment`
+display them as ordinary BPMN comments. All annotations are rendered, with
+wrapping as needed and no line limit; comment width remains capped at 350
+diagram units. The full data remains in `mt:`. An `mt:GeneratedComment`
 marker lets the extension identify comments it owns and refresh them when
 terminology data changes. With comments enabled, they are part of BPMN XML and
 SVG exports.
