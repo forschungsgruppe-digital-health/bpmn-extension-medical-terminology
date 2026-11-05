@@ -196,9 +196,9 @@ references, not directly under `<definitions>`.
 
 An extension must not change BPMN process semantics. This extension adds
 standard BPMN `TextAnnotation` and `Association` artifacts for generated
-comments; their displayed text is a compact preview of `mt:` data, capped at
-five rendered lines and 350 diagram units wide. An overflow marker indicates
-omitted content; the complete clinical data remains in `mt:`. To prevent
+comments; their displayed text renders all `mt:` annotations, wrapped as
+needed, with a maximum width of 350 diagram units. The complete clinical data
+remains in `mt:`. To prevent
 overlaps, comment placement may also adjust BPMN-DI bounds, without storing
 clinical meaning there. A consumer that ignores `mt:` content can still open
 the process and display the standard comments. `mustUnderstand="false"` (the

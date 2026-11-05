@@ -46,7 +46,7 @@
  * The bpmn-js properties-panel integration and its configuration.
  *
  * @categoryDescription Diagram
- * The opt-in bpmn-js module that draws `MT` badges and generated BPMN comments.
+ * The bpmn-js module that draws `MT` badges and generated BPMN comments.
  *
  * @categoryDescription Discovery
  * Finding terminology packages at build time, and labelling what was found.

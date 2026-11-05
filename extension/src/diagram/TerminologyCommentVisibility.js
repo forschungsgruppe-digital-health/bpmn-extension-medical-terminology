@@ -23,7 +23,6 @@ export default function TerminologyCommentVisibility(eventBus, elementRegistry, 
   this._elementRegistry = elementRegistry;
   this._graphicsFactory = graphicsFactory;
   this._terminologyRegistry = injector.get('terminologyRegistry', false);
-  this._translate = injector.get('translate');
   this._modeling = injector.get('modeling', false);
   this._elementFactory = injector.get('elementFactory', false);
   this._bpmnFactory = injector.get('bpmnFactory', false);
@@ -115,7 +114,6 @@ TerminologyCommentVisibility.prototype._createGeneratedComment = function(target
   const text = getGeneratedCommentText(
     annotations,
     this._terminologyRegistry,
-    this._translate,
     this._textRenderer
   );
   const dimensions = getGeneratedCommentDimensions(text, this._textRenderer);
@@ -188,7 +186,6 @@ TerminologyCommentVisibility.prototype._syncGeneratedCommentFor = function(eleme
     ? getGeneratedCommentText(
       annotations,
       this._terminologyRegistry,
-      this._translate,
       this._textRenderer
     )
     : '';
