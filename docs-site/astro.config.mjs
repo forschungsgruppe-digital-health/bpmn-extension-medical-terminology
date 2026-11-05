@@ -11,7 +11,8 @@ import { readFileSync } from 'node:fs';
 const apiSidebar = JSON.parse(readFileSync(new URL('./src/generated/api-sidebar.json', import.meta.url), 'utf8'));
 
 
-const SITE_BASE = '/bpmn-extension-medical-terminology';
+const SITE_BASE = (process.env.DOCS_BASE_PATH || '/bpmn-extension-medical-terminology')
+  .replace(/\/$/, '');
 
 /**
  * Prefix root-relative links written in Markdown with the site base.
@@ -122,7 +123,8 @@ export default defineConfig({
         { label: 'The data format', items: [
           { label: 'Namespace v1', link: '/ns/terminology/v1/' },
           { label: 'XML schema', link: '/schema/' },
-          { label: 'Compatibility', link: '/compatibility/' }
+          { label: 'Compatibility', link: '/compatibility/' },
+          { label: 'Version matrix', link: '/version-matrix/' }
         ] },
         { label: 'Extending it', items: [
           { label: 'Extension points', link: '/extending/' },
@@ -130,7 +132,6 @@ export default defineConfig({
           { label: 'Transport adapters', link: '/extending/adapters/' }
         ] },
         ...apiSidebar,
-        { label: 'Architecture', collapsed: true, items: [{ autogenerate: { directory: 'architecture' } }] },
         { label: 'Project', items: [
           { label: 'Background and related work', link: '/background/' },
           { label: 'Roadmap', link: '/roadmap/' },

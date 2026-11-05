@@ -284,14 +284,13 @@ Being clear about the edges is more useful than a longer feature list.
 - **It holds no patient data.** Annotations describe process steps and document classes — model-level
   metadata, not records. The fixtures and demo content are synthetic.
 
-There are also current gaps, as opposed to deliberate exclusions. The properties panel offers the group on
-16 BPMN element types — tasks and their specialisations, subprocesses, exclusive gateways, data object and
-data store references, and start, end and intermediate events. Other gateway types and message flows can
-hold annotations in the XML but have no panel group, so on those the annotations have to be written
-programmatically. Editing a saved annotation in place is not implemented — it can only be removed and
-added again — and undo does not currently cover adding or removing an annotation. These are known and
-scheduled; see [the properties panel](/properties-panel/) for the precise behaviour and
-[the roadmap](/roadmap/) for status.
+The default properties-panel targets cover tasks and their specialisations, subprocesses, exclusive
+gateways, data object and data store references, and start, end, and intermediate events. Hosts can
+replace, extend, or exclude target types; other BPMN elements can still carry existing `mt:` data.
+Saved annotations can be edited, and annotation changes participate in bpmn-js undo/redo. Annotated
+elements also show diagram badges; users can switch on generated BPMN comments when a readable,
+interoperable preview is useful. See [the properties panel](/properties-panel/) for the behavior and
+[the version matrix](/version-matrix/) for the tested integration stack.
 
 ## Is this the right tool for you?
 
@@ -313,4 +312,5 @@ scheduled; see [the properties panel](/properties-panel/) for the precise behavi
 - [The properties panel](/properties-panel/) — what the modeller actually sees, and its current limits.
 - [Package discovery](/configuration/discovery/) — shipping terminology content with your build.
 - [Extending](/extending/) — the bpmn.io concepts behind the extension, and how to add your own.
-- [Architecture](/architecture/) — how the pieces fit together, in arc42 form.
+- [Architecture](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42) —
+  how the pieces fit together, in arc42 form.

@@ -60,8 +60,9 @@ the namespace authority and format-version policy are recorded in
 
 ## The content model
 
-Three types, in a strict containment chain: a container, the annotations inside it, and the
-codes inside each annotation. All three declare `superClass: ["Element"]`, which in moddle
+Three annotation-data types form a strict containment chain: a container, the annotations inside
+it, and the codes inside each annotation. A fourth type, `mt:GeneratedComment`, marks derived
+BPMN comments and is not part of that chain. All four declare `superClass: ["Element"]`, which in moddle
 terms means each one is a free-standing extension element rather than an addition to a BPMN
 type. Because the descriptor sets `xml.tagAlias: "lowerCase"`, the moddle type `Annotations`
 serialises as `<mt:annotations>`, `Annotation` as `<mt:annotation>` and `Coding` as
@@ -73,6 +74,11 @@ bpmn:extensionElements
     └── mt:annotation *           (id, text)
         └── mt:coding *           (system, version, code, display)
 ```
+
+Generated BPMN text annotations carry an empty `mt:generatedComment` marker in their own
+`bpmn:extensionElements`. The marker lets the extension refresh those standard BPMN comments
+from their source annotations; it does not contain clinical data. See
+[generated comments](/properties-panel/#diagram-badges-and-generated-comments).
 
 ### `mt:Annotations` — the container
 
@@ -88,8 +94,8 @@ The `values` property name never appears in the XML. Moddle serialises a typed `
 property as a bare repetition of the child type's own tag, which is why the container's
 content is simply a sequence of `<mt:annotation>` elements.
 
-The writing helper
-([`AnnotationHelper.js`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/services/AnnotationHelper.js))
+The modeling service
+([`AnnotationModeling.js`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/services/AnnotationModeling.js))
 creates `bpmn:extensionElements` and the container lazily, on the first annotation, and
 reuses the existing container afterwards — so a normally-edited element has exactly one
 `<mt:annotations>`. The reader side looks up the container by `$type`, takes the first
@@ -521,6 +527,6 @@ a round trip through a specific third-party tool, test that tool with
 - [Properties panel](/properties-panel/) — how annotations are created and what the editor
   enforces.
 - [Extending](/extending/) — the moddle and bpmn.io background behind the design.
-- [Architecture](/architecture/) — the arc42 documentation, including the namespace
-  constraint.
+- [Architecture](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42) —
+  the arc42 documentation, including the namespace constraint.
 - [Namespace v1](/ns/terminology/v1/) — the generated, authoritative structural reference.

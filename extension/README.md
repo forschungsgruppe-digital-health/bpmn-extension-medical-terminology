@@ -18,6 +18,8 @@ Install the package with npm:
 
 For staged candidates, use the
 [download and test checklist](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/RELEASE-TESTING.md).
+For stable-release registry configuration and package access, see the
+[compatibility and installation guide](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs-site/src/content/docs/compatibility.md#installing-it-today).
 
 ```bash
 npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology

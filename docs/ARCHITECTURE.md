@@ -17,6 +17,11 @@ Terminology annotations use the `mt:` namespace
 standard BPMN `extensionElements`. The extension does not modify BPMN core
 elements or BPMN-DI data.
 
+The terminology services module also enables diagram badges and optional
+generated BPMN comments. Comments are standard `bpmn:TextAnnotation` and
+`bpmn:Association` artifacts with an `mt:GeneratedComment` marker; their
+readable text is derived from the authoritative `mt:` annotations.
+
 ## Chapters
 
 | # | Chapter | File |

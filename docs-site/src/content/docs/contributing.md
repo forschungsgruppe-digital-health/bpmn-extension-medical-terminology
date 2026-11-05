@@ -22,8 +22,9 @@ Before you start, two rules apply to every change without exception:
 
 ### Prerequisites
 
-- **Node.js 24 or later.** The root `package.json` declares `"engines": { "node": ">=24" }`, and
-  every continuous-integration job runs on Node 24.
+- **Node.js 24 or later.** The root `package.json` declares `"engines": { "node": ">=24" }`.
+  The [version matrix](/version-matrix/) records the Node major used by the build and validation
+  workflows.
 - **`xmllint`** (from `libxml2-utils` on Debian and Ubuntu) for the XSD validation steps. Without
   it, `npm run check:xsd` and `npm run xsd:ext` cannot run.
 - A checkout of the repository. Some of the tooling only does its job inside a git working tree.
@@ -44,10 +45,8 @@ if this is not a git checkout, or git is unavailable, it prints a notice and exi
 You can re-run it at any time with `npm run hooks:install`.
 
 :::tip[Devcontainer]
-The repository ships a `.devcontainer` definition that installs `xmllint` and the workspace
-dependencies on create, and starts the demo modeler on port 5173 on attach. Note that its image
-is `mcr.microsoft.com/devcontainers/javascript-node:22`, one major behind the `>=24` the
-repository declares — install a newer Node inside the container if a tool objects.
+The repository ships a `.devcontainer` definition that uses Node.js 24, installs `xmllint` and
+the workspace dependencies on create, and starts the demo modeler on port 5173 on attach.
 :::
 
 ### Run the demo modeler
@@ -92,8 +91,9 @@ npm test
 ```
 
 This runs the test script of every workspace that defines one, which today means Vitest over the
-`extension/` suite — 24 test files covering adapters, providers, the registry, the configuration
-assembly, the services, the properties-panel entries, the Vite plugin, the CLI and the lint rules.
+`extension/` suite. It covers adapters, providers, the registry, configuration assembly, services,
+properties-panel entries, the Vite plugin, the CLI, and lint rules. The file count changes as the
+suite evolves; use Vitest's output rather than a hard-coded count.
 
 The tests are the most reliable statement of what the code actually does, and they are the
 fastest way to understand an unfamiliar corner of it. Two conventions matter:
@@ -183,13 +183,18 @@ Three parts of the site are generated rather than written by hand:
   [API reference](/api/), change the JSDoc on the symbol, not the generated page. (`npm run
   docs:api` runs TypeDoc separately, into `docs-site/.typedoc-out/`; that copy feeds the coverage
   gate below and the script that derives the API sidebar from the `@category` tags.)
-- **`src/content/docs/architecture/`** is copied from `docs/arc42/` by
-  `docs-site/scripts/import-repo-docs.mjs` on every site build, and is git-ignored. Edit the
-  chapter files under `docs/arc42/`, never the copies.
+- **Architecture documentation** lives in `docs/arc42/` and is not copied into the site.
+  See the [arc42 chapters](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42)
+  and [`docs/ARCHITECTURE.md`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/ARCHITECTURE.md)
+  in the repository.
 - **`src/content/docs/configuration/defaults.md`** is written by
   `tools/generate-config-defaults.mjs` from the assembled default configuration. Unlike the other
   two it *is* committed, and `npm run docs:defaults:check` — part of `npm run check:conformance` —
   fails the build when the page and the code disagree.
+- **`src/content/docs/version-matrix.md`** is generated from release tags, manifests, the demo
+  lockfile, and the CI Node declaration. The docs build regenerates it from all available tags;
+  run `npm run docs:versions` locally and `npm run docs:versions:check` to check for drift.
+  The docs workflows fetch tags before generating the page.
 
 Two further gates protect the generated reference:
 
@@ -261,7 +266,7 @@ Releases are automated, and the automation is split in two on purpose.
    last release and maintains a release pull request that bumps the version and writes the
    changelog.
 2. **Merging that pull request** creates the git tag and the GitHub Release. Tags carry the
-   component name — `terminology-v0.1.9`.
+   component name — `terminology-vX.Y.Z`.
 3. **A published release triggers the publish workflow**, which pushes the package to the
    configured registry. It is decoupled from release-please's own release step because that step
    proved unreliable for this repository, and it is idempotent: an already-published version is
@@ -282,16 +287,17 @@ npm pack --dry-run
 ```
 
 :::note[Where the package is published today]
-The package is currently published to GitHub Packages with private visibility and is not
-available from npmjs.com, which means nobody outside the owning organisation can install it.
-That is a known, tracked problem rather than an intended state — see the
-[roadmap](/roadmap/) and the [support](/support/) page.
+Stable releases are published through GitHub Packages. Release candidates are staged on npm,
+then require maintainer review before publication; staging and candidate testing are documented
+in [`docs/NPM-STAGING.md`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/NPM-STAGING.md)
+and [`docs/RELEASE-TESTING.md`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/RELEASE-TESTING.md).
+Check the current package permissions and [installation instructions](/compatibility/#installing-it-today).
 :::
 
 ## Also worth reading
 
 - [Extending the extension](/extending/) — the concepts behind providers and adapters, and the
   bpmn.io mechanisms this package sits on.
-- [Architecture](/architecture/) — the arc42 chapters, including the building-block view and the
-  recorded quality requirements.
+- [Architecture](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42) —
+  the arc42 chapters in the repository.
 - [API reference](/api/) — every exported symbol, generated from the source.

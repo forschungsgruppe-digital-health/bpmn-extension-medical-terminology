@@ -3,9 +3,9 @@ title: Using the properties panel
 description: How the Medical terminology group behaves in a bpmn-js properties panel, how to wire it up correctly, and what it can and cannot do today.
 ---
 
-The extension ships a properties-panel group called **Medical terminology**. It is the only
-user-facing surface of the package: everything a modeller does — picking a code system,
-searching it, attaching codings to a BPMN element, removing them again — happens there.
+The extension ships a properties-panel group called **Medical terminology**. It is the main
+editing surface: a modeller can search terminology, add or edit annotations, and remove them.
+The diagram also shows badges and can display generated BPMN comments.
 
 This page describes the contract: what the group looks like, what wiring it needs, which
 elements it appears on, how search behaves, and which limitations are real today.
@@ -57,9 +57,9 @@ The panel is split into two didi modules, and **you need both**:
 | Module | What it contributes |
 |---|---|
 | `createTerminologyPropertiesPanelModule(config)` / `TerminologyPropertiesPanelModule` | The UI — registers `TerminologyPropertiesProvider` with the properties panel |
-| `createTerminologyModule(services)` | The services — publishes `terminologyRegistry` and, when the services object carries one, `terminologyProviderLoader` into the didi container |
+| `createTerminologyModule(services)` | The services — publishes `terminologyRegistry` and an optional `terminologyProviderLoader`; it also includes the badge and generated-comment diagram module |
 
-The UI module resolves those services *optionally*
+The UI module resolves the terminology services *optionally*
 (`useService('terminologyRegistry', false)` in
 [`entries/AnnotationListEntry.js`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/properties-panel/entries/AnnotationListEntry.js)).
 That is deliberate — the panel still renders and still lets you write free-text annotations
@@ -175,8 +175,7 @@ want to avoid pulling the whole barrel into a code-split chunk.
 
 ## Which elements show the group
 
-`TerminologyPropertiesProvider` registers at priority `500` and filters by an explicit
-allow-list, `TARGET_TYPES`. These 16 BPMN types are on it:
+By default, the properties panel offers annotations for these BPMN types:
 
 | Category | Types |
 |---|---|
@@ -186,28 +185,17 @@ allow-list, `TARGET_TYPES`. These 16 BPMN types are on it:
 | Data | `bpmn:DataObjectReference`, `bpmn:DataStoreReference` |
 | Events | `bpmn:StartEvent`, `bpmn:EndEvent`, `bpmn:IntermediateThrowEvent`, `bpmn:IntermediateCatchEvent` |
 
-The check uses bpmn-js's `is()` helper, which is type-hierarchy aware. That has two
-consequences worth knowing:
+The check uses bpmn-js's `is()` helper, which is type-hierarchy aware. Inherited types
+are included too: for example, `bpmn:AdHocSubProcess` and `bpmn:Transaction` inherit
+from `bpmn:SubProcess`.
 
-- Types that *inherit* from a listed type are included even though they are not named.
-  `bpmn:AdHocSubProcess` and `bpmn:Transaction` both extend `bpmn:SubProcess`, so both get
-  the group. Equally, the seven specialised task types are redundant entries — they all
-  extend `bpmn:Task` already.
-- Types that merely *look* related are not included. `bpmn:BoundaryEvent` extends
-  `bpmn:CatchEvent`, not `bpmn:IntermediateCatchEvent`, so boundary events get no group.
-  `bpmn:CallActivity` extends `bpmn:Activity`, not `bpmn:SubProcess`. Parallel, inclusive,
-  complex and event-based gateways extend `bpmn:Gateway`, not `bpmn:ExclusiveGateway`.
+Other BPMN types do not show the group by default. You can replace the default list,
+add types, or exclude types in the host application; see [Options](#options).
 
-Everything else — sequence flows, pools and lanes, text annotations, associations, the
-process itself — shows no terminology group at all. There is no configuration option to
-widen the list; if you need another element type, that is a change to
-[`TerminologyPropertiesProvider.js`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/properties-panel/TerminologyPropertiesProvider.js).
-
-:::note
-The group label goes through the bpmn-js `translate` service, so a host application that
-registers its own translation module can localise the string `Medical terminology`. The
-strings *inside* the entry — button captions, hints, error messages — are not translated;
-they are English literals in the component.
+:::note[Translation]
+The group label, some validation and request-error messages, the comment toggle, and the badge
+description use the host `translate` service. Many form labels, hints, and button captions remain
+English literals; full UI internationalisation is not yet complete.
 :::
 
 The group is marked as *edited* (the panel's change indicator) whenever the selected element
@@ -411,27 +399,26 @@ codings** labels are plain `<label>` elements with no association to their contr
 
 ## Options
 
-The UI module takes a small options object, resolved by
+The UI module takes an options object, resolved by
 [`properties-panel/config.js`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/extension/src/properties-panel/config.js):
 
-```js title="extension/src/properties-panel/config.js"
-export const DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG = Object.freeze({
-  showAnnotations: true
-});
+| Option | Effect |
+| --- | --- |
+| `showAnnotations` | Show or hide the terminology group; defaults to `true`. |
+| `targetTypes` | Replace the default annotatable BPMN types. |
+| `includeTypes` | Add types to the defaults or `targetTypes`. |
+| `excludeTypes` | Exclude types after the defaults, `targetTypes`, and `includeTypes`. |
+
+```js title="Extend the default types"
+createTerminologyPropertiesPanelModule({
+  includeTypes: ['bpmn:Participant'],
+  excludeTypes: ['bpmn:UserTask']
+})
 ```
 
-`showAnnotations` is the only option. It is `true` by default, and setting it to `false`
-removes the annotation entry — which, since it is the group's only entry, removes the
-**Medical terminology** group altogether:
-
-```js title="Register the provider but render no terminology group"
-createTerminologyPropertiesPanelModule({ showAnnotations: false })
-```
-
-That is useful as a feature flag in a host application that wants the services and the moddle
-extension available — for programmatic annotation, import/export, validation — without exposing
-the editing UI. The frozen defaults object is re-exported from the barrel as
-`DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG`, so a host can read it rather than hard-coding `true`.
+Use `targetTypes` to replace the default list. Set `showAnnotations` to `false` when the host
+needs the services and moddle extension without exposing the editing UI. The frozen defaults
+object is re-exported from the barrel as `DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG`.
 
 Everything else — which providers exist, which servers they talk to, which packages are
 discovered — is configured on the *services* side, not here. See
@@ -512,35 +499,26 @@ To restyle rather than replace, override under the same scope:
 }
 ```
 
+## Diagram badges and generated comments
+
+The terminology services module automatically enables an `MT` badge for annotated elements.
+The badge is rendered in the diagram and SVG export; it is not stored as terminology data in
+the BPMN XML. To add readable BPMN comments, turn on **Show terminology as BPMN comments** in
+the properties panel. The extension generates linked standard `bpmn:TextAnnotation` and
+`bpmn:Association` elements, marked with `mt:GeneratedComment`; it regenerates them from the
+complete `mt:` annotations when the setting changes or annotations are edited.
+
+Generated comment text follows annotation creation order, with each annotation's free text
+before its codings. It wraps to a maximum width of 350 diagram units and renders every line.
+The comments are ordinary BPMN elements in XML and remain readable in BPMN editors that do
+not load this extension. The `mt:` data remains the authoritative source; the readable comment
+is a derived preview.
+
 ## Known limitations
 
-:::caution[Undo does not remove an annotation]
-Adding and removing annotations does not participate in the bpmn-js command stack correctly.
-The helper mutates the business object directly and then calls
-`modeling.updateModdleProperties(element, businessObject, {})` with an empty property set,
-which marks the diagram dirty and triggers a re-render but records nothing the command stack
-can reverse. **Pressing Ctrl+Z after adding an annotation does not remove it**, and undo after
-a removal does not bring it back. Until this is fixed, treat both operations as immediate and
-final, and use the `×` button rather than undo to correct a mistake.
-
-**Editing an existing annotation in place is not implemented.** The saved list is read-only:
-there is no way to change an annotation's text, add a coding to it, or correct a wrong code.
-The workflow is to remove the annotation and add it again. Note that removing it also frees its
-generated id, so re-adding usually reproduces the same `mt-ann-*` value.
-
-Both are tracked; see [the roadmap](/roadmap/).
-:::
-
-A note on repository documents you may encounter: the MVP user stories and the arc42 runtime
-view both describe in-place editing and command-stack participation as implemented. They
-describe the intended design, not the current code. This page reflects what
-`AnnotationListEntry.js` and `AnnotationHelper.js` actually do.
-
-Two smaller limits, for completeness:
-
 - Search is capped at 15 results per query with no paging control.
-- The set of annotatable element types is fixed in source; see
-  [Which elements show the group](#which-elements-show-the-group).
+- UI translation is partial; see [issue #1](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/1).
+- The package requires a bundler; see [Compatibility](/compatibility/).
 
 ## Where to go next
 
@@ -550,4 +528,4 @@ Two smaller limits, for completeness:
   satisfy to render well in the dropdown.
 - [Schema](/schema/) — the `mt:` XML shape the panel produces.
 - [Compatibility](/compatibility/) — bpmn-js and properties-panel version requirements.
-- [Roadmap](/roadmap/) — the command-stack fix, in-place editing, and the error export.
+- [Roadmap](/roadmap/) — remaining project work and tracked issues.

@@ -1,6 +1,6 @@
 {
   "name": "bpmn-extension-template",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
 
   // Install xmllint (for the xsd / xsd:ext checks) and all workspace deps.
   // The `demo` workspace pulls in bpmn-js + properties-panel + vite, so the

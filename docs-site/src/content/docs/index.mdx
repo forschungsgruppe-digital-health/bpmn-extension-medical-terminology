@@ -1,0 +1,56 @@
+---
+title: Medical terminology for BPMN
+description: Decide whether coded clinical annotations belong in your BPMN models.
+---
+
+import ModelSandbox from '../../components/ModelSandbox.astro';
+
+Add machine-readable clinical meaning to BPMN tasks, documents, and decisions.
+The extension stores terminology codes in the `.bpmn` file without changing
+the process semantics.
+The versioned data namespace is
+`https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`;
+the [XML schema](/schema/) describes its contract.
+
+## Is it a fit?
+
+| You need to… | Fit |
+| --- | --- |
+| Attach codes such as SNOMED CT, LOINC, ICD-10-GM, OPS, IHE XDS, or KDL to BPMN elements | **Yes** |
+| Search and select codes in a bpmn-js properties panel | **Yes** |
+| Show which elements are annotated, or add readable BPMN comments | **Yes**, when terminology services are registered |
+| Use the XML format with another BPMN tool | **Yes**, if it preserves unknown extension elements |
+| Execute processes or generate FHIR resources | **No** |
+| Get a terminology licence or a terminology server | **No** |
+
+## What it adds
+
+Annotations are saved as `mt:` extension elements. Registering the terminology
+services module also enables `MT` badges; a properties-panel switch can generate
+standard BPMN comments from those annotations. You do not need to register
+`TerminologyBadgeModule` separately. The complete terminology data remains in
+`mt:`. See [properties-panel configuration](/properties-panel/) for annotatable
+element types and [the XML schema](/schema/) for interoperability details.
+
+<ModelSandbox />
+
+## Before adopting it
+
+The package is actively developed research software. Stable releases are
+published through GitHub Packages; release candidates are staged on npm for evaluation.
+It ships raw ESM and requires a bundler such as Vite, Rollup, webpack, or
+esbuild. See [compatibility](/compatibility/) and the
+[version matrix](/version-matrix/) for the current package and tested stack.
+
+For example scenarios, see [use cases](/use-cases/). For architecture and
+technical background, see the repository's [arc42 chapters](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42)
+and [MVP user stories](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/user-stories/terminology-extension-mvp.md).
+
+| If you want to… | Read |
+| --- | --- |
+| Configure terminology sources | [Configuration](/configuration/) · [Defaults](/configuration/defaults/) |
+| Add annotations in bpmn-js | [Properties panel](/properties-panel/) |
+| Use the XML format in another tool | [XML schema](/schema/) · [Namespace v1](/ns/terminology/v1/) |
+| Add a custom terminology source | [Extending](/extending/) |
+| Compare releases and tested dependencies | [Version matrix](/version-matrix/) |
+| Look up an export or type | [API reference](/api/) |

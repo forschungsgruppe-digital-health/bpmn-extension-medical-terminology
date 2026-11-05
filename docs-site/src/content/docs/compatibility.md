@@ -7,26 +7,32 @@ This page answers the questions that come before installation: does it fit my bp
 version, will it work with my build setup, will it fight with the other extensions I already
 load, and what happens to my files elsewhere. Every version number below was read from the
 package manifests and the committed lockfile in this repository.
+The [version matrix](/version-matrix/) records the corresponding values for each release tag and
+the current checkout.
 
 ## At a glance
 
 | | |
 |---|---|
 | Consumption model | **Bundler required** (Vite, Rollup, webpack, esbuild). Plain Node `import` of the main entry point fails. |
-| Availability | **Not on npmjs.com.** Install from GitHub Packages or from the repository. |
-| bpmn-js | Peer range `>=15.0.0`; exercised against **18.14.0**. |
-| bpmn-js-properties-panel | Peer range `>=5.0.0`; exercised against **5.53.0**. |
-| @bpmn-io/properties-panel | Peer range `>=3.0.0`; exercised against **3.40.6**. |
+| Availability | Stable releases use GitHub Packages; release candidates are staged on npm. Access depends on the package or stage permissions. |
+| bpmn-js | Peer range `>=15.0.0`; see the [version matrix](/version-matrix/) for the resolved test version. |
+| bpmn-js-properties-panel | Peer range `>=5.0.0`; see the [version matrix](/version-matrix/) for the resolved test version. |
+| @bpmn-io/properties-panel | Peer range `>=3.0.0`; see the [version matrix](/version-matrix/) for the resolved test version. |
 | Node | Repository and CI: **24**. The published package declares no `engines`. |
 | Module format | ESM only (`"type": "module"`), raw source, no build step. |
 | Licence | MIT. |
 
 ## Installing it today
 
-The package is **not published on npmjs.com**. `npm install` against the public registry will
-not find it. There are two ways to get it.
+Stable package releases are published through GitHub Packages. Configure the
+`@forschungsgruppe-digital-health` scope and authenticate with an account that can access the
+package. Release candidates are staged on npm for evaluation; they are not ordinary published
+versions and require the stage ID and npm stage workflow documented in
+[NPM staging](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/NPM-STAGING.md).
+Check the current release and package permissions before installing.
 
-From GitHub Packages, which is where the publish workflow pushes it. Point the
+For stable releases from GitHub Packages, point the
 `@forschungsgruppe-digital-health` scope at that registry and authenticate first:
 
 ```ini title=".npmrc"
@@ -52,7 +58,7 @@ application rather than depend on a registry. Making the artefact easier to obta
 [roadmap](/roadmap/).
 
 :::note[Why `--legacy-peer-deps`]
-`bpmn-js-properties-panel` 5.53.0 declares peer dependencies on `camunda-bpmn-js-behaviors`
+The demo's resolved `bpmn-js-properties-panel` version declares peer dependencies on `camunda-bpmn-js-behaviors`
 and `diagram-js` that this repository does not install directly (the Camunda behaviours are
 only needed for the Camunda property groups). npm's strict peer resolution treats that as a
 conflict. The flag is about the properties panel's upstream peer graph, not about anything
@@ -66,20 +72,21 @@ The extension declares exactly three peer dependencies
 
 | Peer | Declared range | Installed in this repository | Required for |
 |---|---|---|---|
-| `bpmn-js` | `>=15.0.0` | 18.14.0 | The properties panel. `TerminologyPropertiesProvider` imports `bpmn-js/lib/util/ModelUtil.js`. |
-| `bpmn-js-properties-panel` | `>=5.0.0` | 5.53.0 | The properties panel only. Provides `useService`. |
-| `@bpmn-io/properties-panel` | `>=3.0.0` | 3.40.6 | The properties panel only. Provides the entry components and the Preact hooks. |
+| `bpmn-js` | `>=15.0.0` | See [version matrix](/version-matrix/) | The properties panel. `TerminologyPropertiesProvider` imports `bpmn-js/lib/util/ModelUtil.js`. |
+| `bpmn-js-properties-panel` | `>=5.0.0` | See [version matrix](/version-matrix/) | The properties panel only. Provides `useService`. |
+| `@bpmn-io/properties-panel` | `>=3.0.0` | See [version matrix](/version-matrix/) | The properties panel only. Provides the entry components and the Preact hooks. |
 
 Two caveats about those ranges:
 
 **The declared floors are not the tested floors.** CI installs and exercises one combination
-— the versions in the right-hand column, resolved from the committed lockfile, on Node 24.
+— the versions in the right-hand column of the [version matrix](/version-matrix/), resolved from the committed lockfile and CI configuration.
 The `>=15.0.0` floor expresses an intent (bpmn-js 15 is where the current properties-panel
 architecture settled) rather than a verified result. If you are on bpmn-js 15, 16 or 17,
 expect it to work and test it; nothing in CI covers it.
 
 **The effective `@bpmn-io/properties-panel` floor is higher than this package's.**
-`bpmn-js-properties-panel` 5.53.0 itself requires `@bpmn-io/properties-panel >= 3.40`. Where
+The demo's resolved `bpmn-js-properties-panel` version requires
+`@bpmn-io/properties-panel >= 3.40`. Where
 the two ranges disagree, the panel's requirement wins, because it is the package that renders
 your entries. Treat `>=3.40` as the real minimum whenever you use the properties panel.
 
@@ -103,7 +110,7 @@ edge ever goes away, the panel will fail to resolve it. If you see
 
 | Context | Requirement |
 |---|---|
-| Developing this repository | Node 24 or later (`engines.node: ">=24"` at the repository root; CI runs Node 24). |
+| Developing this repository | Node 24 or later (`engines.node: ">=24"` at the repository root; see the [version matrix](/version-matrix/) for the CI major). |
 | Consuming the published package | No `engines` field is declared. |
 | Browser code (panel, registry, providers) | No Node requirement — it is bundled for the browser. |
 | `fdh-terminology-discover` CLI and the Vite plugin | Run under your project's Node during the build. |
@@ -117,7 +124,7 @@ export { default as TerminologyModdleDescriptor }
 ```
 
 So whichever toolchain consumes the package — Node for the CLI, a bundler for the browser
-code — must support standard import attributes. The repository's demo builds with Vite 6.4.3.
+code — must support standard import attributes. The repository's demo build uses the Vite version shown in the [version matrix](/version-matrix/).
 
 ## Why a bundler is required
 

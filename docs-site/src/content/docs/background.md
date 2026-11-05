@@ -204,11 +204,12 @@ Stated as narrowly as it can honestly be stated:
   bpmn.io extension that binds medical terminology to BPMN elements. The prior
   clinical work named above either kept its codes outside the BPMN file or shipped
   a tool that is no longer obtainable. This is a claim about *availability*, not
-  about ideas — and it carries a caveat this project has to fix rather than argue
-  away: the source is public and MIT-licensed, but the built package is currently
-  published only to GitHub Packages with private visibility, so `npm install` fails
-  for anyone outside the organisation. Making the package publicly obtainable is
-  tracked on the [roadmap](/roadmap/).
+  about ideas — and it carries a caveat this project has to fix rather than
+  argue away: stable packages are published through GitHub Packages, while
+  release candidates are staged on npm.
+  Staged candidates require the stage workflow and are not ordinary published
+  versions. Broader adoption and distribution are tracked on the
+  [roadmap](/roadmap/).
 - **A specified and machine-checked serialisation.** The interchange form is not
   left implicit. It is a published descriptor, an XSD generated from it, and the
   blocking checks listed above — precisely the step Stroppi et al. describe and the
@@ -240,8 +241,10 @@ Stated as narrowly as it can honestly be stated:
 - **No standardisation status.** The `mt:` namespace is a project namespace. It
   has not been submitted to, endorsed by, or harmonised with OMG, HL7, IHE or the
   Medical Informatics Initiative.
-- **One research group, pre-1.0.** The descriptor, the API and the namespace may
-  still change. See the [roadmap](/roadmap/).
+- **One research group, prerelease software.** The JavaScript API may still
+  change before a stable release. The `/v1` XML format contract is versioned
+  separately; see the [namespace policy](/ns/terminology/v1/) and
+  [version matrix](/version-matrix/).
 
 ### Namespace authority
 
@@ -356,7 +359,7 @@ particularly those marked unverified.
 - [Schema](/schema/) — the `mt:` data model and its XML form.
 - [Compatibility](/compatibility/) — what round-tripping guarantees and what it
   does not.
-- [Architecture decisions](/architecture/09_architecture_decisions/) — the arc42
-  decision index and the records behind the design choices described here.
+- [Architecture decisions](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/arc42/09_architecture_decisions.md) —
+  the arc42 decision index and the records behind the design choices described here.
 - [Roadmap](/roadmap/) — the open decisions named on this page, including the
   namespace authority.
