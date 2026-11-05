@@ -288,6 +288,10 @@
             "link": "/api/variables/terminology_error_event/"
           },
           {
+            "label": "TerminologyBadgeModule",
+            "link": "/api/variables/terminologybadgemodule/"
+          },
+          {
             "label": "TerminologyPropertiesPanelModule",
             "link": "/api/variables/terminologypropertiespanelmodule/"
           }

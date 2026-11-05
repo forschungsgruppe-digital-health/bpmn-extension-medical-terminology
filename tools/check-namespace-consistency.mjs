@@ -55,13 +55,12 @@ export function checkNamespaceConsistency(root = repoRoot) {
     'README.md',
     'schema/README.md',
     'docs/ARCHITECTURE.md',
-    'docs/EXTENDING.md',
     'docs/arc42/02_architecture_constraints.md',
     'docs/arc42/04_solution_strategy.md',
     'docs/arc42/08_crosscutting_concepts.md',
     'docs/arc42/09_architecture_decisions.md',
     'docs/arc42/12_glossary.md',
-    'docs-site/src/content/docs/index.md',
+    'docs-site/src/content/docs/index.mdx',
     'docs-site/src/content/docs/schema.md',
     'docs-site/src/content/docs/ns/terminology/v1.md'
   ];

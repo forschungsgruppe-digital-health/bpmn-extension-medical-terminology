@@ -1,0 +1,188 @@
+---
+const example = `import BpmnModeler from 'bpmn-js/lib/Modeler';
+import {
+  BpmnPropertiesPanelModule,
+  BpmnPropertiesProviderModule
+} from 'bpmn-js-properties-panel';
+import {
+  TerminologyModdleDescriptor,
+  TerminologyPropertiesPanelModule,
+  createDefaultTerminologyModule
+} from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
+
+const modeler = new BpmnModeler({
+  container: '#canvas',
+  propertiesPanel: { parent: '#properties' },
+  additionalModules: [
+    BpmnPropertiesPanelModule,
+    BpmnPropertiesProviderModule,
+    TerminologyPropertiesPanelModule,
+    createDefaultTerminologyModule()
+  ],
+  moddleExtensions: { mt: TerminologyModdleDescriptor }
+});`;
+const siteBase = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<section class="model-sandbox" aria-label="Interactive demo and project links">
+  <div class="sandbox-information">
+    <div class="sandbox-tabs" role="tablist" aria-label="More information">
+      <button id="sandbox-tab-code" type="button" role="tab" aria-selected="true" aria-controls="sandbox-panel-code" tabindex="0">Code</button>
+      <button id="sandbox-tab-docs" type="button" role="tab" aria-selected="false" aria-controls="sandbox-panel-docs" tabindex="-1">Docs</button>
+      <button id="sandbox-tab-github" type="button" role="tab" aria-selected="false" aria-controls="sandbox-panel-github" tabindex="-1">GitHub</button>
+    </div>
+
+    <div id="sandbox-panel-code" role="tabpanel" aria-labelledby="sandbox-tab-code" tabindex="0">
+      <p>Register the properties panel, default terminology services, and the <code>mt:</code> descriptor. The terminology services module also enables diagram badges and generated-comment support.</p>
+      <pre><code>{example}</code></pre>
+    </div>
+
+    <div id="sandbox-panel-docs" role="tabpanel" aria-labelledby="sandbox-tab-docs" tabindex="0" hidden>
+      <p>Explore the documented capabilities and format:</p>
+      <ul>
+        <li><a href={`${siteBase}/configuration/`}>Configuration</a></li>
+        <li><a href={`${siteBase}/properties-panel/`}>Annotating and editing</a></li>
+        <li><a href={`${siteBase}/schema/`}>BPMN XML schema</a></li>
+        <li><a href={`${siteBase}/version-matrix/`}>Version matrix</a></li>
+      </ul>
+    </div>
+
+    <div id="sandbox-panel-github" role="tabpanel" aria-labelledby="sandbox-tab-github" tabindex="0" hidden>
+      <p>Browse the source, report an issue, or review the current release information.</p>
+      <ul>
+        <li><a href="https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology">Repository</a></li>
+        <li><a href="https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues">Issues</a></li>
+        <li><a href="https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/releases">Releases</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sandbox-preview">
+    <div class="sandbox-preview__heading">
+      <strong>Try the demo</strong>
+      <a href={`${siteBase}/demo/`} target="_blank" rel="noreferrer">Open separately</a>
+    </div>
+    <iframe
+      title="BPMN Medical Terminology interactive demo"
+      src={`${siteBase}/demo/`}
+      loading="lazy"
+      referrerpolicy="no-referrer"
+    ></iframe>
+  </div>
+</section>
+
+<style>
+  .model-sandbox {
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.9fr) minmax(0, 1.35fr);
+    gap: 1rem;
+    margin: 1.5rem 0 2rem;
+    align-items: stretch;
+  }
+
+  .sandbox-information,
+  .sandbox-preview {
+    min-width: 0;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  .sandbox-information {
+    padding: 1rem;
+  }
+
+  .sandbox-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--sl-color-gray-5);
+    margin: -0.2rem 0 1rem;
+  }
+
+  .sandbox-tabs button {
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: var(--sl-color-text);
+    cursor: pointer;
+    padding: 0.65rem 0.8rem;
+  }
+
+  .sandbox-tabs button[aria-selected="true"] {
+    border-bottom-color: var(--sl-color-accent);
+    color: var(--sl-color-accent-high);
+    font-weight: 700;
+  }
+
+  .sandbox-information pre {
+    max-height: 21rem;
+    overflow: auto;
+    font-size: 0.72rem;
+  }
+
+  .sandbox-preview {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sandbox-preview__heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 0.85rem;
+    border-bottom: 1px solid var(--sl-color-gray-5);
+  }
+
+  .sandbox-preview iframe {
+    border: 0;
+    width: 100%;
+    min-height: 34rem;
+    flex: 1;
+    background: white;
+  }
+
+  @media (max-width: 55rem) {
+    .model-sandbox {
+      grid-template-columns: 1fr;
+    }
+
+    .sandbox-preview iframe {
+      min-height: 38rem;
+    }
+  }
+</style>
+
+<script>
+  document.querySelectorAll('.sandbox-tabs').forEach((tablist) => {
+    const tabs = Array.from(tablist.querySelectorAll('[role="tab"]'));
+
+    function activate(tab) {
+      for (const item of tabs) {
+        const selected = item === tab;
+        item.setAttribute('aria-selected', String(selected));
+        item.tabIndex = selected ? 0 : -1;
+        document.getElementById(item.getAttribute('aria-controls')).hidden = !selected;
+      }
+    }
+
+    tablist.addEventListener('click', (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const tab = target.closest('[role="tab"]');
+      if (tab && tabs.includes(tab)) activate(tab);
+    });
+
+    tablist.addEventListener('keydown', (event) => {
+      const index = tabs.indexOf(document.activeElement);
+      if (index < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabs.length - 1
+          : (index + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length;
+      tabs[next].focus();
+      activate(tabs[next]);
+    });
+  });
+</script>

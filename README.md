@@ -813,7 +813,7 @@ Release maintainers: [npm staging setup](docs/NPM-STAGING.md) and
 |---|---|---|
 | [README.md](README.md) | Users and integrators | Features, setup, usage, and discovery |
 | [Extending bpmn.io](docs/EXTENDING.md) | Developers and contributors | BPMN 2.0, bpmn.io, moddle, properties panel, linting, and validation primer |
-| [Terminology extension user story](docs/user-stories/terminology-extension-mvp.md) | Maintainers and stakeholders | Dated current scope, implemented capabilities, and planned follow-up |
+| [Terminology extension user story](docs/user-stories/terminology-extension-mvp.md) | Maintainers and stakeholders | Historical scope snapshot (2026-08-27) and planned follow-up; not current behavior documentation |
 | [Architecture](docs/ARCHITECTURE.md) | Contributors and integrators | Complete arc42 architecture documentation |
 | [Architecture decisions](docs/adr/) | Maintainers and contributors | Accepted ADRs and ADR template |
 | [Schema](schema/README.md) | XML/tooling integrators | Generated terminology XSD and usage |

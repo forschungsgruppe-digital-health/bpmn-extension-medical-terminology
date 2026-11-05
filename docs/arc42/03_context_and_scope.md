@@ -29,7 +29,7 @@ graph TB
 
     EXT -->|additionalModules and APIs| MODEL
     EXT -->|properties-panel provider| PANEL
-    EXT -->|moddleExtensions: term| MODEL
+    EXT -->|moddleExtensions: mt| MODEL
     APP --> EXT
     DEMO --> MODEL
     MODDLE --> EXT

@@ -22,8 +22,8 @@ Before you start, two rules apply to every change without exception:
 
 ### Prerequisites
 
-- **Node.js 24 or later.** The root `package.json` declares `"engines": { "node": ">=24" }`, and
-  every continuous-integration job runs on Node 24.
+- **Node.js 24 or later.** The root `package.json` declares `"engines": { "node": ">=24" }`.
+  The [version matrix](/version-matrix/) records the Node major used by CI.
 - **`xmllint`** (from `libxml2-utils` on Debian and Ubuntu) for the XSD validation steps. Without
   it, `npm run check:xsd` and `npm run xsd:ext` cannot run.
 - A checkout of the repository. Some of the tooling only does its job inside a git working tree.
@@ -45,9 +45,8 @@ You can re-run it at any time with `npm run hooks:install`.
 
 :::tip[Devcontainer]
 The repository ships a `.devcontainer` definition that installs `xmllint` and the workspace
-dependencies on create, and starts the demo modeler on port 5173 on attach. Note that its image
-is `mcr.microsoft.com/devcontainers/javascript-node:22`, one major behind the `>=24` the
-repository declares — install a newer Node inside the container if a tool objects.
+dependencies on create, and starts the demo modeler on port 5173 on attach. Its image uses
+Node 24, matching the repository's declared minimum.
 :::
 
 ### Run the demo modeler
@@ -58,8 +57,8 @@ npm run dev
 
 This starts the Vite dev server for the `demo/` workspace — a bpmn-js modeler with the extension
 and its properties panel already wired up. It is the fastest way to see the effect of a change,
-and it is the reference for how a host application integrates the package; see
-[use cases](/use-cases/) for what it demonstrates.
+and it is the reference for how a host application integrates the package; the
+[decision and quick-start page](/) explains the supported integration paths.
 
 The demo runs with the package's default provider configuration. To point it at a SNOMED CT
 server, copy `demo/.env.example` to `demo/.env.local` and set `VITE_SNOWSTORM_BASE_URL` to a
@@ -92,7 +91,7 @@ npm test
 ```
 
 This runs the test script of every workspace that defines one, which today means Vitest over the
-`extension/` suite — 24 test files covering adapters, providers, the registry, the configuration
+`extension/` suite — 29 test files covering adapters, providers, the registry, the configuration
 assembly, the services, the properties-panel entries, the Vite plugin, the CLI and the lint rules.
 
 The tests are the most reliable statement of what the code actually does, and they are the
@@ -118,16 +117,17 @@ The repository has one command that runs everything:
 npm run verify
 ```
 
-It is the required local gate and expands to four groups: package conventions, the generated
-terminology drift guard, the conformance suite, and the tests. Running it before pushing means a
-green push is a green pipeline, because the hooks, the editor tasks and continuous integration
-all call the *same* npm scripts.
+It is the required local gate and covers package conventions, coupled release versions, the
+generated terminology drift guard, the conformance suite, and the tests. Running it before
+pushing means a green push is a green pipeline, because the hooks, the editor tasks and
+continuous integration all call the *same* npm scripts.
 
 ### What each gate proves
 
 | Command | Blocking? | What it actually checks |
 |---|---|---|
 | `npm run check:packages` | yes | Publishing conventions for each publishable package: an accepted name prefix, `"type": "module"`, and a usable entry point (`main` or `exports`). Missing `exports`, peer dependencies, `repository.directory` or `publishConfig.registry` are warnings, not failures. Private packages skip the publish-specific rules but must still be ESM. |
+| `npm run check:versions` | yes | That package, lockfile, moddle descriptor, generated XSD, and release metadata agree on the current version. |
 | `npm run generate:hl7:check` | yes | That the checked-in HL7 code-system resource still matches what the generator produces from the installed `hl7.terminology.r4` package. It is a drift guard: if the dependency moved and the generated file did not, this fails. Regenerate with `npm run generate:hl7`. |
 | `npm run lint:bpmn` | yes | Runs bpmnlint over the repository's `.bpmn` files with `.bpmnlintrc` — the recommended and correctness rule sets plus the repository's own terminology plugin. This is BPMN *structure*: disconnected nodes, missing start and end events, implicit splits, dangling references. |
 | `npm run check:roundtrip` | yes | Parses each fixture with the `mt:` moddle extension registered, serialises it, re-parses and re-serialises, and asserts the two serialisations are identical. It also compares extension-element counts to detect content silently dropped on parse. This is where *extension* correctness is actually established, because the standard BPMN schema cannot check it. Add `--strict` to turn moddle parse warnings into failures. |
@@ -135,11 +135,14 @@ all call the *same* npm scripts.
 | `npm run xsd:ext` | yes | Validates each example against BPMN core **and** the extension's own schema in one pass, by generating a small driver schema that imports both. This works because the BPMN schema admits foreign content through a lax wildcard — a validator only checks it if it already holds a schema for that namespace. |
 | `npm run check:xsd` | informational | Validates the BPMN *core* of each file against the official OMG schema. Informational by design: a green result says nothing about the extension content, which the lax wildcard lets through unchecked. Pass `--strict` to make an invalid core fail. |
 | `npm run docs:defaults:check` | yes | That the generated [default configuration](/configuration/defaults/) page still matches the configuration the code assembles. The values it documents — which terminology server is contacted, which code-system versions are pinned — are module-private constants, so the page is generated from the assembled configuration itself and this check fails when the two drift. Regenerate with `npm run docs:defaults`. |
+| `npm run docs:namespace:check` | yes | That the generated namespace reference still matches the moddle descriptor and XSD. |
+| `npm run check:namespace` | yes | That descriptor, XSD, examples, documentation, and package metadata consistently use the versioned `mt:` namespace URI. |
 | `npm test` | yes | The Vitest suite. |
 
-`npm run check:conformance` is the six conformance steps in sequence
-(`lint:bpmn`, `check:roundtrip`, `xsd:gen:check`, `xsd:ext`, `check:xsd`, `docs:defaults:check`),
-and `npm run verify` is conventions plus the generated-content guard plus conformance plus tests.
+`npm run check:conformance` runs the BPMN lint, moddle round-trip, generated-XSD,
+combined extension-XSD, informational BPMN-core XSD, generated-defaults, and namespace checks.
+`npm run verify` adds package conventions, release-version consistency, generated terminology
+data, and the tests.
 
 :::caution[No JavaScript linter yet]
 The repository has no ESLint configuration. `npm run lint` resolves to nothing, because no
@@ -183,9 +186,8 @@ Three parts of the site are generated rather than written by hand:
   [API reference](/api/), change the JSDoc on the symbol, not the generated page. (`npm run
   docs:api` runs TypeDoc separately, into `docs-site/.typedoc-out/`; that copy feeds the coverage
   gate below and the script that derives the API sidebar from the `@category` tags.)
-- **`src/content/docs/architecture/`** is copied from `docs/arc42/` by
-  `docs-site/scripts/import-repo-docs.mjs` on every site build, and is git-ignored. Edit the
-  chapter files under `docs/arc42/`, never the copies.
+- **`public/ns/terminology/v1/`** is staged from the descriptor and generated XSD during a
+  documentation build. Edit the moddle descriptor rather than these staged files.
 - **`src/content/docs/configuration/defaults.md`** is written by
   `tools/generate-config-defaults.mjs` from the assembled default configuration. Unlike the other
   two it *is* committed, and `npm run docs:defaults:check` — part of `npm run check:conformance` —
@@ -208,7 +210,7 @@ Both run in the `docs-preview` workflow, which fires on a pull request that touc
 the docs, the extension source or the documentation tooling. It builds the whole published tree
 and attaches it as a downloadable artifact rather than deploying it, because GitHub Pages serves
 one site per repository and its environment accepts deployments from the default branch only. On
-`main`, the `deploy-demo` workflow builds the same tree — this site at the root, the interactive
+`main`, the `deploy-site` workflow builds the same tree — this site at the root, the interactive
 demo under `/demo/` — and publishes it to GitHub Pages.
 
 ## Commits, branches and reviews
@@ -284,14 +286,14 @@ npm pack --dry-run
 :::note[Where the package is published today]
 The package is currently published to GitHub Packages with private visibility and is not
 available from npmjs.com, which means nobody outside the owning organisation can install it.
-That is a known, tracked problem rather than an intended state — see the
-[roadmap](/roadmap/) and the [support](/support/) page.
+That is a known limitation rather than an intended state — see
+[Compatibility](/compatibility/) and [Support](/support/).
 :::
 
 ## Also worth reading
 
 - [Extending the extension](/extending/) — the concepts behind providers and adapters, and the
   bpmn.io mechanisms this package sits on.
-- [Architecture](/architecture/) — the arc42 chapters, including the building-block view and the
-  recorded quality requirements.
+- [Architecture overview](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/ARCHITECTURE.md)
+  — the component boundaries and recorded architecture decisions.
 - [API reference](/api/) — every exported symbol, generated from the source.

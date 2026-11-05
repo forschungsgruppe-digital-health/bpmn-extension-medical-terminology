@@ -110,7 +110,8 @@ extension/
 │   ├── FallbackProvider.js
 │   └── presets/index.js                  bundled package presets
 ├── src/services/
-│   ├── AnnotationHelper.js               mt: object CRUD
+│   ├── AnnotationHelper.js               mt: read helpers
+│   ├── AnnotationModeling.js             command-stack mutations
 │   ├── TerminologyServices.js             service/module factories
 │   ├── FhirCodeSystemLoader.js            FHIR CodeSystem loading
 │   ├── CodeSystemProviderFactory.js       CodeSystem → provider
@@ -120,6 +121,7 @@ extension/
 ├── src/config/terminology-config.js       defaults and overrides
 ├── src/moddle/medical-terminology.json               mt: descriptor
 ├── src/properties-panel/                  bpmn-js editing provider and entries
+├── src/diagram/                            annotation badges and generated comments
 └── src/vite/                              package discovery plugin
 ```
 
@@ -132,6 +134,8 @@ extension/
   values.
 - `Coding`, an `Element` with `system`, optional `version`, `code`, and
   optional `display` attributes.
+- `GeneratedComment`, a marker on generated BPMN text annotations so they can be
+  identified and refreshed from the authoritative `mt:` annotation data.
 
 The descriptor uses lower-case XML tag aliases. The schema counterpart is
 `schema/medical-terminology.xsd`.
@@ -140,10 +144,20 @@ The descriptor uses lower-case XML tag aliases. The schema counterpart is
 
 `TerminologyPropertiesProvider` registers at low priority and contributes the
 “Medical terminology” group for supported tasks, subprocesses, gateways,
-events, data references, and other `TARGET_TYPES`. `AnnotationListEntry` edits
-`mt:Annotations` and `mt:Coding` values. `AnnotationHelper` lazily creates
-`bpmn:ExtensionElements` and wires `$parent` links before bpmn-js commits the
-change through `modeling.updateModdleProperties`.
+events, data references, and configured target types. `AnnotationListEntry`
+supports add, edit, and remove operations through bpmn-js modeling commands.
+`AnnotationModeling` creates `bpmn:ExtensionElements` lazily and wires `$parent`
+links before bpmn-js commits the change through `modeling.updateModdleProperties`.
+`AnnotationHelper` reads the current annotations.
+
+### Diagram indicators and comments
+
+`TerminologyBadgeRenderer` displays a badge on annotated elements. The
+`TerminologyCommentVisibility` service exposes a global switch that creates or
+removes standard BPMN text annotations and associations. The terminology
+services module depends on this diagram module, so hosts do not register it
+separately. Generated comments carry the `mt:GeneratedComment` marker and are
+refreshed from the `mt:` source data.
 
 ### Providers and defaults
 
