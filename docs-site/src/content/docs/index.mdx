@@ -3,6 +3,8 @@ title: Decision and quick start
 description: Decide whether medical terminology annotations fit your BPMN workflow and choose the integration path for your framework.
 ---
 
+import { LinkButton } from '@astrojs/starlight/components';
+
 This package attaches machine-readable medical codes to BPMN elements without changing
 BPMN itself. A task can keep its readable label while also carrying SNOMED CT, LOINC,
 ICD-10-GM, OPS, ATC, IHE XDS, KDL, or other codes inside the `.bpmn` file.
@@ -16,7 +18,9 @@ The terminology services module also enables an `MT` badge for annotated element
 The properties panel can generate linked BPMN comments from the full annotation data.
 See the [properties-panel guide](/properties-panel/) for integration details.
 
-[Try the live demo](/demo/).
+<LinkButton href={`${import.meta.env.BASE_URL}demo/`} icon="right-arrow">
+  Try the live demo
+</LinkButton>
 
 ## What problem does it solve?
 
