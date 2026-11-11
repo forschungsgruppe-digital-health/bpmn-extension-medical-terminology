@@ -96,15 +96,22 @@ function escapeCell(value) {
   return String(value).replaceAll('|', '\\|');
 }
 
-export function publishedVersions(npm, github) {
+export function publishedVersions(npm, github, githubVisibility) {
+  if (![ 'public', 'private', 'internal' ].includes(githubVisibility)) {
+    throw new Error(`Unknown GitHub package visibility: ${githubVisibility}`);
+  }
+  const isRelease = version => /^\d+\.\d+\.\d+(?:-rc(?:[.-]?\d+(?:[.-][0-9A-Za-z-]+)*)?)?$/i.test(version);
   const versions = new Map();
   for (const [ version, metadata ] of Object.entries(npm.versions)) {
-    if (!metadata.stub) versions.set(version, [ 'npm' ]);
+    if (!metadata.stub && isRelease(version)) versions.set(version, [ 'npm' ]);
   }
-  for (const { name } of github) {
-    const registries = versions.get(name) || [];
-    registries.push('GitHub Packages');
-    versions.set(name, registries);
+  if (githubVisibility === 'public') {
+    for (const { name } of github) {
+      if (!isRelease(name)) continue;
+      const registries = versions.get(name) || [];
+      registries.push('GitHub Packages');
+      versions.set(name, registries);
+    }
   }
   return Object.fromEntries(versions);
 }
@@ -142,13 +149,17 @@ function refreshPublishedVersions() {
     '--fail', '--silent', '--show-error', '--location',
     `https://registry.npmjs.org/%40forschungsgruppe-digital-health%2F${packageName}`
   ], { encoding: 'utf8' }));
-  const github = execFileSync('gh', [
-    'api', '--paginate',
-    `orgs/forschungsgruppe-digital-health/packages/npm/${packageName}/versions?per_page=100`,
-    '--jq', '.[].name'
-  ], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).map(name => ({ name }));
-  const versions = publishedVersions(npm, github);
-  if (!Object.keys(versions).length) throw new Error('Both registries returned no published versions.');
+  const githubPackage = `orgs/forschungsgruppe-digital-health/packages/npm/${packageName}`;
+  const visibility = execFileSync('gh', [
+    'api', githubPackage, '--jq', '.visibility'
+  ], { encoding: 'utf8' }).trim();
+  const github = visibility === 'public'
+    ? execFileSync('gh', [
+      'api', '--paginate', `${githubPackage}/versions?per_page=100`, '--jq', '.[].name'
+    ], { encoding: 'utf8' }).trim().split('\n').filter(Boolean).map(name => ({ name }))
+    : [];
+  const versions = publishedVersions(npm, github, visibility);
+  if (!Object.keys(versions).length) throw new Error('No publicly available releases or release candidates were found.');
   writeFileSync(releasesPath, `${JSON.stringify(versions, null, 2)}\n`);
 }
 
@@ -171,7 +182,9 @@ function renderMatrix() {
     'description: Published packages and the versions declared or resolved by their release tags.',
     '---',
     '',
-    'This table lists package versions published to npm or GitHub Packages, using their Git tags.',
+    'This table lists publicly available release and release-candidate packages from npm or',
+    'GitHub Packages, using their Git tags. GitHub Packages may require authentication even for',
+    'public packages; private packages and other prereleases are excluded.',
     'The registry snapshot is refreshed explicitly after publishing. The table separates',
     'declared compatibility ranges from the exact demo dependencies resolved in each committed',
     'lockfile. The lockfile versions are the repository\'s exercised integration stack, not an',
