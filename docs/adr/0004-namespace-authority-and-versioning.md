@@ -58,8 +58,8 @@ independent of the npm package SemVer and the descriptor's package `version`.
   requires maintainer sign-off and a new namespace such as `/v2`.
 - A new format namespace requires its own ADR, preserved documentation for the
   old URI, and an explicit decision about parallel reading and migration.
-- Package releases remain in the `0.x` series until the maintainers deliberately
-  declare a stable public release. Package SemVer does not alter the namespace
+- Package SemVer, including prerelease versions, evolves independently of the
+  XML format version. A package release does not alter the namespace
   automatically.
 
 The controlled authority starts at `/v1`, establishing the first public format

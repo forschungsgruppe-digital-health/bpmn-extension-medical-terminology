@@ -10,12 +10,11 @@ routes do not currently work.
 
 ## Before you file anything
 
-A few behaviours are known, documented and already tracked. Checking these first saves everyone
-time:
+Common behaviors and integration failures are documented below. Checking these first saves
+everyone time:
 
-- **`Ctrl+Z` does not undo adding or removing an annotation**, and an existing annotation cannot
-  be edited in place. Both are described on the [properties panel](/properties-panel/) page and
-  tracked on the [roadmap](/roadmap/).
+- **Annotation changes can be edited and undone.** If the list appears stale, check whether the
+  selected element is among the configured [properties-panel targets](/properties-panel/#which-elements-show-the-group).
 - **The panel shows a terminology group but no search results.** This is almost always the
   integration trap: the properties-panel module was registered without the terminology module
   alongside it. Type a search term and the entry says so — "No terminology registry configured
@@ -23,10 +22,9 @@ time:
   page.
 - **A plain Node `import` of the package fails.** The package is consumed through a bundler. This
   is structural, not a bug; see [compatibility](/compatibility/).
-- **`npm install` fails with `E401 Unauthorized`.** The package is not on npmjs.com and its
-  GitHub Packages visibility is private, so it cannot currently be installed from outside the
-  owning organisation. Install from a checkout of the repository in the meantime. This is the
-  first item on the [roadmap](/roadmap/).
+- **`npm install` fails with `E401 Unauthorized`.** Check the package scope, GitHub Packages
+  registry configuration, and account permissions in [Compatibility](/compatibility/#installing-it-today).
+  Release-candidate stages have a separate [download and test procedure](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/RELEASE-TESTING.md).
 - **Searches fail against a terminology server.** Check the error's `kind` first — see the
   checklist below. A redirect or a CORS rejection is a configuration problem at the server or the
   host, not a defect in the package; [configuration](/configuration/) covers the request routing.
@@ -78,8 +76,9 @@ is the policy of record. Its substance:
 - Out of scope: the private demo application, documentation-only problems, and anything that would
   require committing real patient data. General code-quality and lint findings go through ordinary
   issues and pull requests.
-- The project is pre-1.0. Only the latest released `0.x` version receives security fixes; there is
-  no long-term-support branch.
+- The project is a prerelease research artefact. The supported-version policy is described in
+  [`SECURITY.md`](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/SECURITY.md);
+  there is no long-term-support branch.
 - The stated targets are acknowledgement within **5 working days** and an assessment with a
   remediation plan within **30 days**.
 
@@ -130,9 +129,9 @@ Space under grant `01ZZ2506A` (MiHUB, 2026–2029).
 records a DOI. Until an archival integration is configured there is no persistent concept DOI
 or release DOI to cite.
 
-In the meantime, cite the repository together with the **specific release tag** you used, for
-example `terminology-v0.1.9`, and the date you retrieved it. A tag is at least resolvable and
-immutable, which a bare repository URL is not.
+In the meantime, cite the repository together with the **specific release tag** you used (listed
+in the [version matrix](/version-matrix/)) and the date you retrieved it. A tag is at least
+resolvable and immutable, which a bare repository URL is not.
 
 Minting a concept DOI through Zenodo and recording it in both metadata files is a decided
 near-term item — see the [roadmap](/roadmap/).
@@ -207,9 +206,8 @@ content it serves. [Configuration](/configuration/) covers how to point the exte
   level, and there would be no point pretending otherwise — a single maintainer on a funded
   research project answers when the project allows. Expect days rather than hours, and expect it
   to depend on the time of year.
-- **Supported versions.** Pre-1.0. Only the latest released `0.x` gets fixes; there is no
-  long-term-support branch, and breaking changes are possible between minor versions while the
-  version stays below 1.0.
+- **Supported versions.** Only the latest published extension version receives fixes; there is no
+  long-term-support branch. Prerelease versions may change before stable 1.0.
 - **Bus factor.** The overwhelming majority of commits come from one person. The project knows
   this and tracks it, together with the countermeasures — a second person with commit rights, a
   written maintenance policy, and anchoring the artefact in a context that outlives an individual

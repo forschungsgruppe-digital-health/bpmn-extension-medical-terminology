@@ -10,12 +10,12 @@ import TerminologyCommentVisibility from './TerminologyCommentVisibility.js';
 
 /**
  * bpmn-js module that draws round `MT` badges and manages generated BPMN
- * TextAnnotations. Add it to `additionalModules` to enable diagram comments.
+ * TextAnnotations. It is included by the terminology services module.
  *
  * @type {TerminologyBadgeModuleDefinition}
  */
 const TerminologyBadgeModule = {
-  __init__: [ 'terminologyBadgeRenderer' ],
+  __init__: [ 'terminologyBadgeRenderer', 'terminologyCommentVisibility' ],
   terminologyBadgeRenderer: [ 'type', TerminologyBadgeRenderer ],
   terminologyCommentVisibility: [ 'type', TerminologyCommentVisibility ]
 };

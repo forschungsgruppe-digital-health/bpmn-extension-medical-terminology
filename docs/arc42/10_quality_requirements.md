@@ -78,8 +78,10 @@ point, and recommended publishing metadata.
 
 ### Q5 — Test regression
 
-When a pull request or push is validated, the Node 22 workflow runs the
-extension Vitest suite and builds the demo after the tests pass.
+When a pull request or push is validated, the Node 24 workflow runs the
+extension Vitest suite and builds the demo after the tests pass. See the
+[version matrix](../../docs-site/src/content/docs/version-matrix.md) for the
+current tested toolchain.
 
 ## 10.3 Targets requiring human input
 

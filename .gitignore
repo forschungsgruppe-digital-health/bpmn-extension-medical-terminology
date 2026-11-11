@@ -50,7 +50,6 @@ coverage/
 docs-site/node_modules/
 docs-site/.astro/
 docs-site/src/content/docs/api/
-docs-site/src/content/docs/architecture/
 docs-site/.typedoc-coverage.json
 docs-site/.typedoc-out/
 docs-site/public/ns/terminology/

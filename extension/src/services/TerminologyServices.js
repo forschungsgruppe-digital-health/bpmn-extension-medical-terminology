@@ -10,6 +10,7 @@ import {
   formatPackageProviderDisplayName
 } from './PackageMetadata.js';
 import { createFhirTerminologyProviderLoader } from './TerminologyProviderLoader.js';
+import TerminologyBadgeModule from '../diagram/index.js';
 
 /**
  * @typedef {Object} TerminologyServices - Runtime services consumed by the properties-panel module.
@@ -256,10 +257,11 @@ export function createTerminologyServices(config = {}) {
  * `additionalModules`.
  *
  * @param {TerminologyServices} services
- * @returns {Record<string, [string, any]>}
+ * @returns {Record<string, any>}
  */
 export function createTerminologyModule(services) {
   return {
+    __depends__: [ TerminologyBadgeModule ],
     terminologyRegistry: ['value', services.terminologyRegistry],
     ...(services.terminologyProviderLoader
       ? { terminologyProviderLoader: ['value', services.terminologyProviderLoader] }

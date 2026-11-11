@@ -152,6 +152,10 @@ describe('TerminologyServices', () => {
     });
 
     expect(createTerminologyModule(services)).toEqual({
+      __depends__: [ expect.objectContaining({
+        terminologyBadgeRenderer: expect.any(Array),
+        terminologyCommentVisibility: expect.any(Array)
+      }) ],
       terminologyRegistry: ['value', services.terminologyRegistry]
     });
   });

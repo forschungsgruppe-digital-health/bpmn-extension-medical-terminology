@@ -185,8 +185,8 @@ properties panel reads but consumers cannot import.
   operations and the Snowstorm API, with authentication, language, timeouts and
   cancellation.
 - [API reference](/api/) — the generated reference for every exported symbol.
-- [Architecture](/architecture/) — the arc42 chapters, including the building
-  block view and the cross-cutting concepts behind these seams.
+- [Architecture](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42) —
+  the arc42 chapters behind these extension points.
 - [Compatibility](/compatibility/) — peer-dependency ranges and what other BPMN
   tools do with a `mt:`-annotated file.
 - [Configuration](/configuration/) — everything you can change without writing

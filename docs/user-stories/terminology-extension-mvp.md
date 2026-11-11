@@ -1,20 +1,23 @@
 # User Stories: Terminology Extension (`mt:`)
 
-> **Status:** implemented baseline with planned, human-confirmed follow-up
-> scope  
+> **Status:** historical planning snapshot (2026-08-27); not a current behavior specification
 > **Package:** `@forschungsgruppe-digital-health/bpmn-extension-medical-terminology` (`extension/`)
 > **Moddle descriptor:** [`extension/src/moddle/medical-terminology.json`](../../extension/src/moddle/medical-terminology.json)
 > **Namespace:** `term`, `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`
 > **Date:** 2026-08-27
 
-This document records the current terminology-extension behavior and the
-smallest useful follow-up stories. It is a planning and traceability document,
-not a promise that every future story is already implemented. Examples use
-synthetic model data only.
+This document records the terminology-extension scope and follow-up stories as
+understood on 2026-08-27. It is retained for planning history and must not be
+used as a current behavior specification. Current behavior is documented in the
+[properties-panel guide](../../docs-site/src/content/docs/properties-panel.md),
+[namespace reference](../../docs-site/src/content/docs/ns/terminology/v1.md),
+and [API reference](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/api/).
+Examples use synthetic model data only.
 
-## Current scope
+## Scope recorded in this snapshot
 
-The descriptor currently defines exactly three types:
+At the time of this snapshot, the descriptor was described as defining these
+three annotation types:
 
 - `Annotations`, a container with many `Annotation` values;
 - `Annotation`, with `id`, optional `text`, and many `Coding` values;
@@ -23,8 +26,10 @@ The descriptor currently defines exactly three types:
 Terminology content is persisted only as `mt:` elements under BPMN
 `extensionElements`. The properties panel currently exposes terminology
 editing for tasks, subprocesses, exclusive gateways, data references, and
-start, end, and intermediate events. Message flows are descriptor-supported
-but do not currently have a terminology panel target.
+start, end, and intermediate events. Message flows are descriptor-supported but were not listed as a panel target
+in this snapshot. The descriptor has since gained `mt:GeneratedComment`, and
+the current properties-panel target configuration is customizable; consult the
+current documentation linked above.
 
 ## Epic 1: Core annotation model — implemented
 
