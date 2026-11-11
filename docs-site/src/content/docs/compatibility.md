@@ -7,8 +7,7 @@ This page answers the questions that come before installation: does it fit my bp
 version, will it work with my build setup, will it fight with the other extensions I already
 load, and what happens to my files elsewhere. Every version number below was read from the
 package manifests and the committed lockfile in this repository.
-The [version matrix](/version-matrix/) records the corresponding values for each release tag and
-the current checkout.
+The [version matrix](/version-matrix/) records the corresponding values for published packages.
 
 ## At a glance
 

@@ -191,10 +191,11 @@ Three parts of the site are generated rather than written by hand:
   `tools/generate-config-defaults.mjs` from the assembled default configuration. Unlike the other
   two it *is* committed, and `npm run docs:defaults:check` — part of `npm run check:conformance` —
   fails the build when the page and the code disagree.
-- **`src/content/docs/version-matrix.md`** is generated from release tags, manifests, the demo
-  lockfile, and the CI Node declaration. The docs build regenerates it from all available tags;
-  run `npm run docs:versions` locally and `npm run docs:versions:check` to check for drift.
-  The docs workflows fetch tags before generating the page.
+- **`src/content/docs/version-matrix.md`** is generated from the published-version snapshot,
+  release tags, manifests, the demo lockfile, and the CI Node declaration. After publishing, fetch
+  all tags and run `node tools/generate-version-matrix.mjs --refresh` with `curl` and `gh`
+  authenticated with `read:packages`; commit both the snapshot and the matrix. Normal builds use
+  the snapshot without registry credentials. Run `npm run docs:versions:check` to check for drift.
 
 Two further gates protect the generated reference:
 
