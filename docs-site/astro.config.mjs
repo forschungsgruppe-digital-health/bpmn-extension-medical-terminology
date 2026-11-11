@@ -11,8 +11,8 @@ import { readFileSync } from 'node:fs';
 const apiSidebar = JSON.parse(readFileSync(new URL('./src/generated/api-sidebar.json', import.meta.url), 'utf8'));
 
 
-const SITE_BASE = (process.env.DOCS_BASE_PATH || '/bpmn-extension-medical-terminology')
-  .replace(/\/$/, '');
+const DEFAULT_BASE = '/bpmn-extension-medical-terminology';
+const SITE_BASE = (process.env.DOCS_BASE_PATH || DEFAULT_BASE).replace(/\/$/, '');
 
 /**
  * Prefix root-relative links written in Markdown with the site base.
@@ -56,6 +56,9 @@ export default defineConfig({
   site: 'https://forschungsgruppe-digital-health.github.io',
   base: SITE_BASE,
   trailingSlash: 'always',
+  redirects: {
+    '/preview/streamline': `${SITE_BASE}/`
+  },
 
   markdown: {
     rehypePlugins: [rehypeBaseLinks]
@@ -110,33 +113,26 @@ export default defineConfig({
       ],
 
       sidebar: [
-        { label: 'Start here', items: [
-          { label: 'Overview', link: '/' },
-          { label: 'Use cases', link: '/use-cases/' }
+        { label: 'Decision & quick start', items: [
+          { label: 'Is this package for me?', link: '/' }
         ] },
-        { label: 'Using the extension', items: [
+        { label: 'Using the package', items: [
           { label: 'Configuration', link: '/configuration/' },
           { label: 'Default configuration', link: '/configuration/defaults/' },
           { label: 'Terminology packages', link: '/configuration/discovery/' },
           { label: 'Properties panel', link: '/properties-panel/' }
         ] },
-        { label: 'The data format', items: [
-          { label: 'Namespace v1', link: '/ns/terminology/v1/' },
+        { label: 'Technical reference', items: [
           { label: 'XML schema', link: '/schema/' },
+          { label: 'Namespace v1', link: '/ns/terminology/v1/' },
           { label: 'Compatibility', link: '/compatibility/' },
-          { label: 'Version matrix', link: '/version-matrix/' }
-        ] },
-        { label: 'Extending it', items: [
-          { label: 'Extension points', link: '/extending/' },
-          { label: 'Writing a provider', link: '/extending/providers/' },
-          { label: 'Transport adapters', link: '/extending/adapters/' }
+          { label: 'Version matrix', link: '/version-matrix/' },
+          { label: 'Extending', link: '/extending/' }
         ] },
         ...apiSidebar,
-        { label: 'Project', items: [
-          { label: 'Background and related work', link: '/background/' },
-          { label: 'Roadmap', link: '/roadmap/' },
-          { label: 'Contributing', link: '/contributing/' },
-          { label: 'Support', link: '/support/' }
+        { label: 'Project & help', collapsed: true, items: [
+          { label: 'Support', link: '/support/' },
+          { label: 'Contributing', link: '/contributing/' }
         ] }
       ]
     })
