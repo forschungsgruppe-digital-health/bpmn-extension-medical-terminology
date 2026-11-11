@@ -179,7 +179,7 @@ npm run docs:build     # refresh the TypeDoc output, then build the static site
 npm run docs:preview   # serve the built output
 ```
 
-Three parts of the site are generated rather than written by hand:
+Several parts of the site are generated rather than written by hand:
 
 - **`src/content/docs/api/`** is produced by the `starlight-typedoc` plugin while the site builds,
   from the JSDoc in `extension/src/`. It is git-ignored. To change what appears on the
@@ -195,8 +195,9 @@ Three parts of the site are generated rather than written by hand:
 - **`src/content/docs/version-matrix.md`** is generated from the published-version snapshot and
   release tags. After publishing, fetch all tags and run
   `node tools/generate-version-matrix.mjs --refresh` with `curl` and `gh` authenticated with
-  `read:packages`; commit both the snapshot and the matrix. Normal builds use the snapshot
-  without registry credentials. Run `npm run docs:versions:check` to check for drift.
+  `read:packages`; commit both the snapshot and the matrix. The refresh includes only public
+  packages and stable or release-candidate versions. Normal builds use the snapshot without
+  registry credentials. Run `npm run docs:versions:check` to check for drift.
 
 Two further gates protect the generated reference:
 

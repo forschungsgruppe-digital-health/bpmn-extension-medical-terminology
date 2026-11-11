@@ -56,10 +56,6 @@ export default defineConfig({
   site: 'https://forschungsgruppe-digital-health.github.io',
   base: SITE_BASE,
   trailingSlash: 'always',
-  redirects: {
-    '/preview/streamline': `${SITE_BASE}/`
-  },
-
   markdown: {
     rehypePlugins: [rehypeBaseLinks]
   },
