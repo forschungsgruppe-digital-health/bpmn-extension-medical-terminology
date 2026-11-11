@@ -23,6 +23,7 @@ on:
       - 'package-lock.json'
       - 'extension/package.json'
       - 'tools/generate-config-defaults.mjs'
+      - 'tools/generate-version-matrix.mjs'
       - 'tools/generate-namespace-docs.mjs'
       - 'tools/check-api-docs.mjs'
       - 'tools/check-doc-types.mjs'
@@ -42,6 +43,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -63,6 +66,9 @@ jobs:
 
       - name: Stage namespace artifacts
         run: npm run docs:namespace:stage
+
+      - name: Generate version matrix
+        run: npm run docs:versions
 
       - name: Build documentation site
         # docs:gate has already generated TypeDoc output for the sidebar.

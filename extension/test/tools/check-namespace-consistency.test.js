@@ -25,7 +25,7 @@ const files = [
   'docs/arc42/08_crosscutting_concepts.md',
   'docs/arc42/09_architecture_decisions.md',
   'docs/arc42/12_glossary.md',
-  'docs-site/src/content/docs/index.md',
+  'docs-site/src/content/docs/index.mdx',
   'docs-site/src/content/docs/schema.md',
   'docs-site/src/content/docs/ns/terminology/v1.md'
 ];

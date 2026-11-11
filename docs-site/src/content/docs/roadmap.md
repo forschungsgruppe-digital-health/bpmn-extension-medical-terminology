@@ -13,11 +13,10 @@ The [issue tracker](https://github.com/forschungsgruppe-digital-health/bpmn-exte
 is authoritative. If this page and an issue disagree, believe the issue.
 
 :::note[Where the known limitations are described]
-This page lists what is *planned*. What is *currently missing or surprising* is documented on
-the [properties panel](/properties-panel/) page (undo, editing in place, the integration trap)
-and on the [compatibility](/compatibility/) page (bundler-only consumption, peer-dependency
-ranges). Read those before filing an issue — several of the sharper edges are already known
-and tracked.
+This page lists what is *planned*. Current properties-panel behavior, including target
+configuration, editing, undo/redo, and generated comments, is documented on the
+[properties panel](/properties-panel/) page. Bundler and peer-version constraints are on
+[Compatibility](/compatibility/).
 :::
 
 ## Near-term themes
@@ -25,22 +24,19 @@ and tracked.
 Five themes are in view. They are ordered by what blocks what, not by size, and none of them
 has a settled design unless this page says so.
 
-### 1. Make the package installable from a public registry
+### 1. Improve package access and adoption
 
-Today the package is published to GitHub Packages with private visibility, and it is not on
-npmjs.com. An `npm install` by anyone outside the organisation fails with `E401 Unauthorized`.
-Every other theme on this page is worth less until that is fixed, because nobody outside the
-owning organisation can obtain the artefact at all.
+Stable releases are published through GitHub Packages; release candidates are staged on npm.
+The exact access available to a consumer depends on registry configuration, package permissions,
+and whether a candidate has been published from its stage.
 
-The decision to make is *where*: npmjs.com, which is the ordinary route for bpmn.io modules,
-or GitHub Packages switched to public visibility. Tracked in
+The remaining work is to make the installation route straightforward for external adopters and
+add a clean-project install/import smoke test. Tracked in
 [#36](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/36).
 
-The same issue carries a second item that belongs with it: a continuous-integration smoke test
-that installs the packed tarball into an empty project and imports it. That is the only check
-that would have caught the current gap between what the package claims as its entry point and
-what a consumer's toolchain can actually resolve. See
-[compatibility](/compatibility/) for what resolves today and what does not.
+See [Compatibility](/compatibility/) for current registry instructions and
+[NPM staging](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/dev/docs/NPM-STAGING.md)
+for release-candidate handling.
 
 ### 2. A citable release with a DOI
 
@@ -65,28 +61,19 @@ The descriptor now uses the organization-controlled, versioned Pages URI
 Its [namespace reference](/ns/terminology/v1/) is generated from the descriptor and publishes
 the JSON descriptor and XSD beside the human-readable contract.
 
-Issue [#35](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/35)
-can close after the changed descriptor and documentation are merged to `main`, Pages deploys,
-and the public URI and machine-readable artifacts have been verified live.
+The namespace decision is settled and recorded in ADR-0004; the descriptor and generated
+reference use the organization-controlled `/v1` URI. Issue
+[#35](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/35)
+remains open only until the documentation is merged to `main`, Pages deploys, and the public URI
+and machine-readable artifacts are verified live.
 
-### 4. Complete the annotation editing loop
+### 4. Connect the MII terminology service
 
-The properties panel can add and remove annotations, but not edit one in place, and its add and
-remove operations do not participate in the bpmn-js command stack in a way that undo can reverse.
-In a clinical annotation tool that matters more than it sounds: correcting a wrong code means
-deleting the annotation and retyping it, and a mis-click cannot be taken back with `Ctrl+Z`.
-
-Two issues cover this. [#3](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/3)
-asks for editing an existing annotation on a working copy, committed through the command stack
-so that cancel and undo both behave, with the annotation's identifier staying stable. Its
-acceptance criteria explicitly require undo and redo to restore the complete previous and
-following state, which is the part that is missing today.
-[#4](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/4)
-covers the error-handling half: reusing the host's own validation and error mechanisms instead
-of the panel keeping a parallel error display of its own, while preserving the structured
-request-error information the adapters already produce.
-
-See [properties panel](/properties-panel/) for exactly what the current behaviour is.
+Issue [#34](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/34)
+tracks a verified integration with the Medizininformatik-Initiative terminology service. Access
+requires an appropriate client certificate; the intended architecture keeps the certificate and
+private key behind a host-operated backend rather than in browser code. The extension ships no
+proxy, and tests must continue to use synthetic data without credentials.
 
 ### 5. Documentation
 
@@ -105,20 +92,17 @@ Every open issue, with a faithful English summary. The issue bodies themselves a
 
 | # | Title | Summary |
 |---|---|---|
-| [#1](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/1) | Internationalisation of the extension interface | Labels, placeholders, tooltips and error messages in the terminology UI are hard-coded English; only the group title currently goes through bpmn-js's `translate` service. The goal is that a host application can translate the whole surface, with today's English text as the fallback when no translation is supplied. The proposal is to reuse the existing `translate(template, replacements)` service rather than introduce a second, parallel language mechanism. Terminology *content* language and the `Accept-Language` of server requests stay a separate concern. |
-| [#2](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/2) | Configure the annotatable BPMN element types | The set of element types that get the terminology group is fixed in a private `TARGET_TYPES` list (see [properties panel](/properties-panel/)); consumers cannot narrow or widen it. The issue proposes extending the existing properties configuration and the public type definitions, validating type names, and defining what an empty list means and how inheritance is handled — `is(element, 'bpmn:Task')` also matches specialised tasks. Annotations already present on elements that a configuration hides must survive load and save. Two decisions are open: type names only or predicate functions as well, and whether a configured list replaces or extends the defaults. |
-| [#3](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/3) | Edit existing terminology annotations | Stored annotations can currently only be deleted and re-created, so a small correction means retyping the whole annotation. The issue asks for editing a working copy — text plus each coding's system, code, version and display — with changes applied on save through the bpmn-js command stack rather than by mutating the business object up front, so that cancel and undo both work. Open: whether the annotation identifier is editable (proposal: keep it stable), and what happens to unsaved changes when the selection moves to another element. |
-| [#4](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/4) | Reuse the host application's error handling | The terminology UI manages its own search and form errors, which risks two competing error displays in a host application. The issue asks for the public mechanisms of the supported panel versions to be used instead — entry-level `validate`, `useError`, and `propertiesPanel.setErrors` are named as concrete entry points — while distinguishing field validation from asynchronous provider and network failures, since not every search failure is a model error. The structured request-error information must be preserved and not swallowed. Open: whether technical errors reach the host through an event or a callback. |
-| [#16](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/16) | Unify the naming scheme in the dropdown | Package-backed and server-backed providers label themselves differently, and server names come from configuration rather than from the server's own metadata. The issue proposes a single documented label scheme covering both, fetching `CodeSystem` title and version by canonical URL where available, with a defined fallback chain (configured label, then canonical URI, then provider id) and no invented version when none is known. Metadata must be cached and loaded asynchronously so an offline or permission-restricted server cannot block search, and label metadata must never rewrite already-stored codings. |
-| [#17](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/17) | Visualising annotated elements in the diagram | Nothing in the diagram currently shows which elements carry terminology annotations. The issue is a design decision first: badge, icon or marker versus a permanent short label versus details on selection or hover; bpmn-js overlays versus a custom SVG renderer, with the question of whether the indicator must survive an SVG export treated explicitly. It must cover zero, one and many annotations, stay correct across import, change, undo and removal, and remain reachable by keyboard and screen reader — hover alone is not sufficient. BPMN core and BPMN-DI must stay untouched. |
-| [#34](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/34) | Connect and configure the MII terminology server | The extension offers generic FHIR providers but no documented, verified connection to the Medizininformatik-Initiative's terminology service. The issue notes that a base URL is not enough: read access requires a suitable client certificate, which a bearer header does not substitute for. The proposed route is mutual TLS through a backend the host operates, so the certificate and private key never reach the browser; direct browser use would additionally require the server to permit the browser origin through CORS, and this package ships no proxy. Code system and value set URIs and their versions are to be configured explicitly and checked against what the service actually offers. Automated tests must keep working from synthetic fixtures with no credentials. See [configuration](/configuration/) for the options this would build on. |
-| [#36](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/36) | Adoption and citability | Remaining adoption work covers public package access, a DOI and current citation metadata, plus reducing the project's bus factor through a written maintenance policy and a second person with commit rights. |
-| [#37](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/37) | Related work and publication targets | The repository currently cites no literature at all. The issue is a reading and positioning list covering prior work on binding terminology to process models, work on BPMN-to-FHIR transformation, and the methodological literature on BPMN extensions and their conformance — together with a table of possible publication venues. Its tasks are a related-work section, a decision record justifying a custom extension over the existing standard BPMN constructs, and a venue decision. It records that only one deadline in the table has been verified and the others are extrapolated. |
+| [#1](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/1) | Internationalisation der Extension-Oberfläche | Translation is partial: the group label, selected messages, comment toggle, and badge description use the host `translate` service, while many form labels and buttons are still English literals. The issue tracks completing localization without coupling terminology-content language to request `Accept-Language`. |
+| [#34](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/34) | Connect and configure the MII terminology server | The remaining work is a verified MII terminology-service integration. Read access requires client-certificate handling through a host-operated backend; certificates must not reach browser code. The extension ships no proxy, and tests must remain credential-free and synthetic. |
+| [#35](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/35) | Namespace authority and `/v1` versioning | The decision is settled in [ADR-0004](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0004-namespace-authority-and-versioning.md). Remaining work is to merge the documentation, deploy Pages, verify the public URI and artifacts, then close the issue. |
+| [#36](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/36) | Adoption and citability | Remaining adoption work includes a clear external installation route, a clean-project package smoke test, DOI and citation metadata, and reducing the project's bus factor through maintenance policy and another person with commit rights. |
+| [#37](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/37) | Related work and publication targets | The issue tracks related-work literature, a decision record comparing a custom extension with standard BPMN constructs, and publication venue research. Deadlines in the issue are not all verified. |
 
 ## Non-goals
 
 These are not oversights or "not yet" items. They are boundaries the project keeps on purpose,
-and they follow the scope recorded in the [architecture documentation](/architecture/).
+and they follow the scope recorded in the
+[architecture documentation](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/tree/main/docs/arc42).
 
 - **A BPMN editor or a process engine.** The host application supplies bpmn-js; this package is
   an extension to it, never a replacement for it.

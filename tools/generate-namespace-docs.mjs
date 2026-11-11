@@ -138,8 +138,8 @@ export function renderNamespacePage(descriptor) {
   lines.push(`The \`${formatVersion}\` segment versions the serialized XML contract, not the npm package.`);
   lines.push('Ordinary package releases and backward-compatible additions keep this URI unchanged.');
   lines.push('An incompatible removal, rename or semantic change requires maintainer approval,');
-  lines.push('a new namespace version and a documented migration path. Package releases remain');
-  lines.push('in the `0.x` series until the project deliberately declares a stable public release.');
+  lines.push('a new namespace version and a documented migration path. Package SemVer, including');
+  lines.push('prerelease versions, evolves independently and does not change this namespace.');
   lines.push('');
   lines.push('The extension family follows the pattern');
   lines.push('`https://forschungsgruppe-digital-health.github.io/<repository>/ns/<extension>/v<format-major>`.');

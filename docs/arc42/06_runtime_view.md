@@ -39,7 +39,7 @@ sequenceDiagram
     participant Panel as Properties panel
     participant Provider as TerminologyPropertiesProvider
     participant Entry as Annotation entry
-    participant Helper as AnnotationHelper
+    participant ModelingHelper as AnnotationModeling
     participant Modeling as bpmn-js modeling
     participant BO as businessObject
 
@@ -50,24 +50,36 @@ sequenceDiagram
     Panel->>Entry: render current values
     Entry->>Helper: getAnnotations(BO)
     Helper-->>Entry: mt: values
-    User->>Entry: add or remove annotation
-    Entry->>Helper: addAnnotation/removeAnnotation
-    Helper->>BO: create containers and child objects
+    User->>Entry: add, edit, or remove annotation
+    Entry->>ModelingHelper: saveAnnotation/deleteAnnotation
+    ModelingHelper->>BO: create or update containers and child objects
     Entry->>Modeling: updateModdleProperties(...)
     Modeling-->>Panel: command-stack change and re-render
 ```
 
-The helper creates `bpmn:ExtensionElements` and `mt:Annotations` lazily.
-Created objects receive `$parent` links. bpmn-js therefore owns undo/redo and
-serialization rather than the entry component mutating XML directly.
+`AnnotationModeling` creates `bpmn:ExtensionElements` and `mt:Annotations`
+lazily. Created objects receive `$parent` links. bpmn-js therefore owns
+undo/redo and serialization rather than the entry component mutating XML
+directly.
 
-## Scenario 3 — Serialize and check a roundtrip
+## Scenario 3 — Render badges and generated comments
+
+The terminology services module includes the diagram module. Badges are
+rendered for annotated BPMN elements without adding badge data to XML. When a
+user enables **Show terminology as BPMN comments**, the comment visibility
+service creates linked `bpmn:TextAnnotation` and `bpmn:Association` elements.
+The annotation carries `mt:GeneratedComment` so the service can recognize it;
+comment text is regenerated from the ordered `mt:` annotation data when it
+changes. The preview has no line-count limit and is capped at 350 diagram units
+wide. The complete clinical data remains in `mt:`.
+
+## Scenario 4 — Serialize and check a roundtrip
 
 The demo uses `modeler.saveXML({ format: true })` for its XML preview and
 download. The conformance tool performs the same operation without a modeler:
 
 1. Discover `.bpmn` files under `examples/valid/` and `docs/`.
-2. Parse each file with `term` registered.
+2. Parse each file with `mt` registered.
 3. Serialize to XML A.
 4. Parse A and serialize again to XML B.
 5. Require A and B to be identical.
@@ -77,7 +89,7 @@ download. The conformance tool performs the same operation without a modeler:
 The command is `npm run check:roundtrip`, and it is part of
 `npm run check:conformance` and `npm run verify`.
 
-## Scenario 4 — Search terminology
+## Scenario 5 — Search terminology
 
 Integrator code calls the registry:
 
@@ -94,7 +106,7 @@ searches in-memory concepts. Package providers are built from FHIR
 `CodeSystem` resources and preserve each resource's canonical URL in returned
 concepts.
 
-## Scenario 5 — Discover package-backed CodeSystems
+## Scenario 6 — Discover package-backed CodeSystems
 
 The bundled HL7 preset imports its generated CodeSystem module directly and
 does not depend on Vite APIs. The Vite plugin remains an optional build-time

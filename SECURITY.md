@@ -6,10 +6,11 @@
 
 ## Supported versions
 
-This project is pre-1.0 (`0.x`). Only the latest released `0.x` version of each published package
-(`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`) receives security fixes;
-there is no long-term-support branch yet. The `@forschungsgruppe-digital-health/demo` package is
-private/unpublished and is out of scope for releases and advisories.
+This project is an actively developed research artefact. Only the latest published version of
+the extension package (`@forschungsgruppe-digital-health/bpmn-extension-medical-terminology`)
+receives security fixes; there is no long-term-support branch. The private demo workspace
+(`bpmn-medical-terminology-demo`) is not a published package and is out of scope for releases and
+advisories.
 
 ## Reporting a vulnerability
 
