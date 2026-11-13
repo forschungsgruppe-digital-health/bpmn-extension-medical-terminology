@@ -58,6 +58,9 @@ This redirects the built-in FHIR providers, the default SNOMED provider, and the
 loader. A production host is responsible for authentication, licensing, availability, and
 CORS. The package does not ship a proxy.
 
+For servers requiring client certificates, see
+[mTLS-secured terminology servers](/configuration/mtls/).
+
 Use `fetchFn` when requests must go through your backend or require custom authentication:
 
 ```js

@@ -114,6 +114,7 @@ export default defineConfig({
         ] },
         { label: 'Using the package', items: [
           { label: 'Configuration', link: '/configuration/' },
+          { label: 'mTLS-secured servers', link: '/configuration/mtls/' },
           { label: 'Default configuration', link: '/configuration/defaults/' },
           { label: 'Terminology packages', link: '/configuration/discovery/' },
           { label: 'Properties panel', link: '/properties-panel/' }
