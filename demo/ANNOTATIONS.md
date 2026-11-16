@@ -14,6 +14,14 @@ its subtypes, such as `bpmn:UserTask`. Use `targetTypes: []` to hide the panel
 for all elements. Omitting `targetTypes` uses the package's existing defaults.
 `showAnnotations: false` still hides the panel regardless of the selected types.
 
+Defaults are `bpmn:Task` (including `UserTask`, `ServiceTask`, `SendTask`,
+`ReceiveTask`, `ManualTask`, `ScriptTask`, and `BusinessRuleTask`),
+`bpmn:SubProcess`, `bpmn:ExclusiveGateway`, `bpmn:DataObjectReference`,
+`bpmn:DataStoreReference`, `bpmn:IntermediateThrowEvent`,
+`bpmn:IntermediateCatchEvent`, `bpmn:StartEvent`, `bpmn:EndEvent`, and
+`bpmn:SequenceFlow`. Message flows and other types can be added with
+`includeTypes` or `targetTypes`.
+
 The demo and the package defaults both use this JSON file. No JavaScript edit is
 needed to change the default list.
 

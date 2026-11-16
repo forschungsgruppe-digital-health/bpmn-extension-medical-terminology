@@ -43,6 +43,10 @@ describe('annotation target types', () => {
     expect(groupsFor('bpmn:UserTask', { targetTypes: ['bpmn:Task'] })[0].entries).toHaveLength(2);
   });
 
+  it('enables sequence flows by default', () => {
+    expect(groupsFor('bpmn:SequenceFlow')[0].entries).toHaveLength(2);
+  });
+
   it('adds included types to the defaults', () => {
     expect(groupsFor('bpmn:Task', { includeTypes: ['bpmn:Participant'] })[0].entries).toHaveLength(2);
     expect(groupsFor('bpmn:Participant', { includeTypes: ['bpmn:Participant'] })[0].entries).toHaveLength(2);
