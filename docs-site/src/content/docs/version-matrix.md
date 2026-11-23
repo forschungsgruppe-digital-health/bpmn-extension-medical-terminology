@@ -16,6 +16,7 @@ runner's exact Node.js or npm patch version.
 
 | Extension version | Source | Namespace URI | Declared peer ranges | Locked demo versions | CI Node |
 | --- | --- | --- | --- | --- | --- |
+| 1.0.0-rc.2 | terminology-v1.0.0-rc.2<br>npm | `mt: https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` | bpmn-js >=15.0.0<br>bpmn-js-properties-panel >=5.0.0<br>@bpmn-io/properties-panel >=3.0.0 | bpmn-js 18.14.0<br>bpmn-js-properties-panel 5.53.0<br>@bpmn-io/properties-panel 3.40.6<br>vite 6.4.3 | Node 24 |
 | 1.0.0-rc.1 | terminology-v1.0.0-rc.1<br>npm | `mt: https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1` | bpmn-js >=15.0.0<br>bpmn-js-properties-panel >=5.0.0<br>@bpmn-io/properties-panel >=3.0.0 | bpmn-js 18.14.0<br>bpmn-js-properties-panel 5.53.0<br>@bpmn-io/properties-panel 3.40.6<br>vite 6.4.3 | Node 24 |
 
 After publishing, fetch all tags and refresh registry data with

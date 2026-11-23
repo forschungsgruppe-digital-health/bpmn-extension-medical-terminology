@@ -5,28 +5,27 @@ description: Decide whether medical terminology annotations fit your BPMN workfl
 
 import { LinkButton } from '@astrojs/starlight/components';
 
-This package attaches machine-readable medical codes to BPMN elements without changing
-BPMN itself. A task can keep its readable label while also carrying SNOMED CT, LOINC,
-ICD-10-GM, OPS, ATC, IHE XDS, KDL, or other codes inside the `.bpmn` file.
+This package is an open-source plugin for **bpmn-js** process editors (not a standalone
+application). It lets teams attach standardized, machine-readable medical codes — such as
+SNOMED CT, LOINC, ICD-10-GM, OPS, ATC, IHE XDS, KDL, or HL7 — directly to BPMN elements inside
+the `.bpmn` file, without changing BPMN itself.
 
-The latest GitHub prerelease is `1.0.0-rc.2`; the
-[version matrix](/version-matrix/) lists publicly available packages. The versioned data namespace is
-`https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`;
-the matrix also tracks tested dependencies.
+Want to see how it works in practice? Open the interactive demo, click any element in the
+diagram, and explore the **Medical terminology** panel, `MT` badges, and generated BPMN
+comments:
 
-The terminology services module also enables an `MT` badge for annotated elements.
-The properties panel can generate linked BPMN comments from the full annotation data.
-See the [properties-panel guide](/properties-panel/) for integration details.
-
-<LinkButton href={`${import.meta.env.BASE_URL}demo/`} icon="right-arrow">
+<LinkButton
+  href="https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/"
+  icon="right-arrow"
+>
   Try the live demo
 </LinkButton>
 
 ## What problem does it solve?
 
-A label such as `CT chest` is understandable to a person, but software cannot reliably
-compare it with `CT-Thorax`. A terminology annotation adds an unambiguous system URI,
-code, optional version, and display text:
+A task label such as `CT chest` is understandable to a person, but software cannot reliably
+match it with `CT-Thorax`. A terminology annotation adds an unambiguous system URI, code,
+optional version, and display text right next to the element:
 
 ```xml
 <bpmn:task id="Task_CT" name="CT chest">
@@ -42,8 +41,8 @@ code, optional version, and display text:
 </bpmn:task>
 ```
 
-The diagram and BPMN core remain unchanged. The additional data lives only in standard
-`bpmn:extensionElements` under the versioned `mt:` namespace
+The diagram and BPMN process semantics remain unchanged. All clinical semantics live inside
+standard `bpmn:extensionElements` under the versioned `mt:` namespace
 `https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1`.
 
 ## Is it a good fit?
@@ -54,32 +53,57 @@ The diagram and BPMN core remain unchanged. The additional data lives only in st
 | Search terminology from a bpmn-js properties panel | **Yes** |
 | Store annotations in the `.bpmn` file instead of a sidecar | **Yes** |
 | Work offline with bundled or installed FHIR CodeSystems | **Yes** |
+| Show visual `MT` badges or optional BPMN comments for annotations | **Yes** — included in the bpmn-js integration |
 | Use the XML format from Camunda or a custom BPMN tool | **Yes**, if the tool preserves unknown extension elements |
 | Generate FHIR resources from a process model | **Not included**; the annotations can be input to your own mapping |
 | Execute or simulate a process | **No** |
 | Obtain a terminology licence or hosted terminology server | **No** |
 
-This is actively developed research software. Check the current [compatibility constraints](/compatibility/)
-and [properties-panel limitations](/properties-panel/#known-limitations) before adoption.
+## What you need before adopting
+
+- **Host application or BPMN tool:** For interactive search and editing, integrate the package
+  into a bundler-based `bpmn-js` web application. If you use Camunda or another BPMN editor,
+  you can exchange the XML format directly without installing the JavaScript package.
+- **Terminology sources and licences:** Offline search works out of the box with bundled HL7,
+  IHE XDS, and KDL code systems. For production use with SNOMED CT, LOINC, ICD-10-GM, OPS, or
+  ATC, your organisation must hold the required publisher licences and connect its own
+  terminology server (the public demo server is for evaluation only). See
+  [Licensing & terminology rights](/licensing/).
+- **Data protection:** Annotations describe clinical *processes* with standardized codes and
+  short notes — never enter or store patient data in BPMN models.
 
 ## Choose your integration path
 
-### bpmn-js modeler: full package
+### 1. bpmn-js modeler: full interactive setup
 
-Use the moddle descriptor, terminology services, and properties-panel module together:
+First follow the [installation instructions](/compatibility/#installation) (stable releases are
+published on GitHub Packages; release candidates are staged on npm). Then wire the standard
+bpmn-js properties panel together with the terminology moddle descriptor, UI module, and
+terminology services:
 
 ```js
 import BpmnModeler from 'bpmn-js/lib/Modeler';
+import {
+  BpmnPropertiesPanelModule,
+  BpmnPropertiesProviderModule
+} from 'bpmn-js-properties-panel';
 import {
   TerminologyModdleDescriptor,
   TerminologyPropertiesPanelModule,
   createDefaultTerminologyModule
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
+
+import 'bpmn-js/dist/assets/diagram-js.css';
+import 'bpmn-js/dist/assets/bpmn-js.css';
+import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
 import '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology/properties-panel.css';
 
 const modeler = new BpmnModeler({
   container: '#canvas',
+  propertiesPanel: { parent: '#properties' },
   additionalModules: [
+    BpmnPropertiesPanelModule,
+    BpmnPropertiesProviderModule,
     TerminologyPropertiesPanelModule,
     createDefaultTerminologyModule()
   ],
@@ -89,31 +113,43 @@ const modeler = new BpmnModeler({
 });
 ```
 
-The host application must also register the normal bpmn-js properties-panel modules and
-styles. See [Properties panel](/properties-panel/) for the complete integration.
+`createDefaultTerminologyModule()` supplies the searchable providers and automatically enables
+`MT` badges and generated BPMN comments. See [Properties panel](/properties-panel/) and
+[Configuration](/configuration/) to point at your own FHIR/Snowstorm server or switch to
+offline-only mode.
 
-### JavaScript without the UI
+### 2. JavaScript without the UI
 
-Use the exported descriptor and helper APIs when your application should read, write, or
-query annotations without rendering the terminology panel. The package ships raw ESM and
-is intended for a bundler-based application. Start with the [API reference](/api/) and
-[compatibility notes](/compatibility/).
+Use the exported moddle descriptor and annotation helpers when your application reads, writes,
+or queries annotations programmatically without rendering the properties panel. The package
+ships raw ESM for bundler-based builds. Start with the [API reference](/api/) and
+[Compatibility](/compatibility/).
 
-### Camunda or another BPMN framework
+### 3. Camunda or another BPMN framework
 
-The UI integration is specific to bpmn-js, but the XML format is not. Another framework can
-write and read the same `mt:` elements directly. It must preserve unknown
-`bpmn:extensionElements` when saving. The [XML schema](/schema/) explains the format and
-the generated [namespace reference](/ns/terminology/v1/) is the authoritative contract.
+The UI integration is specific to bpmn-js, but the XML format is framework-independent. Any
+tool can read and write the same `mt:` elements directly as long as it preserves unknown
+`bpmn:extensionElements` on save. See [XML schema](/schema/) and the generated
+[namespace v1 reference](/ns/terminology/v1/).
+
+## Status and compatibility
+
+This is actively developed research software from Technische Universität Dresden
+(Forschungsgruppe Digital Health). Before adoption, review the
+[version matrix](/version-matrix/) (available releases, release candidates, and tested
+dependencies), [compatibility constraints](/compatibility/), and
+[properties-panel limitations](/properties-panel/#known-limitations).
 
 ## What to read next
 
 | Goal | Page |
 | --- | --- |
-| Configure default, self-hosted, or offline terminology sources | [Configuration](/configuration/) |
-| Add annotations in the bpmn-js UI | [Properties panel](/properties-panel/) |
+| Install the package and check runtime requirements | [Compatibility](/compatibility/) |
+| Configure default, self-hosted, mTLS, or offline terminology sources | [Configuration](/configuration/) |
+| Customise supported elements, badges, and BPMN comments | [Properties panel](/properties-panel/) |
 | Integrate with another BPMN/XML tool | [XML schema](/schema/) |
 | Add a custom terminology source | [Extending](/extending/) |
 | Look up an exported function or type | [API reference](/api/) |
 | Compare releases and tested dependencies | [Version matrix](/version-matrix/) |
-| Report a problem | [Support](/support/) |
+| Check code, terminology, and bpmn.io licensing requirements | [Licensing & terminology rights](/licensing/) |
+| Funding and reporting problems | [Support](/support/) |

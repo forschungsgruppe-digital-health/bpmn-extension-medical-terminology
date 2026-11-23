@@ -12,16 +12,12 @@
         "collapsed": true,
         "items": [
           {
-            "label": "createPackageCollectionProvider",
-            "link": "/api/functions/createpackagecollectionprovider/"
+            "label": "createDefaultTerminologyModule",
+            "link": "/api/functions/createdefaultterminologymodule/"
           },
           {
-            "label": "createPackageFallbackProvider",
-            "link": "/api/functions/createpackagefallbackprovider/"
-          },
-          {
-            "label": "createPackageTerminologyProvider",
-            "link": "/api/functions/createpackageterminologyprovider/"
+            "label": "createDefaultTerminologyServices",
+            "link": "/api/functions/createdefaultterminologyservices/"
           },
           {
             "label": "createTerminologyModule",
@@ -38,19 +34,19 @@
         "collapsed": true,
         "items": [
           {
-            "label": "ACTIVE\\_FHIR\\_VERSION",
+            "label": "ACTIVE_FHIR_VERSION",
             "link": "/api/variables/active_fhir_version/"
           },
           {
-            "label": "FHIR\\_MIME\\_TYPE",
+            "label": "FHIR_MIME_TYPE",
             "link": "/api/variables/fhir_mime_type/"
           },
           {
-            "label": "FHIR\\_R4",
+            "label": "FHIR_R4",
             "link": "/api/variables/fhir_r4/"
           },
           {
-            "label": "FHIR\\_R5",
+            "label": "FHIR_R5",
             "link": "/api/variables/fhir_r5/"
           },
           {
@@ -68,14 +64,6 @@
           {
             "label": "createDefaultTerminologyConfig",
             "link": "/api/functions/createdefaultterminologyconfig/"
-          },
-          {
-            "label": "createDefaultTerminologyModule",
-            "link": "/api/functions/createdefaultterminologymodule/"
-          },
-          {
-            "label": "createDefaultTerminologyServices",
-            "link": "/api/functions/createdefaultterminologyservices/"
           }
         ]
       },
@@ -100,7 +88,7 @@
             "link": "/api/classes/staticprovider/"
           },
           {
-            "label": "DEFAULT\\_PACKAGE\\_PROVIDER\\_IDS",
+            "label": "DEFAULT_PACKAGE_PROVIDER_IDS",
             "link": "/api/variables/default_package_provider_ids/"
           },
           {
@@ -120,8 +108,20 @@
             "link": "/api/functions/createkdlprovider/"
           },
           {
+            "label": "createPackageCollectionProvider",
+            "link": "/api/functions/createpackagecollectionprovider/"
+          },
+          {
+            "label": "createPackageFallbackProvider",
+            "link": "/api/functions/createpackagefallbackprovider/"
+          },
+          {
             "label": "createPackagePresetProvider",
             "link": "/api/functions/createpackagepresetprovider/"
+          },
+          {
+            "label": "createPackageTerminologyProvider",
+            "link": "/api/functions/createpackageterminologyprovider/"
           },
           {
             "label": "createStaticProviderFromCodeSystem",
@@ -168,16 +168,8 @@
             "link": "/api/functions/addannotation/"
           },
           {
-            "label": "createId",
-            "link": "/api/functions/createid/"
-          },
-          {
             "label": "ensureAnnotationsContainer",
             "link": "/api/functions/ensureannotationscontainer/"
-          },
-          {
-            "label": "ensureExtensionElements",
-            "link": "/api/functions/ensureextensionelements/"
           },
           {
             "label": "getAnnotations",
@@ -188,20 +180,12 @@
             "link": "/api/functions/getannotationscontainer/"
           },
           {
-            "label": "getCodingKey",
-            "link": "/api/functions/getcodingkey/"
-          },
-          {
             "label": "getUsedCodingKeys",
             "link": "/api/functions/getusedcodingkeys/"
           },
           {
             "label": "getUsedIds",
             "link": "/api/functions/getusedids/"
-          },
-          {
-            "label": "isValidId",
-            "link": "/api/functions/isvalidid/"
           },
           {
             "label": "removeAnnotation",
@@ -214,12 +198,30 @@
         "collapsed": true,
         "items": [
           {
-            "label": "DEFAULT\\_TERMINOLOGY\\_PROPERTIES\\_CONFIG",
+            "label": "DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG",
             "link": "/api/variables/default_terminology_properties_config/"
+          },
+          {
+            "label": "TERMINOLOGY_ERROR_EVENT",
+            "link": "/api/variables/terminology_error_event/"
+          },
+          {
+            "label": "TerminologyPropertiesPanelModule",
+            "link": "/api/variables/terminologypropertiespanelmodule/"
           },
           {
             "label": "createTerminologyPropertiesPanelModule",
             "link": "/api/functions/createterminologypropertiespanelmodule/"
+          }
+        ]
+      },
+      {
+        "label": "Diagram",
+        "collapsed": true,
+        "items": [
+          {
+            "label": "TerminologyBadgeModule",
+            "link": "/api/variables/terminologybadgemodule/"
           }
         ]
       },
@@ -256,6 +258,10 @@
             "link": "/api/interfaces/searchresult/"
           },
           {
+            "label": "TerminologyBadgeModuleDefinition",
+            "link": "/api/interfaces/terminologybadgemoduledefinition/"
+          },
+          {
             "label": "TerminologyCapabilities",
             "link": "/api/interfaces/terminologycapabilities/"
           },
@@ -282,18 +288,6 @@
           {
             "label": "FhirVersionCode",
             "link": "/api/type-aliases/fhirversioncode/"
-          },
-          {
-            "label": "TERMINOLOGY\\_ERROR\\_EVENT",
-            "link": "/api/variables/terminology_error_event/"
-          },
-          {
-            "label": "TerminologyBadgeModule",
-            "link": "/api/variables/terminologybadgemodule/"
-          },
-          {
-            "label": "TerminologyPropertiesPanelModule",
-            "link": "/api/variables/terminologypropertiespanelmodule/"
           }
         ]
       },
@@ -302,11 +296,11 @@
         "collapsed": true,
         "items": [
           {
-            "label": "DEFAULT\\_DISCOVERY\\_EXCLUDE",
+            "label": "DEFAULT_DISCOVERY_EXCLUDE",
             "link": "/api/variables/default_discovery_exclude/"
           },
           {
-            "label": "DEFAULT\\_DISCOVERY\\_INCLUDE",
+            "label": "DEFAULT_DISCOVERY_INCLUDE",
             "link": "/api/variables/default_discovery_include/"
           },
           {

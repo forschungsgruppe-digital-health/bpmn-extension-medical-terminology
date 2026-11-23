@@ -141,6 +141,12 @@
  * @typedef {import('./properties-panel/index.js').TerminologyPropertiesPanelModuleDefinition} TerminologyPropertiesPanelModuleDefinition
  */
 
+/**
+ * bpmn-js module for terminology badges and generated comments.
+ *
+ * @typedef {import('./diagram/index.js').TerminologyBadgeModuleDefinition} TerminologyBadgeModuleDefinition
+ */
+
 /** @category Configuration */
 export {
   ACTIVE_FHIR_VERSION,
@@ -177,6 +183,7 @@ export { default as TerminologyPropertiesPanelModule } from './properties-panel/
 export { createTerminologyPropertiesPanelModule } from './properties-panel/index.js';
 /** @category Properties panel */
 export { DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG } from './properties-panel/config.js';
+/** @category Properties panel */
 export { TERMINOLOGY_ERROR_EVENT } from './properties-panel/error-contract.js';
 
 /** @category Diagram */
@@ -186,14 +193,17 @@ export { default as TerminologyBadgeModule } from './diagram/index.js';
 export {
   getAnnotations,
   addAnnotation,
-  createId,
   getUsedIds,
-  getCodingKey,
   getUsedCodingKeys,
-  isValidId,
   removeAnnotation,
   getAnnotationsContainer,
-  ensureAnnotationsContainer,
+  ensureAnnotationsContainer
+} from './services/AnnotationHelper.js';
+/** @category Internal helpers */
+export {
+  createId,
+  getCodingKey,
+  isValidId,
   ensureExtensionElements
 } from './services/AnnotationHelper.js';
 
@@ -216,11 +226,14 @@ export {
   formatPackageDisplayName,
   formatPackageProviderDisplayName
 } from './services/PackageMetadata.js';
-/** @category Getting started */
+/** @category Providers */
 export {
   createPackageTerminologyProvider,
   createPackageCollectionProvider,
-  createPackageFallbackProvider,
+  createPackageFallbackProvider
+} from './services/TerminologyServices.js';
+/** @category Getting started */
+export {
   createTerminologyServices,
   createTerminologyModule
 } from './services/TerminologyServices.js';
@@ -233,12 +246,15 @@ export {
   createIheXdsTypeCodeProvider,
   createKdlProvider
 } from './providers/presets/index.js';
+/** @category Getting started */
+export {
+  createDefaultTerminologyServices,
+  createDefaultTerminologyModule
+} from './config/terminology-config.js';
 /** @category Configuration */
 export {
   createDefaultServerConfig,
   createDefaultFhirProviderConfigs,
   createDefaultPackageProviders,
-  createDefaultTerminologyConfig,
-  createDefaultTerminologyServices,
-  createDefaultTerminologyModule
+  createDefaultTerminologyConfig
 } from './config/terminology-config.js';

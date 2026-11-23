@@ -33,10 +33,11 @@ mt:annotations
     └── mt:coding (0..n)
 ```
 
-Generated BPMN text annotations carry an empty `mt:GeneratedComment` marker in their
-own `bpmn:extensionElements`. It identifies the comment as derived content so the
-extension can refresh it from the authoritative `mt:annotations`; the marker itself
-does not contain clinical data. See [generated comments](/properties-panel/#diagram-badges-and-generated-comments).
+Generated BPMN text annotations carry an empty `<mt:generatedComment>` element (moddle type
+`mt:GeneratedComment`) in their own `bpmn:extensionElements`. It identifies the comment as
+derived content so the extension can refresh it from the authoritative `mt:annotations`; the
+marker itself does not contain clinical data. See
+[generated comments](/properties-panel/#diagram-badges-and-generated-comments).
 
 ### `mt:annotations`
 
@@ -97,10 +98,10 @@ does not contain or require a FHIR resource.
 </bpmn:definitions>
 ```
 
-The extension model also defines `mt:GeneratedComment` for generated BPMN comments. The
-annotation data itself allows `mt:annotations` wherever BPMN allows extension
-elements. The bpmn-js properties panel intentionally supports a smaller list; see
-[Supported BPMN elements](/properties-panel/#supported-bpmn-elements).
+The extension model also defines `<mt:generatedComment>` (moddle type `mt:GeneratedComment`)
+for generated BPMN comments. The annotation data itself allows `mt:annotations` wherever BPMN
+allows extension elements. The bpmn-js properties panel intentionally supports a smaller list;
+see [Supported BPMN elements](/properties-panel/#supported-bpmn-elements).
 
 ## Using the format with another framework
 

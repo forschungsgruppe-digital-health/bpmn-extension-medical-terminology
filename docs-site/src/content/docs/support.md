@@ -57,16 +57,26 @@ which contains the current private reporting route, scope, and response targets.
 
 ## Licence and terminology content
 
-The source code is MIT licensed. Terminology content keeps the licence of its publisher:
+The extension source code is MIT licensed, but that licence does **not** grant rights to
+external medical terminologies (SNOMED CT®, LOINC®, ICD-10-GM, OPS, ATC, or bundled FHIR
+packages). Integrating applications must also preserve the `bpmn.io` watermark.
 
-| Content | How it is used | What the application owner must check |
-| --- | --- | --- |
-| HL7 Terminology, IHE XDS, and KDL defaults | Bundled and searchable offline | The licence and attribution in each source package or resource |
-| SNOMED CT, LOINC, ICD-10-GM, OPS, and ATC defaults | Requested from a terminology server at runtime | Publisher licence, server terms, and permitted territory/use |
-| A package or server added by the host | Chosen by the integrating application | Redistribution and access rights for that source |
+See [Licensing & terminology rights](/licensing/) for the full breakdown of publisher
+licences, demo-server boundaries, and `bpmn.io` terms.
 
-The extension's MIT licence does not grant rights to external terminology content. A selected
-concept stores only its system URI, code, optional version, and display in the BPMN file; that
-does not replace the publisher's terms.
+## Project and funding
+
+This package is developed by **Technische Universität Dresden, Forschungsgruppe Digital Health**
+as part of **MiHUB – Medical Informatics Hub**, a Digital Progress Hub (Digitaler
+FortschrittsHub Gesundheit) of the German Medical Informatics Initiative (MII).
+
+MiHUB is funded by the German Federal Ministry of Research, Technology and Space
+(Bundesministerium für Forschung, Technologie und Raumfahrt, BMFTR) under grant number
+**01ZZ2506A** (01/2026 – 12/2029). The responsibility for the content of this publication lies
+with the authors.
+
+- Project: <https://mihubx.de/mihub/>
+- Funding record: [Förderkatalog des Bundes, FKZ 01ZZ2506A](https://foerderportal.bund.de/foekat/jsp/SucheAction.do?actionMode=view&fkz=01ZZ2506A)
+- Funder: BMFTR ([ROR 04pz7b180](https://ror.org/04pz7b180))
 
 For development and pull requests, see [Contributing](/contributing/).

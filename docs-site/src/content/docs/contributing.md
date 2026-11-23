@@ -275,9 +275,11 @@ Releases are automated, and the automation is split in two on purpose.
    proved unreliable for this repository, and it is idempotent: an already-published version is
    skipped, so re-runs and duplicate release events do not fail the job.
 
-One version number spans four artefacts — the package, the bpmnlint plugin, the moddle descriptor
-and the generated XSD — applied in lockstep through release-please's `extra-files` configuration,
-so a reader of any one of them can tell which release it came from. The namespace URI is
+One version number spans the coupled release artefacts — the package, the bpmnlint plugin, the
+moddle descriptor, the generated XSD, `codemeta.json`, `CITATION.cff`, the release-please
+manifest, and `package-lock.json` — kept in lockstep through release-please's `extra-files`
+configuration and verified by `npm run check:versions`, so a reader of any one of them can tell
+which release it came from. The namespace URI is
 explicitly **not** part of that: it is the data-format contract and is changed only by hand, as a
 deliberate breaking change. The reasoning is recorded in
 [ADR-0001](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/blob/main/docs/adr/0001-versioning-and-release-please.md).
@@ -290,10 +292,10 @@ npm pack --dry-run
 ```
 
 :::note[Where the package is published today]
-The package is currently published to GitHub Packages with private visibility and is not
-available from npmjs.com, which means nobody outside the owning organisation can install it.
-That is a known limitation rather than an intended state — see
-[Compatibility](/compatibility/) and [Support](/support/).
+Stable releases are published to GitHub Packages via `.github/workflows/publish.yml`; release
+candidates (`-rc.N`) are staged on npm via `.github/workflows/npm-stage.yml` for evaluation.
+See [Compatibility](/compatibility/#installation) and the [version matrix](/version-matrix/)
+for currently available versions and installation instructions.
 :::
 
 ## Also worth reading
