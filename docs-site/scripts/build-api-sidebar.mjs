@@ -55,7 +55,8 @@ for (const line of markdown.split('\n')) {
   }
   const bullet = line.match(/^-\s+\[([^\]]+)\]\(([^)]+)\)\s*$/);
   if (bullet && current) {
-    current.items.push({ label: bullet[1], link: toSitePath(bullet[2]) });
+    const label = bullet[1].replace(/\\([_*`[\]])/g, '$1');
+    current.items.push({ label, link: toSitePath(bullet[2]) });
   }
 }
 
