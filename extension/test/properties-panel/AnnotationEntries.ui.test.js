@@ -183,11 +183,13 @@ const SEARCH_RESULTS = {
 
 let AnnotationListEntry;
 let ShowAsCommentEntry;
+let ShowBadgesEntry;
 
 describe('terminology properties panel UI', () => {
   beforeAll(async () => {
     ({ AnnotationListEntry } = await import('../../src/properties-panel/entries/AnnotationListEntry.js'));
     ({ ShowAsCommentEntry } = await import('../../src/properties-panel/entries/ShowAsCommentEntry.js'));
+    ({ ShowBadgesEntry } = await import('../../src/properties-panel/entries/ShowBadgesEntry.js'));
   });
 
   beforeEach(() => {
@@ -223,6 +225,54 @@ describe('terminology properties panel UI', () => {
     fireEvent.click(screen.getByRole('checkbox'));
 
     expect(visibility.setVisible).toHaveBeenCalledWith(true);
+  });
+
+  it('presents the global MT badge switch with the standard inline panel layout and syncs with events', async () => {
+    let visible = true;
+    const listeners = new Set();
+    const eventBus = {
+      on: vi.fn((event, listener) => {
+        if (event === 'terminology.badges.changed') {
+          listeners.add(listener);
+        }
+      }),
+      off: vi.fn((event, listener) => {
+        if (event === 'terminology.badges.changed') {
+          listeners.delete(listener);
+        }
+      })
+    };
+    const badgeRenderer = {
+      isVisible: vi.fn(() => visible),
+      setVisible: vi.fn((next) => {
+        visible = Boolean(next);
+        listeners.forEach((listener) => listener({ visible }));
+      })
+    };
+    serviceState.current = {
+      translate: (text) => text,
+      eventBus,
+      terminologyBadgeRenderer: badgeRenderer
+    };
+    const view = render(h(ShowBadgesEntry, { element: {} }));
+
+    expect(view.container.querySelector('[data-inline="true"]')).not.toBeNull();
+    expect(screen.getByText('Show MT badges')).not.toBeNull();
+    expect(screen.getByRole('checkbox').checked).toBe(true);
+
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    expect(badgeRenderer.setVisible).toHaveBeenCalledWith(false);
+    await waitFor(() => expect(screen.getByRole('checkbox').checked).toBe(false));
+  });
+
+  it('hides the MT badge switch when the diagram module is not installed', () => {
+    serviceState.current = {
+      translate: (text) => text
+    };
+    const view = render(h(ShowBadgesEntry, { element: {} }));
+
+    expect(view.container.innerHTML).toBe('');
   });
 
   it('adds and removes annotations through undo and redo, updating the panel', async () => {

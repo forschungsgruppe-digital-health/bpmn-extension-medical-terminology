@@ -97,8 +97,8 @@ The result's `system`, `version`, `code`, and `display` values are copied into a
 
 ## Options
 
-Use `createTerminologyPropertiesPanelModule()` to hide the terminology entry or adjust which
-BPMN element types show the annotation editor:
+Use `createTerminologyPropertiesPanelModule()` to hide the terminology entry, start with `MT`
+badges turned off, or adjust which BPMN element types show the annotation editor:
 
 ```js
 import {
@@ -107,6 +107,7 @@ import {
 
 const TerminologyPanelModule = createTerminologyPropertiesPanelModule({
   showAnnotations: true,
+  showBadges: true,
   // Optional: replace the built-in default list completely:
   // targetTypes: ['bpmn:Task', 'bpmn:SequenceFlow'],
   includeTypes: ['bpmn:Participant'],
@@ -116,6 +117,7 @@ const TerminologyPanelModule = createTerminologyPropertiesPanelModule({
 
 - `showAnnotations` (`true` by default) toggles the annotation editor entry while keeping the
   provider registered.
+- `showBadges` (`true` by default) sets the initial visibility of diagram `MT` badges.
 - `targetTypes` replaces the built-in list of supported BPMN types.
 - `includeTypes` adds BPMN types on top of the defaults (or `targetTypes`).
 - `excludeTypes` removes BPMN types after applying defaults, `targetTypes`, and `includeTypes`.
@@ -143,12 +145,15 @@ modeler.get('eventBus').on(TERMINOLOGY_ERROR_EVENT, ({ element, error, operation
 
 ## Diagram badges and generated comments
 
-The terminology services module automatically renders an `MT` badge on annotated BPMN shapes
-(such as tasks, events, gateways, and data objects). The badge is a visual indicator, not
-stored terminology data. The properties panel's **Show terminology as BPMN comments** switch
-creates linked standard BPMN text annotations and associations for annotated shapes.
-Connections such as `SequenceFlow` can hold terminology annotations in the panel and XML, but
-do not receive diagram badges or generated comments.
+The terminology services module renders an `MT` badge on annotated BPMN shapes (such as tasks,
+events, gateways, and data objects) by default (`showBadges: true`). The badge is a visual
+indicator, not stored terminology data, and can be toggled globally with the **Show MT badges**
+switch (or initialized with `showBadges: false` in `createTerminologyPropertiesPanelModule`).
+
+The properties panel's **Show terminology as BPMN comments** switch operates independently and
+creates linked standard BPMN text annotations and associations for annotated shapes even when
+`MT` badges are turned off. Connections such as `SequenceFlow` can hold terminology
+annotations in the panel and XML, but do not receive diagram badges or generated comments.
 
 Generated comments carry an empty `<mt:generatedComment>` element (moddle type
 `mt:GeneratedComment`) and are refreshed from the complete `mt:` data when annotations change
@@ -161,8 +166,9 @@ remains in the `mt:` extension elements. See the [XML schema](/schema/) for the 
 ## Known limitations
 
 - The list requests at most 15 search results and has no paging control.
-- The group title, generated-comment switch, badge `aria-label`, and validation/error messages
-  use the host translation service; form field labels and action buttons are currently English.
+- The group title, panel toggle switches (**Show MT badges** and **Show terminology as BPMN
+  comments**), badge `aria-label`, and validation/error messages use the host translation
+  service; form field labels and action buttons are currently English.
 - Diagram `MT` badges and generated BPMN comments apply to annotated shapes, not connections
   such as `SequenceFlow`.
 

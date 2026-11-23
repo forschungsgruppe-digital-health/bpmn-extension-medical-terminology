@@ -181,6 +181,8 @@ export interface SnomedProviderConfig {
 export interface TerminologyPropertiesPanelConfig {
   /** Show or hide the terminology annotation entry on matching elements. */
   showAnnotations?: boolean;
+  /** Show or hide `MT` badges on annotated elements and generated comments. */
+  showBadges?: boolean;
   /** Replace the package's default annotatable BPMN types. */
   targetTypes?: string[];
   /** Add BPMN types to the defaults, or to the `targetTypes` override. */
