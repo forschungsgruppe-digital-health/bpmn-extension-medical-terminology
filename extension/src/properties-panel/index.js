@@ -33,7 +33,12 @@ export function createTerminologyPropertiesPanelModule(config = {}) {
   };
 }
 
-/** @type {TerminologyPropertiesPanelModuleDefinition} */
+/**
+ * Default bpmn-js properties-panel module for medical terminology annotations.
+ *
+ * @type {TerminologyPropertiesPanelModuleDefinition}
+ * @category Properties panel
+ */
 const TerminologyPropertiesPanelModule = createTerminologyPropertiesPanelModule();
 
 export default TerminologyPropertiesPanelModule;

@@ -50,13 +50,44 @@ terminologyVitePlugin({
   packages: {
     'my.terminology': {
       include: [ 'https://example.org/CodeSystem/custom' ]
+    },
+    'other.terminology': {
+      exclude: [ 'https://example.org/CodeSystem/deprecated' ]
     }
-  }
+  },
+  autoDiscover: false,
+  exclude: [ 'unused.terminology' ],
+  includeTransitiveFrom: [ '@my-org/clinical-terminology-bundle' ]
 });
 ```
 
 Use `include: [ '*' ]` only when every CodeSystem in that package belongs in the bundle. An
 unknown URL fails the build instead of silently creating an empty provider.
+
+If you prefer explicit imports instead of exposing a global registry, set `exposeGlobal: false`
+and import the virtual module in your application entry point:
+
+```js title="vite.config.js"
+terminologyVitePlugin({
+  exposeGlobal: false
+});
+```
+
+```js title="src/main.js"
+import packages, { packageMetadata } from 'virtual:fdh-terminology-packages';
+import {
+  createDefaultTerminologyModule
+} from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
+
+const TerminologyModule = createDefaultTerminologyModule({
+  packageAutoDiscovery: false,
+  packageDiscovery: {
+    enabled: true,
+    packages,
+    metadata: packageMetadata
+  }
+});
+```
 
 :::note
 The plugin injects build-time data through a virtual Vite module. It is not an HTTP endpoint;
@@ -99,9 +130,12 @@ Important CLI options:
 | Option | Purpose |
 | --- | --- |
 | `--out <file>` | Required output module |
+| `--root <directory>` | Consumer project root (default: current directory) |
 | `--package <name>` | Include a package; repeatable |
 | `--include <package>=<url>` | Keep one canonical CodeSystem URL; repeatable |
 | `--exclude <package>=<url>` | Omit one canonical CodeSystem URL; repeatable |
+| `--exclude-package <name>` | Exclude a package during auto-discovery; repeatable |
+| `--include-transitive-from <name>` | Follow dependencies from a package; repeatable |
 | `--no-auto-discover` | Disable dependency scanning |
 
 Use `npx fdh-terminology-discover --help` for the complete option list.
@@ -133,6 +167,29 @@ const TerminologyModule = createDefaultTerminologyModule({
 
 This route is framework-neutral. The host only needs to provide FHIR `CodeSystem` objects with
 embedded `concept` entries.
+
+### Filter packages, exclude CodeSystems, and override labels at runtime
+
+`packageDiscovery` also supports whitelist filtering (`mode`, `include`, `exclude`),
+omitting individual CodeSystem URIs (`excludeSystemUris`), and overriding single-CodeSystem
+labels (`componentLabels`):
+
+```js
+const TerminologyModule = createDefaultTerminologyModule({
+  packageDiscovery: {
+    enabled: true,
+    mode: 'whitelist',
+    include: [ 'my.terminology', 'de.ihe-d.*' ],
+    exclude: [ 'my.legacy.terminology' ],
+    excludeSystemUris: [ 'https://example.org/CodeSystem/deprecated' ],
+    componentLabels: {
+      'my.terminology': {
+        'https://example.org/CodeSystem/custom': 'House Terminology'
+      }
+    }
+  }
+});
+```
 
 ## Runtime behaviour
 

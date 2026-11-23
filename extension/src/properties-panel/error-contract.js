@@ -3,4 +3,9 @@ export const ANNOTATION_ID_ENTRY_ID = 'annotation-id';
 export const ANNOTATION_SEARCH_ENTRY_ID = 'annotation-search';
 export const ANNOTATION_FORM_ENTRY_ID = 'annotation-form';
 
+/**
+ * bpmn-js EventBus event fired when a terminology properties-panel error is raised or cleared.
+ *
+ * @category Properties panel
+ */
 export const TERMINOLOGY_ERROR_EVENT = 'medicalTerminology.error';
