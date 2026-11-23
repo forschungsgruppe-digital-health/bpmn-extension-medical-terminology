@@ -96,7 +96,8 @@ The result's `system`, `version`, `code`, and `display` values are copied into a
 
 ## Options
 
-Hide the terminology entry while keeping the provider registered:
+Hide the terminology entry or start with `MT` badges turned off while keeping the provider
+registered:
 
 ```js
 import {
@@ -104,7 +105,8 @@ import {
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 const TerminologyPanelModule = createTerminologyPropertiesPanelModule({
-  showAnnotations: false
+  showAnnotations: false,
+  showBadges: false
 });
 ```
 
@@ -115,11 +117,14 @@ const TerminologyPanelModule = createTerminologyPropertiesPanelModule({
 
 ## Diagram badges and generated comments
 
-The terminology services module automatically renders an `MT` badge for each annotated
-element. The badge is a visual indicator, not stored terminology data. The properties panel's
-**Show terminology as BPMN comments** switch creates linked standard BPMN text annotations and
-associations. Generated comments carry an `mt:GeneratedComment` marker and are refreshed from
-the complete `mt:` data when annotations change or the switch is toggled.
+The terminology services module renders an `MT` badge for each annotated element by default
+(`showBadges: true`). The badge is a visual indicator, not stored terminology data, and can be
+toggled globally with the **Show MT badges** switch (or initialized with `showBadges: false` in
+`createTerminologyPropertiesPanelModule`). The properties panel's
+**Show terminology as BPMN comments** switch operates independently and creates linked standard
+BPMN text annotations and associations even when `MT` badges are turned off. Generated comments
+carry an `mt:GeneratedComment` marker and are refreshed from the complete `mt:` data when
+annotations change or the switch is toggled.
 
 Comment lines follow annotation creation order, with each annotation's free text before its
 codings. The comments wrap at 350 diagram units and render all lines; the full clinical data

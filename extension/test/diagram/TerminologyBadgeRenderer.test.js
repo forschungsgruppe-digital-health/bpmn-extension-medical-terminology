@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import BpmnModeler from 'bpmn-js/lib/Modeler.js';
 import { TerminologyRegistry } from '../../src/core/TerminologyRegistry.js';
 import TerminologyBadgeModule from '../../src/diagram/index.js';
 import { createTerminologyModule } from '../../src/services/TerminologyServices.js';
+
+vi.mock('../../src/properties-panel/TerminologyPropertiesProvider.js', () => ({
+  default: function MockTerminologyPropertiesProvider() {}
+}));
+
+import { createTerminologyPropertiesPanelModule } from '../../src/properties-panel/index.js';
 import {
   getGeneratedCommentDimensions,
   isGeneratedComment
@@ -254,6 +260,63 @@ describe('TerminologyBadgeRenderer', () => {
 
     await modeler.importXML(xml);
     expect(badgeCount('A')).toBe('2');
+  });
+
+  it('toggles badge visibility globally, fires change events, and updates SVG export without altering XML', async () => {
+    await createModeler();
+    annotate('A', 2);
+    const badgeRenderer = modeler.get('terminologyBadgeRenderer');
+    const eventBus = modeler.get('eventBus');
+    const events = [];
+    eventBus.on('terminology.badges.changed', (event) => events.push(event.visible));
+
+    expect(badgeRenderer.isVisible()).toBe(true);
+    expect(badgeCount('A')).toBe('2');
+
+    // No-op when setting the same value.
+    badgeRenderer.setVisible(true);
+    expect(events).toEqual([]);
+
+    const { xml: xmlBefore } = await modeler.saveXML();
+
+    badgeRenderer.setVisible(false);
+    expect(badgeRenderer.isVisible()).toBe(false);
+    expect(events).toEqual([ false ]);
+    expect(gfx('A').querySelector('.mt-badge')).toBeNull();
+    expect(gfx('A').querySelector('rect')).not.toBeNull();
+
+    const { svg: svgHidden } = await modeler.saveSVG();
+    expect(svgHidden).not.toContain('mt-badge');
+
+    const { xml: xmlHidden } = await modeler.saveXML();
+    expect(xmlHidden).toBe(xmlBefore);
+
+    // New annotations while hidden do not draw a badge.
+    annotate('B', 1);
+    expect(gfx('B').querySelector('.mt-badge')).toBeNull();
+
+    badgeRenderer.setVisible(true);
+    expect(badgeRenderer.isVisible()).toBe(true);
+    expect(events).toEqual([ false, true ]);
+    expect(badgeCount('A')).toBe('2');
+    expect(badgeCount('B')).toBe('1');
+  });
+
+  it('respects showBadges: false from createTerminologyPropertiesPanelModule', async () => {
+    await createModeler([
+      TerminologyBadgeModule,
+      createTerminologyPropertiesPanelModule({ showBadges: false })
+    ]);
+    const badgeRenderer = modeler.get('terminologyBadgeRenderer');
+
+    expect(badgeRenderer.isVisible()).toBe(false);
+
+    annotate('A', 1);
+    expect(gfx('A').querySelector('.mt-badge')).toBeNull();
+
+    badgeRenderer.setVisible(true);
+    expect(badgeRenderer.isVisible()).toBe(true);
+    expect(badgeCount('A')).toBe('1');
   });
 
   describe('comment block', () => {
@@ -582,6 +645,48 @@ describe('TerminologyBadgeRenderer', () => {
       const lines = commentLines('A');
       expect(lines).toHaveLength(9);
       expect(lines.at(-1)).toBe('\u00a0\u00a0cs: 8 – Term 8');
+    });
+
+    it('renders generated comments independently when MT badges are turned off', async () => {
+      await createModeler();
+      annotate('A', 1, 'Clinical note');
+      const badgeRenderer = modeler.get('terminologyBadgeRenderer');
+      const commentVisibility = modeler.get('terminologyCommentVisibility');
+
+      badgeRenderer.setVisible(false);
+      expect(gfx('A').querySelector('.mt-badge')).toBeNull();
+
+      commentVisibility.setVisible(true);
+      expect(commentVisibility.isVisible()).toBe(true);
+      expect(generatedComments()).toHaveLength(1);
+      expect(commentLines('A')).toEqual([ '\u00a0\u00a0Clinical note', '\u00a0\u00a0cs: 0 – Term 0' ]);
+      expect(gfx('A').querySelector('.mt-badge')).toBeNull();
+      expect(gfx(annotationFor('A').id).querySelector('.mt-badge')).toBeNull();
+
+      // Re-enabling badges restores them on both the annotated element and the generated comment.
+      badgeRenderer.setVisible(true);
+      expect(gfx('A').querySelector('.mt-badge')).not.toBeNull();
+      expect(gfx(annotationFor('A').id).querySelector('.mt-badge')).not.toBeNull();
+      expect(generatedComments()).toHaveLength(1);
+
+      // Disabling badges again removes them from both without removing the generated comment.
+      badgeRenderer.setVisible(false);
+      expect(gfx('A').querySelector('.mt-badge')).toBeNull();
+      expect(gfx(annotationFor('A').id).querySelector('.mt-badge')).toBeNull();
+      expect(commentVisibility.isVisible()).toBe(true);
+      expect(generatedComments()).toHaveLength(1);
+
+      // Updating annotations keeps the comment in sync without adding badges.
+      annotate('A', 2, [ 'Clinical note', 'Second note' ]);
+      expect(generatedComments()).toHaveLength(1);
+      expect(commentLines('A')).toEqual([
+        '\u00a0\u00a0Clinical note',
+        '\u00a0\u00a0cs: 0 – Term 0',
+        '\u00a0\u00a0Second note',
+        '\u00a0\u00a0cs: 1 – Term 1'
+      ]);
+      expect(gfx('A').querySelector('.mt-badge')).toBeNull();
+      expect(gfx(annotationFor('A').id).querySelector('.mt-badge')).toBeNull();
     });
   });
 });

@@ -2,6 +2,7 @@ import annotationConfig from '../config/annotation-config.json' with { type: 'js
 
 export const DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG = Object.freeze({
   showAnnotations: true,
+  showBadges: true,
   targetTypes: Object.freeze([...annotationConfig.targetTypes]),
   includeTypes: Object.freeze([]),
   excludeTypes: Object.freeze([])
@@ -24,6 +25,8 @@ export function resolveTerminologyPropertiesConfig(config = {}) {
   return {
     showAnnotations: config?.showAnnotations
       ?? DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG.showAnnotations,
+    showBadges: config?.showBadges
+      ?? DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG.showBadges,
     targetTypes: [...targetTypes],
     includeTypes: [...includeTypes],
     excludeTypes: [...excludeTypes]

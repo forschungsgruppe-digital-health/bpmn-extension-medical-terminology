@@ -6,6 +6,13 @@ describe('terminology properties configuration', () => {
     expect(resolveTerminologyPropertiesConfig({ showAnnotations: false }))
       .toMatchObject({ showAnnotations: false });
   });
+
+  it('enables showBadges by default and preserves showBadges: false', () => {
+    expect(DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG.showBadges).toBe(true);
+    expect(resolveTerminologyPropertiesConfig()).toMatchObject({ showBadges: true });
+    expect(resolveTerminologyPropertiesConfig({ showBadges: false }))
+      .toMatchObject({ showBadges: false });
+  });
   it('keeps the existing element types by default', () => {
     expect(resolveTerminologyPropertiesConfig().targetTypes)
       .toEqual(DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG.targetTypes);

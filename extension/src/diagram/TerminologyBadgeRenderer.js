@@ -18,12 +18,26 @@ const BADGE_RENDER_PRIORITY = 2000;
  * the other renderers draw the shape first and appends the badge afterwards.
  *
  * @param {import('diagram-js/lib/core/EventBus.js').default} eventBus
+ * @param {import('diagram-js/lib/core/ElementRegistry.js').default} elementRegistry
+ * @param {import('diagram-js/lib/core/GraphicsFactory.js').default} graphicsFactory
  * @param {Function} translate - Host `translate(template, replacements)` service.
+ * @param {import('didi').Injector} [injector]
  */
-export default function TerminologyBadgeRenderer(eventBus, translate) {
+export default function TerminologyBadgeRenderer(
+  eventBus,
+  elementRegistry,
+  graphicsFactory,
+  translate,
+  injector
+) {
   this._eventBus = eventBus;
+  this._elementRegistry = elementRegistry;
+  this._graphicsFactory = graphicsFactory;
   this._translate = translate;
   this._drawing = false;
+
+  const propertiesConfig = injector?.get('terminologyPropertiesConfig', false);
+  this._visible = Boolean(propertiesConfig?.showBadges ?? true);
 
   eventBus.on('render.shape', BADGE_RENDER_PRIORITY, (event, context) => {
     if (this._drawing || !this.canRender(context.element)) {
@@ -34,9 +48,35 @@ export default function TerminologyBadgeRenderer(eventBus, translate) {
   });
 }
 
-TerminologyBadgeRenderer.$inject = [ 'eventBus', 'translate' ];
+TerminologyBadgeRenderer.$inject = [
+  'eventBus',
+  'elementRegistry',
+  'graphicsFactory',
+  'translate',
+  'injector'
+];
 
-TerminologyBadgeRenderer.prototype.canRender = function(element) {
+TerminologyBadgeRenderer.prototype.isVisible = function() {
+  return this._visible;
+};
+
+/**
+ * Show or hide `MT` badges across the diagram and re-render affected shapes.
+ *
+ * @param {boolean} visible
+ */
+TerminologyBadgeRenderer.prototype.setVisible = function(visible) {
+  const next = Boolean(visible);
+  if (next === this._visible) {
+    return;
+  }
+
+  this._visible = next;
+  this._refreshBadges();
+  this._eventBus.fire('terminology.badges.changed', { visible: next });
+};
+
+TerminologyBadgeRenderer.prototype._isBadgeTarget = function(element) {
   return Boolean(
     element &&
     !element.labelTarget &&
@@ -44,6 +84,21 @@ TerminologyBadgeRenderer.prototype.canRender = function(element) {
     element.width &&
     (getAnnotations(element.businessObject).length || isGeneratedComment(element.businessObject))
   );
+};
+
+TerminologyBadgeRenderer.prototype.canRender = function(element) {
+  return this._visible && this._isBadgeTarget(element);
+};
+
+TerminologyBadgeRenderer.prototype._refreshBadges = function() {
+  this._elementRegistry.getAll()
+    .filter(element => this._isBadgeTarget(element))
+    .forEach(element => {
+      const gfx = this._elementRegistry.getGraphics(element);
+      if (gfx) {
+        this._graphicsFactory.update('shape', element, gfx);
+      }
+    });
 };
 
 TerminologyBadgeRenderer.prototype.drawShape = function(gfx, element, attrs) {
