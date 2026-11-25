@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.11.0](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v1.0.0-rc.2...terminology-v0.11.0) (2026-11-25)
+
+
+### Features
+
+* add global MT badge visibility toggle ([#81](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/81)) ([4b007bf](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/4b007bfa903f0cd8e3e4b30ff7517466403cd7f8))
+* add global MT badge visibility toggle ([#81](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/issues/81)) ([d6e30dd](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/d6e30dd6750bc80841b21f930e03c8ac51b0afe5))
+* annotate sequence flows by default ([6f6d857](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/6f6d8579cab4b3c2527f4b5b08d378f839d824e3))
+* promote dev for terminology 0.11.0 release ([65f5359](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/commit/65f535932ed4b9f943041e33536c231d7cd576b8))
+
 ## [1.0.0-rc.2](https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology/compare/terminology-v0.10.0...terminology-v1.0.0-rc.2) (2026-10-28)
 
 Release candidate based on 0.10.0; no functional changes.
