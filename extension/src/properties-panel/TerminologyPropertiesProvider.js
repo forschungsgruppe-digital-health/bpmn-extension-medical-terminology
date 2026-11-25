@@ -1,6 +1,7 @@
 import { is } from 'bpmn-js/lib/util/ModelUtil.js';
 import { AnnotationListEntry } from './entries/AnnotationListEntry.js';
 import { ShowAsCommentEntry, SHOW_AS_COMMENT_ENTRY_ID } from './entries/ShowAsCommentEntry.js';
+import { ShowBadgesEntry, SHOW_BADGES_ENTRY_ID } from './entries/ShowBadgesEntry.js';
 import { resolveTerminologyPropertiesConfig } from './config.js';
 import { MEDICAL_TERMINOLOGY_ENTRY_ID } from './error-contract.js';
 
@@ -23,6 +24,7 @@ TerminologyPropertiesProvider.prototype.getGroups = function (element) {
       .some(type => is(element, type));
     const isExcludedType = config.excludeTypes.some(type => is(element, type));
     const entries = [
+      { id: SHOW_BADGES_ENTRY_ID, component: ShowBadgesEntry },
       { id: SHOW_AS_COMMENT_ENTRY_ID, component: ShowAsCommentEntry }
     ];
 

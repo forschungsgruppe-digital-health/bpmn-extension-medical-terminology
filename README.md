@@ -139,9 +139,12 @@ CSS variables.
 
 The terminology services module also enables round `MT` badges and terminology
 comments; no separate diagram module is needed. It renders SVG alongside the
-standard bpmn-js shapes. Its global "Show as comment" switch creates
+standard bpmn-js shapes. The **Show MT badges** switch toggles `MT` badges
+globally (`showBadges: true` by default; pass `showBadges: false` to
+`createTerminologyPropertiesPanelModule` to start with badges hidden).
+Independently, the **Show terminology as BPMN comments** switch creates
 standard `bpmn:TextAnnotation` and `bpmn:Association` elements for annotated
-shapes. Generated comments contain a plain-text rendering of the connected
+shapes (even when `MT` badges are turned off). Generated comments contain a plain-text rendering of the connected
 shape's `mt:` data in `<bpmn:text>`, so editors without this extension can
 display them as ordinary BPMN comments. All annotations are rendered, with
 wrapping as needed and no line limit; comment width remains capped at 350
@@ -149,10 +152,10 @@ diagram units. The full data remains in `mt:`. An `mt:GeneratedComment`
 marker lets the extension identify comments it owns and refresh them when
 terminology data changes. With comments enabled, they are part of BPMN XML and
 SVG exports.
-Turning the switch off removes generated comments; turning it on again
+Turning the comment switch off removes generated comments; turning it on again
 recreates them from the current `mt:` data. The Medical terminology properties
 group is available for all selected elements; only configured target types show
-the annotation editor in addition to the global switch.
+the annotation editor in addition to the global switches.
 
 To add or exclude annotatable BPMN element types without replacing the package
 defaults, pass `includeTypes` or `excludeTypes` to

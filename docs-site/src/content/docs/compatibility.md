@@ -14,12 +14,25 @@ description: Supported package, runtime, bpmn-js, and framework-independent XML 
 | bpmn-js-properties-panel | `>=5` |
 | @bpmn-io/properties-panel | `>=3` |
 | Other BPMN frameworks | XML format usable if unknown extension elements are preserved |
+| Package manager | npm (Yarn 4 cannot resolve Simplifier tarball URLs) |
 | Registry | GitHub Packages for stable releases; npm staging for release candidates |
 
 ## Installation
 
+### Release candidates (npm)
+
+Release candidates are staged publicly on npm for evaluation. Check the
+[version matrix](/version-matrix/) for available release-candidate versions, then install with
+npm:
+
+```bash
+npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology@rc
+```
+
+### Stable releases (GitHub Packages)
+
 Stable releases are published under the GitHub organisation scope. Configure the scope in the
-consumer's `.npmrc` and authenticate with a GitHub token that can read packages:
+consumer's `.npmrc` and authenticate with a GitHub token that has `read:packages`:
 
 ```ini
 @forschungsgruppe-digital-health:registry=https://npm.pkg.github.com
@@ -30,8 +43,14 @@ consumer's `.npmrc` and authenticate with a GitHub token that can read packages:
 npm install @forschungsgruppe-digital-health/bpmn-extension-medical-terminology
 ```
 
-Release candidates are staged on npm for evaluation. Access to either registry depends on
-the package or stage permissions. Do not commit a token to the repository.
+Do not commit a token to the repository.
+
+:::note[Package manager and Simplifier dependencies]
+Use **npm** to install this package. Yarn 4 cannot resolve the package's Simplifier-hosted FHIR
+terminology dependencies (`https://packages.simplifier.net/...`). With npm, no extra registry
+configuration is required for those dependencies, though corporate or hospital firewalls must
+allow outbound access to `packages.simplifier.net` during install (or mirror the tarballs).
+:::
 
 ## JavaScript and bpmn-js
 

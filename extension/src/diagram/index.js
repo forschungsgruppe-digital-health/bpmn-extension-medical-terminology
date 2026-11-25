@@ -13,6 +13,7 @@ import TerminologyCommentVisibility from './TerminologyCommentVisibility.js';
  * TextAnnotations. It is included by the terminology services module.
  *
  * @type {TerminologyBadgeModuleDefinition}
+ * @category Diagram
  */
 const TerminologyBadgeModule = {
   __init__: [ 'terminologyBadgeRenderer', 'terminologyCommentVisibility' ],

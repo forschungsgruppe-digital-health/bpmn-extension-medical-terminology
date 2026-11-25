@@ -15,6 +15,7 @@
     "bpmn:IntermediateThrowEvent",
     "bpmn:IntermediateCatchEvent",
     "bpmn:StartEvent",
-    "bpmn:EndEvent"
+    "bpmn:EndEvent",
+    "bpmn:SequenceFlow"
   ]
 }

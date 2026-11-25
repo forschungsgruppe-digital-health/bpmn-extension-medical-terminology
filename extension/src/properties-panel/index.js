@@ -12,6 +12,7 @@ import { resolveTerminologyPropertiesConfig } from './config.js';
  * Build a properties-panel module with host-provided display options.
  * @param {object} [config] - Terminology properties-panel configuration overrides.
  * @param {boolean} [config.showAnnotations=true] - Show the terminology annotation entry.
+ * @param {boolean} [config.showBadges=true] - Show `MT` badges on annotated BPMN elements and generated comments.
  * @param {string[]} [config.targetTypes] - Replace the default annotatable BPMN types.
  * @param {string[]} [config.includeTypes] - Add types to the defaults or `targetTypes` override.
  * @param {string[]} [config.excludeTypes] - Exclude types after defaults, `targetTypes`, and `includeTypes`.
@@ -32,7 +33,12 @@ export function createTerminologyPropertiesPanelModule(config = {}) {
   };
 }
 
-/** @type {TerminologyPropertiesPanelModuleDefinition} */
+/**
+ * Default bpmn-js properties-panel module for medical terminology annotations.
+ *
+ * @type {TerminologyPropertiesPanelModuleDefinition}
+ * @category Properties panel
+ */
 const TerminologyPropertiesPanelModule = createTerminologyPropertiesPanelModule();
 
 export default TerminologyPropertiesPanelModule;

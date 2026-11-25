@@ -19,6 +19,18 @@
     </div>
   </header>
 
+  <aside class="demo-notice" role="note" aria-label="Licence and evaluation notice">
+    <span class="demo-notice__badge">DEMO ONLY</span>
+    <p class="demo-notice__text">
+      <strong>Preview &amp; evaluation only:</strong>
+      Medical terminologies shown here (including SNOMED&nbsp;CT®, LOINC®, ICD-10-GM, OPS, and ATC)
+      are <strong>not</strong> licensed for production or clinical use. Do not enter patient data.
+    </p>
+    <button id="btn-license-notice" type="button" class="demo-notice__btn">
+      Licence &amp; usage notice
+    </button>
+  </aside>
+
   <main class="app-main">
     <div id="canvas" class="app-canvas"></div>
     <div id="properties" class="app-properties"></div>
@@ -26,16 +38,119 @@
 
   <div id="xml-overlay" class="xml-overlay xml-overlay--hidden">
     <div class="xml-overlay__header">
-      <span>BPMN XML (mit mt: Extensions)</span>
-      <button id="btn-xml-close">×</button>
+      <span>BPMN XML (with mt: extensions — demo output; verify code-system licences before reuse)</span>
+      <button id="btn-xml-close" type="button" aria-label="Close XML view">×</button>
     </div>
     <pre id="xml-content" class="xml-overlay__content"></pre>
+  </div>
+
+  <div
+    id="license-overlay"
+    class="license-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="license-dialog-title"
+  >
+    <div class="license-dialog">
+      <div class="license-dialog__header">
+        <div>
+          <span class="license-dialog__eyebrow">DEMO &amp; EVALUATION ONLY · NON-PRODUCTION</span>
+          <h2 id="license-dialog-title">Licence &amp; usage notice for medical terminologies</h2>
+        </div>
+        <button
+          id="btn-license-close"
+          type="button"
+          class="license-dialog__close"
+          aria-label="Close notice"
+          hidden
+        >×</button>
+      </div>
+
+      <div class="license-dialog__body">
+        <p class="license-dialog__summary">
+          This interactive demo is provided for <strong>preview and evaluation only</strong> —
+          <strong>not</strong> for production, clinical, diagnostic, or billing use. Never enter real
+          patient data; use synthetic example data only.
+        </p>
+
+        <section class="license-dialog__section">
+          <h3>1. No licence granted for medical code systems</h3>
+          <p>
+            The <strong>MIT License</strong> applies solely to the source code of this BPMN extension. It
+            grants <strong>no rights to use, redistribute, or deploy</strong> any medical terminology or
+            classification. This project ships <strong>no</strong> SNOMED&nbsp;CT®, LOINC®, ICD-10-GM, OPS,
+            or ATC content; live searches in this demo query the public third-party sandbox server
+            <strong>CSIRO Ontoserver</strong> (<code>https://r4.ontoserver.csiro.au/fhir</code>), which is
+            neither operated nor guaranteed by Technische Universität Dresden. For any operational or
+            production use, you must connect your own terminology server and obtain and comply with the
+            required publisher licences yourself.
+          </p>
+        </section>
+
+        <section class="license-dialog__section">
+          <h3>2. Copyright, trademark, and attribution notices</h3>
+          <ul class="license-dialog__list">
+            <li>
+              <strong>SNOMED&nbsp;CT®:</strong> SNOMED Clinical Terms® (SNOMED&nbsp;CT®) is copyrighted by
+              and a registered trademark of <strong>SNOMED International</strong>. Any use beyond preview and
+              evaluation requires an appropriate Affiliate License (in Germany administered via
+              <strong>BfArM / MLDS</strong>).
+            </li>
+            <li>
+              <strong>LOINC®:</strong> LOINC® is copyright © Regenstrief Institute, Inc. and the LOINC
+              Committee (all rights reserved; registered trademark of Regenstrief Institute, Inc.) and is
+              subject to the
+              <a href="https://loinc.org/license" target="_blank" rel="noopener noreferrer">LOINC License</a>.
+            </li>
+            <li>
+              <strong>ICD-10-GM &amp; OPS:</strong> Official German classifications published by
+              <strong>BfArM</strong> on behalf of the Federal Ministry of Health (BMG); ICD-10-GM is based
+              on ICD-10 published by the WHO. BfArM terms of use and WHO copyright apply.
+            </li>
+            <li>
+              <strong>ATC:</strong> Based on the ATC classification of the <em>WHO Collaborating Centre for
+              Drug Statistics Methodology</em> (in Germany published in cooperation with WIdO / BfArM); the
+              respective publisher terms apply.
+            </li>
+            <li>
+              <strong>Bundled offline packages</strong> (<code>hl7.terminology.r4</code>,
+              <code>de.ihe-d.terminology</code>, <code>dvmd.kdl.r4</code>): Remain subject to the licences
+              and attribution requirements of their respective publishers (HL7 International, IHE Deutschland
+              e.V., DVMD e.V.).
+            </li>
+          </ul>
+        </section>
+
+        <section class="license-dialog__section">
+          <h3>3. Disclaimer of warranty</h3>
+          <p>
+            No warranty is provided for the accuracy, completeness, currency, or availability of displayed
+            codes, mappings, or the external demo server. See
+            <a href="../licensing/">Licensing &amp; terminology rights</a> in the documentation for full
+            details.
+          </p>
+        </section>
+      </div>
+
+      <div class="license-dialog__footer">
+        <button id="btn-license-reject" type="button" class="license-dialog__reject">
+          Reject
+        </button>
+        <button id="btn-license-accept" type="button" class="license-dialog__accept">
+          Accept
+        </button>
+      </div>
+    </div>
   </div>
 
   <footer class="app-footer">
     <span>Demo für <code>@forschungsgruppe-digital-health/bpmn-extension-medical-terminology</code></span>
     <span>·</span>
     <span>Klicke ein Element an → Properties Panel rechts</span>
+    <span>·</span>
+    <button id="btn-footer-license" type="button" class="app-footer__link">
+      Licence &amp; usage notice (demo only)
+    </button>
   </footer>
 
   <script type="module" src="./src/app.js"></script>

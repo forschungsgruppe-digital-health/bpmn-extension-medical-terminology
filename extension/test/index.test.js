@@ -111,6 +111,7 @@ describe('@forschungsgruppe-digital-health/bpmn-extension-medical-terminology â€
     const panelConfig = mod.resolveTerminologyPropertiesConfig({});
 
     expect(panelConfig.showAnnotations).toBe(true);
+    expect(panelConfig.showBadges).toBe(true);
   });
 
   it('should export moddle descriptor as JSON', async () => {

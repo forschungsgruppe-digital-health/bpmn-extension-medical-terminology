@@ -11,6 +11,7 @@ import {
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 import { DEMO_FEATURES } from './demo-config.js';
+import { setupLicenseNotice } from './license-notice.js';
 import {
   createDemoTerminologyServices
 } from './terminology-config.js';
@@ -157,6 +158,8 @@ async function bootstrap() {
   setupSampleSelect();
   await loadSample('annotated');
 }
+
+setupLicenseNotice();
 
 void bootstrap().catch(err => {
   console.error('Failed to bootstrap demo', err);

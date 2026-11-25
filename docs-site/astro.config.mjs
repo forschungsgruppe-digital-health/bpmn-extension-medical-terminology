@@ -99,8 +99,8 @@ export default defineConfig({
               'Extensibility',
               'Annotations',
               'Properties panel',
+              'Diagram',
               'Core types',
-              'XML schema',
               'Discovery',
               'Internal helpers'
             ]
@@ -109,24 +109,26 @@ export default defineConfig({
       ],
 
       sidebar: [
-        { label: 'Decision & quick start', items: [
-          { label: 'Is this package for me?', link: '/' }
+        { label: 'Start & decision', items: [
+          { label: 'Is this package for me?', link: '/' },
+          { label: 'Installation & compatibility', link: '/compatibility/' }
         ] },
-        { label: 'Using the package', items: [
-          { label: 'Configuration', link: '/configuration/' },
+        { label: 'Configuration & integration', items: [
           { label: 'Default configuration', link: '/configuration/defaults/' },
+          { label: 'Configuration options', link: '/configuration/' },
+          { label: 'Properties panel', link: '/properties-panel/' },
           { label: 'Terminology packages', link: '/configuration/discovery/' },
-          { label: 'Properties panel', link: '/properties-panel/' }
+          { label: 'mTLS-secured servers', link: '/configuration/mtls/' },
+          { label: 'Custom providers', link: '/extending/' }
         ] },
-        { label: 'Technical reference', items: [
+        { label: 'Format & reference', items: [
           { label: 'XML schema', link: '/schema/' },
           { label: 'Namespace v1', link: '/ns/terminology/v1/' },
-          { label: 'Compatibility', link: '/compatibility/' },
-          { label: 'Version matrix', link: '/version-matrix/' },
-          { label: 'Extending', link: '/extending/' }
+          { label: 'Version matrix', link: '/version-matrix/' }
         ] },
         ...apiSidebar,
         { label: 'Project & help', collapsed: true, items: [
+          { label: 'Licensing & terminology rights', link: '/licensing/' },
           { label: 'Support', link: '/support/' },
           { label: 'Contributing', link: '/contributing/' }
         ] }
