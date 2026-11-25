@@ -5,10 +5,10 @@ editUrl: false
 ---
 
 :::note
-This page is generated from `extension/src/config/terminology-config.js` by
-`tools/generate-config-defaults.mjs`, and a `--check` run in CI fails when the two
-disagree. It is therefore the authoritative list of defaults; the prose pages link here
-rather than repeating values.
+This page is generated from `extension/src/config/terminology-config.js` and
+`extension/src/properties-panel/config.js` by `tools/generate-config-defaults.mjs`,
+and a `--check` run in CI fails when the code and docs disagree. It is therefore
+the authoritative list of defaults; the prose pages link here rather than repeating values.
 :::
 
 These are the values in effect when you call
@@ -67,6 +67,42 @@ installed FHIR packages).
 | Setting | Default |
 | --- | --- |
 | `fhirBaseUrl` | `https://r4.ontoserver.csiro.au/fhir` |
+
+## Properties panel
+
+These are the defaults in
+[`DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG`](/api/variables/default_terminology_properties_config/)
+when you use `TerminologyPropertiesPanelModule` or call
+[`createTerminologyPropertiesPanelModule`](/api/functions/createterminologypropertiespanelmodule/)
+with no arguments. Override them via `createTerminologyPropertiesPanelModule(options)` — see
+[Properties panel options](/properties-panel/#options).
+
+| Setting | Default |
+| --- | --- |
+| `showAnnotations` | `true` |
+| `showBadges` | `true` |
+| `includeTypes` | `[]` |
+| `excludeTypes` | `[]` |
+
+Default `targetTypes`:
+
+- `bpmn:Task`
+- `bpmn:UserTask`
+- `bpmn:ServiceTask`
+- `bpmn:SendTask`
+- `bpmn:ReceiveTask`
+- `bpmn:ManualTask`
+- `bpmn:ScriptTask`
+- `bpmn:BusinessRuleTask`
+- `bpmn:SubProcess`
+- `bpmn:ExclusiveGateway`
+- `bpmn:DataObjectReference`
+- `bpmn:DataStoreReference`
+- `bpmn:IntermediateThrowEvent`
+- `bpmn:IntermediateCatchEvent`
+- `bpmn:StartEvent`
+- `bpmn:EndEvent`
+- `bpmn:SequenceFlow`
 
 To change the terminology server, disable or override any of the provider IDs above,
 switch to offline-only mode, or configure authentication, continue with

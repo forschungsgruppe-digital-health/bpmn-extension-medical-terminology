@@ -117,10 +117,16 @@ const TerminologyPanelModule = createTerminologyPropertiesPanelModule({
 
 - `showAnnotations` (`true` by default) toggles the annotation editor entry while keeping the
   provider registered.
-- `showBadges` (`true` by default) sets the initial visibility of diagram `MT` badges.
+- `showBadges` (`true` by default) sets the initial visibility of diagram `MT` badges (pass
+  `showBadges: false` to start with badges hidden; users can still toggle them at runtime via
+  **Show MT badges**).
 - `targetTypes` replaces the built-in list of supported BPMN types.
 - `includeTypes` adds BPMN types on top of the defaults (or `targetTypes`).
 - `excludeTypes` removes BPMN types after applying defaults, `targetTypes`, and `includeTypes`.
+
+The default values are exported as
+[`DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG`](/api/variables/default_terminology_properties_config/)
+and listed on [Default configuration](/configuration/defaults/#properties-panel).
 
 ### Listening for search errors (`TERMINOLOGY_ERROR_EVENT`)
 

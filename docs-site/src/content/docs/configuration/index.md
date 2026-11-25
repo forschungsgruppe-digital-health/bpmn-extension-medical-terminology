@@ -11,7 +11,7 @@ Configuration is split across three layers:
 | Layer | Configured via | Page |
 | --- | --- | --- |
 | **Terminology services & providers** (servers, auth, offline mode, overrides, fallbacks) | `createDefaultTerminologyModule(options)` | **This page** |
-| **Properties panel & UI** (supported BPMN element types, hiding the panel, error events) | `createTerminologyPropertiesPanelModule(options)` | [Properties panel](/properties-panel/#options) |
+| **Properties panel & UI** (supported BPMN element types, initial `MT` badge visibility, hiding the panel, error events) | `createTerminologyPropertiesPanelModule(options)` | [Properties panel](/properties-panel/#options) |
 | **Build-time & runtime FHIR packages** (Vite plugin, CLI, custom CodeSystem bundles) | `terminologyVitePlugin()` / `fdh-terminology-discover` / `packageDiscovery` | [Terminology packages](/configuration/discovery/) |
 
 :::caution

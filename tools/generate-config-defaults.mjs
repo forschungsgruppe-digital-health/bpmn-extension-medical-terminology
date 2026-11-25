@@ -21,6 +21,9 @@ import {
   createDefaultTerminologyConfig,
   createDefaultServerConfig
 } from '../extension/src/config/terminology-config.js';
+import {
+  DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG
+} from '../extension/src/properties-panel/config.js';
 
 const TARGET = 'docs-site/src/content/docs/configuration/defaults.md';
 
@@ -36,6 +39,7 @@ const read = (provider, name) => {
 
 const config = createDefaultTerminologyConfig();
 const server = createDefaultServerConfig();
+const panelConfig = DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG;
 
 const lines = [];
 lines.push('---');
@@ -45,10 +49,10 @@ lines.push('editUrl: false');
 lines.push('---');
 lines.push('');
 lines.push(':::note');
-lines.push('This page is generated from `extension/src/config/terminology-config.js` by');
-lines.push('`tools/generate-config-defaults.mjs`, and a `--check` run in CI fails when the two');
-lines.push('disagree. It is therefore the authoritative list of defaults; the prose pages link here');
-lines.push('rather than repeating values.');
+lines.push('This page is generated from `extension/src/config/terminology-config.js` and');
+lines.push('`extension/src/properties-panel/config.js` by `tools/generate-config-defaults.mjs`,');
+lines.push('and a `--check` run in CI fails when the code and docs disagree. It is therefore');
+lines.push('the authoritative list of defaults; the prose pages link here rather than repeating values.');
 lines.push(':::');
 lines.push('');
 lines.push('These are the values in effect when you call');
@@ -127,6 +131,28 @@ lines.push('| Setting | Default |');
 lines.push('| --- | --- |');
 for (const [key, value] of Object.entries(config.loaderConfig || {})) {
   lines.push(`| \`${key}\` | ${code(value)} |`);
+}
+lines.push('');
+lines.push('## Properties panel');
+lines.push('');
+lines.push('These are the defaults in');
+lines.push('[`DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG`](/api/variables/default_terminology_properties_config/)');
+lines.push('when you use `TerminologyPropertiesPanelModule` or call');
+lines.push('[`createTerminologyPropertiesPanelModule`](/api/functions/createterminologypropertiespanelmodule/)');
+lines.push('with no arguments. Override them via `createTerminologyPropertiesPanelModule(options)` — see');
+lines.push('[Properties panel options](/properties-panel/#options).');
+lines.push('');
+lines.push('| Setting | Default |');
+lines.push('| --- | --- |');
+lines.push(`| \`showAnnotations\` | ${code(panelConfig.showAnnotations)} |`);
+lines.push(`| \`showBadges\` | ${code(panelConfig.showBadges)} |`);
+lines.push(`| \`includeTypes\` | ${code(JSON.stringify(panelConfig.includeTypes))} |`);
+lines.push(`| \`excludeTypes\` | ${code(JSON.stringify(panelConfig.excludeTypes))} |`);
+lines.push('');
+lines.push('Default `targetTypes`:');
+lines.push('');
+for (const type of panelConfig.targetTypes) {
+  lines.push(`- ${code(type)}`);
 }
 lines.push('');
 lines.push('To change the terminology server, disable or override any of the provider IDs above,');
