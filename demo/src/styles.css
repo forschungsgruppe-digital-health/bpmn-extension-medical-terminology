@@ -286,13 +286,32 @@ body {
   background: var(--c-bg);
   display: flex;
   justify-content: flex-end;
+  gap: 10px;
+}
+
+.license-dialog__reject {
+  padding: 8px 16px;
+  background: var(--c-danger);
+  border: 1px solid #e46a6a;
+  color: #fff;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+
+.license-dialog__reject:hover,
+.license-dialog__reject:focus-visible {
+  background: #e35d5d;
+  outline: none;
 }
 
 .license-dialog__accept {
   padding: 8px 16px;
-  background: #d99a26;
-  border: 1px solid #e6b14a;
-  color: #1a1306;
+  background: var(--c-success);
+  border: 1px solid #45ae6b;
+  color: #fff;
   border-radius: var(--radius);
   cursor: pointer;
   font-size: 12.5px;
@@ -302,7 +321,7 @@ body {
 
 .license-dialog__accept:hover,
 .license-dialog__accept:focus-visible {
-  background: #eab244;
+  background: #3eab65;
   outline: none;
 }
 

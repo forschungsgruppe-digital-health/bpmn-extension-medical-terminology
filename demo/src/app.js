@@ -11,6 +11,7 @@ import {
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 import { DEMO_FEATURES } from './demo-config.js';
+import { setupLicenseNotice } from './license-notice.js';
 import {
   createDemoTerminologyServices
 } from './terminology-config.js';
@@ -60,93 +61,6 @@ function setupSampleSelect() {
 
   sampleSelect.value = 'annotated';
   sampleSelect.addEventListener('change', () => loadSample(sampleSelect.value));
-}
-
-const LICENSE_NOTICE_ACK_KEY = 'fdh-demo-license-notice-ack-v1';
-
-function isLicenseNoticeAcknowledged() {
-  try {
-    return window.sessionStorage.getItem(LICENSE_NOTICE_ACK_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function markLicenseNoticeAcknowledged() {
-  try {
-    window.sessionStorage.setItem(LICENSE_NOTICE_ACK_KEY, 'true');
-  } catch {
-    // Ignore storage errors in restricted browser contexts.
-  }
-}
-
-function setupLicenseNotice() {
-  const overlay = document.getElementById('license-overlay');
-  const acceptButton = document.getElementById('btn-license-accept');
-  const closeButton = document.getElementById('btn-license-close');
-  const bannerButton = document.getElementById('btn-license-notice');
-  const footerButton = document.getElementById('btn-footer-license');
-
-  if (!overlay || !acceptButton) {
-    return;
-  }
-
-  let acknowledged = isLicenseNoticeAcknowledged();
-
-  function openDialog({ requireAck = false } = {}) {
-    overlay.classList.remove('license-overlay--hidden');
-    if (closeButton) {
-      closeButton.hidden = requireAck;
-    }
-    acceptButton.textContent = requireAck
-      ? 'I understand — open demo for preview only'
-      : 'Close';
-    acceptButton.focus();
-  }
-
-  function closeDialog({ acknowledge = false } = {}) {
-    if (acknowledge) {
-      acknowledged = true;
-      markLicenseNoticeAcknowledged();
-    }
-    overlay.classList.add('license-overlay--hidden');
-  }
-
-  acceptButton.addEventListener('click', () => {
-    closeDialog({ acknowledge: true });
-  });
-
-  if (closeButton) {
-    closeButton.addEventListener('click', () => {
-      if (acknowledged) {
-        closeDialog();
-      }
-    });
-  }
-
-  overlay.addEventListener('click', (event) => {
-    if (event.target === overlay && acknowledged) {
-      closeDialog();
-    }
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && acknowledged && !overlay.classList.contains('license-overlay--hidden')) {
-      closeDialog();
-    }
-  });
-
-  const reopen = () => openDialog({ requireAck: !acknowledged });
-  if (bannerButton) {
-    bannerButton.addEventListener('click', reopen);
-  }
-  if (footerButton) {
-    footerButton.addEventListener('click', reopen);
-  }
-
-  if (!acknowledged) {
-    openDialog({ requireAck: true });
-  }
 }
 
 function setVisibility(selector, isVisible) {
@@ -241,10 +155,11 @@ async function bootstrap() {
     });
   }
 
-  setupLicenseNotice();
   setupSampleSelect();
   await loadSample('annotated');
 }
+
+setupLicenseNotice();
 
 void bootstrap().catch(err => {
   console.error('Failed to bootstrap demo', err);
