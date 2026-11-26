@@ -25,6 +25,7 @@ graph TB
         SNOW["Snowstorm / SNOMED CT"]
         FHIR["FHIR terminology server"]
         PACK["Installed FHIR terminology packages<br/>FHIR CodeSystem JSON resources"]
+        TX["tx.fhir.de (HL7 Deutschland)<br/>public demo live search only"]
     end
 
     EXT -->|additionalModules and APIs| MODEL
@@ -36,6 +37,7 @@ graph TB
     EXT -->|REST| SNOW
     EXT -->|FHIR $expand / $lookup| FHIR
     EXT -->|Vite discovery or explicit modules| PACK
+    DEMO -.->|ValueSet/$expand, only after visitor consent| TX
     TOOLS -->|lint, roundtrip, schema checks| FIX
 ```
 
@@ -68,6 +70,7 @@ graph TB
 | FHIR terminology package | Installed build-time resource | JSON `CodeSystem` resources selected by URL | `extension/src/vite/plugin.js`; `extension/src/services/PackageProviderDiscovery.js` |
 | GitHub Packages | Distribution | npm publish/install | `extension/package.json`; `.github/workflows/publish.yml` |
 | GitHub Pages | Demo distribution | Static HTTPS site | `.github/workflows/pages.yml`; `demo/` |
+| tx.fhir.de (HL7 Deutschland) | Outbound from the public demo, only if the build names it and after the visitor's consent | FHIR `ValueSet/$expand` (searches) for LOINC, ICD-10-GM, OPS and ATC; SNOMED CT only if a build sets `VITE_OPT_IN_SNOMED_EDITION` and the visitor unlocks it by licence self-declaration (no public build sets it) | `demo/src/live-search.js`; `demo/src/snomed-unlock.js`; `demo/src/terminology-config.js` |
 
 Business actors, institutional terminology governance, and service-level
 agreements are not defined by this repository.

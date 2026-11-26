@@ -41,9 +41,27 @@ export default defineConfig({
 });
 ```
 
-Automatic discovery is deliberately restricted to the package's known defaults. To load a
-different installed package, select it explicitly and, preferably, restrict it by canonical
-`CodeSystem.url`:
+Automatic discovery is deliberately restricted to the package's known defaults:
+`hl7.terminology.r4`, the IHE XDS class and type code systems from `de.ihe-d.terminology`, and the
+KDL from `dvmd.kdl.r4`. From `hl7.terminology.r4` it leaves out the same third-party code systems
+as the bundled preset: SNODENT, the ADA tooth codes, the NUCC provider taxonomy and the W3C colour
+codes (see
+[Licensing and terminology rights](/licensing/)). The same defaults apply to the
+`fdh-terminology-discover` CLI without `--package`, `--include` or `--exclude`, and to
+`packageAutoDiscovery`.
+
+:::caution[Explicit selections are not filtered]
+Packages you select explicitly, through the plugin's `packages` or the CLI's `--package`,
+`--include` or `--exclude`, are imported with every CodeSystem you select. The default runtime
+registration (`packageAutoDiscovery`) still applies the defaults above to the plugin's
+registry. It registers only the default packages and leaves out the third-party HL7 code
+systems. To register an explicit selection as it is, pass it as `packageDiscovery.packages` or
+`packageAutoDiscovery: { packages }`. If you register SNODENT, the ADA tooth codes, the W3C colour codes or the NUCC
+taxonomy that way, you need their owners' licences.
+:::
+
+To load a different installed package, select it explicitly and, preferably, restrict it by
+canonical `CodeSystem.url`:
 
 ```js title="vite.config.js"
 terminologyVitePlugin({

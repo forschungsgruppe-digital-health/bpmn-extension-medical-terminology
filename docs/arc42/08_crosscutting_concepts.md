@@ -39,12 +39,19 @@ There are three normal ways to add a terminology system:
 
 ```js
 registry.register(new FhirProvider({
-  id: 'atc',
-  displayName: 'ATC',
-  systemUri: 'http://www.whocc.no/atc',
+  id: 'local-procedures',
+  displayName: 'Local procedures',
+  systemUri: 'https://example.org/CodeSystem/local-procedures',
+  valueSetUri: 'https://example.org/ValueSet/local-procedures',
   baseUrl: 'https://fhir.example.test'
 }));
 ```
+
+The `id` must not clash with a built-in provider such as `atc`; the registry
+rejects a second provider with the same id. Without a version parameter the
+server expands its current release; the provider stores the release reported
+in the expansion's `used-codesystem` parameter with each concept. Version pins
+(`expandParameters`, `lookupParameters`) are opt-in per provider.
 
 ### Static or package-backed CodeSystem
 

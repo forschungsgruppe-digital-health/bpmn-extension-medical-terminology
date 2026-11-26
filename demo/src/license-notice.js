@@ -1,4 +1,4 @@
-export const LICENSE_NOTICE_ACK_KEY = 'fdh-demo-license-notice-ack-v1';
+export const LICENSE_NOTICE_ACK_KEY = 'fdh-demo-license-notice-ack-v4';
 export const REPO_MAINPAGE_URL =
   'https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 

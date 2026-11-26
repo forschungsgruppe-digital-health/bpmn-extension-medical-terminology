@@ -60,10 +60,20 @@ and its properties panel already wired up. It is the fastest way to see the effe
 and it is the reference for how a host application integrates the package; the
 [decision and quick-start page](/) explains the supported integration paths.
 
-The demo runs with the package's default provider configuration. To point it at a SNOMED CT
-server, copy `demo/.env.example` to `demo/.env.local` and set `VITE_SNOWSTORM_BASE_URL` to a
-redirect-free base URL whose CORS policy permits the demo's browser origin. The demo does not
-configure a Vite proxy and the package does not ship one.
+Without configuration the demo contacts no terminology server and offers only the bundled code
+systems. It also offers no live search: `VITE_OPT_IN_FHIR_BASE_URL` gives visitors an optional,
+consent-based live search on `tx.fhir.de`. The Pages workflow takes it from the repository
+variable `DEMO_OPT_IN_FHIR_BASE_URL` (unset or empty means no live search), and the
+`docs-preview` workflow sets it to `https://tx.fhir.de/fhir`. To reproduce that locally, set only
+this variable in `demo/.env.local`. To connect a server from the start instead, copy
+`demo/.env.example` to `demo/.env.local` and set `VITE_FHIR_BASE_URL`, for example to
+`https://tx.fhir.de/fhir` (development and non-commercial research only). Set the SNOMED CT
+variables (`VITE_SNOMED_EDITION`, `VITE_SNOWSTORM_*`, or `VITE_OPT_IN_SNOMED_EDITION` for the
+self-declaration unlock on top of the live search, which accepts only `11000274103`) only with a
+licence for the edition. Restart
+`npm run dev` afterwards. The server must allow the demo's browser origin through CORS; the demo
+does not configure a Vite proxy and the package does not ship one. See
+[Try it in the demo](/configuration/terminology-server/#try-it-in-the-demo).
 
 ## Workspace layout
 
@@ -134,7 +144,7 @@ continuous integration all call the *same* npm scripts.
 | `npm run xsd:gen:check` | yes | That `schema/medical-terminology.xsd` is exactly what `tools/moddle-to-xsd.mjs` generates from the moddle descriptor right now. The descriptor is the single source of truth; the schema is derived. See the [schema](/schema/) page. |
 | `npm run xsd:ext` | yes | Validates each example against BPMN core **and** the extension's own schema in one pass, by generating a small driver schema that imports both. This works because the BPMN schema admits foreign content through a lax wildcard — a validator only checks it if it already holds a schema for that namespace. |
 | `npm run check:xsd` | informational | Validates the BPMN *core* of each file against the official OMG schema. Informational by design: a green result says nothing about the extension content, which the lax wildcard lets through unchecked. Pass `--strict` to make an invalid core fail. |
-| `npm run docs:defaults:check` | yes | That the generated [default configuration](/configuration/defaults/) page still matches the configuration the code assembles. The values it documents — which terminology server is contacted, which code-system versions are pinned — are module-private constants, so the page is generated from the assembled configuration itself and this check fails when the two drift. Regenerate with `npm run docs:defaults`. |
+| `npm run docs:defaults:check` | yes | That the generated [default configuration](/configuration/defaults/) page still matches the configuration the code assembles. The values it documents — which terminology server is contacted, which code systems and value sets the built-in providers use — are module-private constants, so the page is generated from the assembled configuration itself and this check fails when the two drift. Regenerate with `npm run docs:defaults`. |
 | `npm run docs:namespace:check` | yes | That the generated namespace reference still matches the moddle descriptor and XSD. |
 | `npm run check:namespace` | yes | That descriptor, XSD, examples, documentation, and package metadata consistently use the versioned `mt:` namespace URI. |
 | `npm test` | yes | The Vitest suite. |

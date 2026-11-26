@@ -94,7 +94,11 @@ export class SnomedCtProvider extends TerminologyProvider {
         signal: options.signal
       });
     } catch (error) {
-      console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);
+      // A cancelled search (the caller aborted it, e.g. on the next
+      // keystroke) is not a failure worth a warning.
+      if (error?.kind !== 'aborted') {
+        console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);
+      }
       throw error;
     }
 

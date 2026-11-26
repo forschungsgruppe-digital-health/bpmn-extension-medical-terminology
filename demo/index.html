@@ -19,13 +19,48 @@
     </div>
   </header>
 
-  <aside class="demo-notice" role="note" aria-label="Licence and evaluation notice">
+  <aside class="demo-notice" role="note" aria-label="Licence and evaluation notice" lang="en">
     <span class="demo-notice__badge">DEMO ONLY</span>
-    <p class="demo-notice__text">
+    <p class="demo-notice__text" data-server-mode="none">
       <strong>Preview &amp; evaluation only:</strong>
-      Medical terminologies shown here (including SNOMED&nbsp;CT®, LOINC®, ICD-10-GM, OPS, and ATC)
-      are <strong>not</strong> licensed for production or clinical use. Do not enter patient data.
+      <span data-live-search-unavailable>this demo contacts no terminology server. SNOMED&nbsp;CT®,
+      LOINC®, ICD-10-GM, OPS, and ATC cannot be searched here; the examples show a few of their codes
+      for illustration only.</span>
+      <span data-live-search-available hidden>this demo contacts no terminology server unless you
+      switch on the optional live search for LOINC®, ICD-10-GM, OPS, and ATC on
+      <strong data-live-search-host></strong>. SNOMED&nbsp;CT® cannot be searched here<span
+      data-snomed-offered hidden> without a licence self-declaration</span>; the examples
+      show a few of its codes for illustration only.</span>
+      Do not enter patient data.
     </p>
+    <p class="demo-notice__text" data-server-mode="configured" hidden>
+      <span data-demo-mode="local"><strong>Local preview with a terminology server:</strong>
+      this build sends your search terms (and, as with any web request, your IP address)
+      to</span><span data-demo-mode="opt-in" hidden><strong>Live search is on:</strong> with your
+      consent, the demo sends searches in LOINC®, ICD-10-GM, OPS, and ATC<span data-snomed-unlocked
+      hidden> (and SNOMED&nbsp;CT®)</span> from three characters on, with your IP address as with any
+      web request, to</span>
+      <strong data-demo-server-host></strong>.<span data-snomed-unlocked hidden> SNOMED&nbsp;CT® is
+      unlocked on your licence self-declaration.</span> The server operator's terms and the publishers'
+      licences apply. Do not enter patient data.
+    </p>
+    <button id="btn-live-search-open" type="button" class="demo-notice__btn" data-live-search-open
+      data-live-search-available hidden>
+      Live search…
+    </button>
+    <button id="btn-live-search-details" type="button" class="demo-notice__btn" data-live-search-open
+      data-live-search-on hidden>
+      Live search details
+    </button>
+    <button id="btn-snomed-open" type="button" class="demo-notice__btn" data-snomed-open hidden>
+      SNOMED CT…
+    </button>
+    <button id="btn-snomed-lock" type="button" class="demo-notice__btn" data-snomed-lock hidden>
+      Lock SNOMED CT
+    </button>
+    <button id="btn-live-search-off" type="button" class="demo-notice__btn" data-live-search-disable hidden>
+      Turn off live search
+    </button>
     <button id="btn-license-notice" type="button" class="demo-notice__btn">
       Licence &amp; usage notice
     </button>
@@ -50,6 +85,7 @@
     role="dialog"
     aria-modal="true"
     aria-labelledby="license-dialog-title"
+    lang="en"
   >
     <div class="license-dialog">
       <div class="license-dialog__header">
@@ -74,58 +110,176 @@
         </p>
 
         <section class="license-dialog__section">
-          <h3>1. No licence granted for medical code systems</h3>
+          <h3>
+            <span data-server-mode="none">1. No terminology server, no licence granted</span>
+            <span data-server-mode="configured" hidden>1. Terminology server and licences</span>
+          </h3>
           <p>
             The <strong>MIT License</strong> applies solely to the source code of this BPMN extension. It
             grants <strong>no rights to use, redistribute, or deploy</strong> any medical terminology or
-            classification. This project ships <strong>no</strong> SNOMED&nbsp;CT®, LOINC®, ICD-10-GM, OPS,
-            or ATC content; live searches in this demo query the public third-party sandbox server
-            <strong>CSIRO Ontoserver</strong> (<code>https://r4.ontoserver.csiro.au/fhir</code>), which is
-            neither operated nor guaranteed by Technische Universität Dresden. For any operational or
-            production use, you must connect your own terminology server and obtain and comply with the
-            required publisher licences yourself.
+            classification.
           </p>
+          <p data-server-mode="none">
+            This demo <strong>contacts no terminology server</strong><span data-live-search-available
+            hidden> unless you switch on the optional live search described below</span>. Searches cover only
+            the code systems bundled with the package (HL7 Terminology, IHE Deutschland XDS, KDL).
+            SNOMED&nbsp;CT®<span data-live-search-unavailable>, LOINC®, ICD-10-GM, OPS, and ATC</span>
+            <strong>cannot be searched here</strong>; the example diagrams contain a
+            few of their codes, stored as annotations, for illustration. To use these terminologies in your
+            own application, connect a terminology server you are licensed to use and obtain the publishers'
+            licences yourself.
+          </p>
+          <p data-server-mode="none">
+            <span data-live-search-available hidden>
+              <strong>Optional live search:</strong> you can switch on a live search for LOINC®, ICD-10-GM,
+              OPS, and ATC on <strong data-live-search-host></strong>. It is off by default and is switched on
+              only with your separate consent —
+              <button type="button" class="license-dialog__link" data-live-search-open>details and
+              consent</button>. Accepting this notice does not switch it on.<span data-snomed-offered
+              hidden> Licensed SNOMED&nbsp;CT® users can additionally unlock the German Edition after
+              switching on the live search; this requires a separate licence self-declaration.</span>
+            </span>
+          </p>
+          <div data-server-mode="configured" hidden>
+            <p>
+              <span data-demo-mode="local">This <strong>local build</strong> is connected to a terminology
+              server.</span><span data-demo-mode="opt-in" hidden>You have switched on the <strong>live
+              search</strong> (<button type="button" class="license-dialog__link" data-live-search-open>details
+              and withdrawal</button>).</span> Searches in the code systems listed below are sent to
+              <strong data-demo-server-host></strong>. Each request carries the search term and, as with any
+              web request, your IP address.<span data-demo-mode="opt-in" hidden> A search is sent only from
+              three characters on, after you pause typing.<span data-snomed-offered hidden> SNOMED&nbsp;CT® is
+              listed, and searched there, only while you have unlocked it.</span></span> Searches in the code
+              systems bundled with the package (HL7 Terminology, IHE Deutschland XDS, KDL) stay in your
+              browser.
+            </p>
+            <ul class="license-dialog__list">
+              <li data-demo-fhir hidden>
+                <strong>LOINC®, ICD-10-GM, OPS, and ATC (ATC-GM)</strong> are searched on
+                <span data-demo-fhir-host></span>.
+              </li>
+              <li data-demo-snomed hidden>
+                <strong>SNOMED&nbsp;CT®</strong> is searched on <span data-demo-snomed-host></span><span
+                  data-demo-snomed-snowstorm hidden> via Snowstorm</span><span
+                  data-demo-snomed-edition-info hidden> (edition <code data-demo-snomed-edition></code><span
+                  data-demo-snomed-release-info hidden>, release <code data-demo-snomed-release></code></span>)</span>.
+                This requires an Affiliate License for that edition (in Germany administered via
+                <strong>BfArM / MLDS</strong>).<span data-demo-mode="opt-in" hidden> You unlocked it with a
+                self-declaration that you hold such a licence and use SNOMED&nbsp;CT in Germany.</span>
+              </li>
+            </ul>
+            <p>
+              The server operator's terms of use and the publishers' licences apply; this demo grants no
+              rights to any terminology. Do not enter patient data.
+            </p>
+            <p data-demo-operator="tx.fhir.de" hidden>
+              <strong>tx.fhir.de:</strong> Operated by HL7 Deutschland e.V. for development and
+              non-commercial research —
+              <a href="https://tx.fhir.de/de/terms" target="_blank" rel="noopener noreferrer">terms of use</a>,
+              <a href="https://tx.fhir.de/de/licenses" target="_blank" rel="noopener noreferrer">licences</a>,
+              <a href="https://hl7.de/datenschutz/" target="_blank" rel="noopener noreferrer">privacy</a>.
+            </p>
+          </div>
         </section>
 
         <section class="license-dialog__section">
           <h3>2. Copyright, trademark, and attribution notices</h3>
           <ul class="license-dialog__list">
             <li>
-              <strong>SNOMED&nbsp;CT®:</strong> SNOMED Clinical Terms® (SNOMED&nbsp;CT®) is copyrighted by
-              and a registered trademark of <strong>SNOMED International</strong>. Any use beyond preview and
-              evaluation requires an appropriate Affiliate License (in Germany administered via
+              <strong>SNOMED&nbsp;CT®:</strong> This material includes SNOMED Clinical Terms® (SNOMED CT®)
+              which is used by permission of SNOMED International. All rights reserved. SNOMED CT®, was
+              originally created by The College of American Pathologists. "SNOMED" and "SNOMED CT" are
+              registered trademarks of SNOMED International. Edition used in the examples: German National
+              Edition (<code>http://snomed.info/sct/11000274103/version/20260815</code>). Any use of
+              SNOMED&nbsp;CT requires an Affiliate License (in Germany administered via
               <strong>BfArM / MLDS</strong>).
             </li>
             <li>
-              <strong>LOINC®:</strong> LOINC® is copyright © Regenstrief Institute, Inc. and the LOINC
-              Committee (all rights reserved; registered trademark of Regenstrief Institute, Inc.) and is
-              subject to the
-              <a href="https://loinc.org/license" target="_blank" rel="noopener noreferrer">LOINC License</a>.
+              <strong>LOINC®:</strong> This material contains content from LOINC
+              (<a href="https://loinc.org" target="_blank" rel="noopener noreferrer">http://loinc.org</a>).
+              LOINC is copyright © Regenstrief Institute, Inc. and the Logical Observation Identifiers Names
+              and Codes (LOINC) Committee and is available at no cost under the license at
+              <a href="https://loinc.org/license" target="_blank" rel="noopener noreferrer">http://loinc.org/license</a>.
+              LOINC® is a registered United States trademark of Regenstrief Institute, Inc.
             </li>
             <li>
-              <strong>ICD-10-GM &amp; OPS:</strong> Official German classifications published by
-              <strong>BfArM</strong> on behalf of the Federal Ministry of Health (BMG); ICD-10-GM is based
-              on ICD-10 published by the WHO. BfArM terms of use and WHO copyright apply.
+              <strong>ICD-10-GM:</strong> <span lang="de">© WHO, BfArM. Die Erstellung erfolgt unter
+              Verwendung der maschinenlesbaren Fassung des Bundesinstituts für Arzneimittel und
+              Medizinprodukte (BfArM).</span> The release is the version stored with each coding, for
+              example <code>2026</code>.
             </li>
             <li>
-              <strong>ATC:</strong> Based on the ATC classification of the <em>WHO Collaborating Centre for
-              Drug Statistics Methodology</em> (in Germany published in cooperation with WIdO / BfArM); the
-              respective publisher terms apply.
+              <strong>OPS:</strong> <span lang="de">© BfArM. Die Erstellung erfolgt unter Verwendung der
+              maschinenlesbaren Fassung des Bundesinstituts für Arzneimittel und Medizinprodukte
+              (BfArM).</span> Release used in the examples: OPS <code>2026</code>.
             </li>
             <li>
-              <strong>Bundled offline packages</strong> (<code>hl7.terminology.r4</code>,
-              <code>de.ihe-d.terminology</code>, <code>dvmd.kdl.r4</code>): Remain subject to the licences
-              and attribution requirements of their respective publishers (HL7 International, IHE Deutschland
-              e.V., DVMD e.V.).
+              <strong>ATC (ATC-GM):</strong> The ATC codes refer to the German ATC-GM published by BfArM,
+              which is based on the ATC/DDD index of the WHO Collaborating Centre for Drug Statistics
+              Methodology (WHOCC). <span lang="de">Das Wissenschaftliche Institut der AOK (WIdO) ist Urheber
+              der ATC-GM mit DDD, die auf dem vom WHO Collaborating Centre for Drug Statistics Methodology
+              herausgegebenen Werk mit dem Titel „ATC Index with DDDs and Guidelines for ATC Classification
+              and DDD Assignment“ beruht. Die amtliche Veröffentlichung erfolgt durch das Bundesinstitut für
+              Arzneimittel und Medizinprodukte (BfArM).</span> Release used in the examples: ATC-GM
+              <code>2026</code>.
+            </li>
+            <li>
+              <strong>Bundled offline packages:</strong> <code>hl7.terminology.r4</code> (HL7 International,
+              CC0-1.0; code systems owned by third parties are left out), <code>de.ihe-d.terminology</code>
+              (IHE Deutschland e.V.) and <code>dvmd.kdl.r4</code> (DVMD e.V.). The last two declare no
+              licence; their publishers' terms apply.
+            </li>
+            <li>
+              <strong>Software:</strong> This demo is built with bpmn-js and other open-source libraries;
+              see the <a href="./THIRD_PARTY_LICENSES.txt" target="_blank" rel="noopener">third-party
+              licences</a>.
             </li>
           </ul>
         </section>
 
         <section class="license-dialog__section">
-          <h3>3. Disclaimer of warranty</h3>
+          <h3>3. Privacy</h3>
+          <p data-server-mode="none">
+            The demo runs entirely in your browser. It sends neither your diagrams nor your searches to any
+            server<span data-live-search-available hidden> unless you switch on the optional live
+            search</span>, and downloaded files stay on your device. The page is hosted on GitHub Pages; when you
+            load it, GitHub processes technical data such as your IP address — see the
+            <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+              target="_blank" rel="noopener noreferrer">GitHub General Privacy Statement</a>.
+            Responsible for this demo: Technische Universität Dresden, Forschungsgruppe Digital Health
+            (<a href="https://tu-dresden.de/impressum" target="_blank" rel="noopener noreferrer">Impressum</a>).
+            <span data-live-search-available hidden>The optional live search sends data to
+            <span data-live-search-host></span> only after your separate consent; the
+            <button type="button" class="license-dialog__link" data-live-search-open>live-search
+            notice</button> explains what is sent and to whom.</span>
+          </p>
+          <p data-server-mode="configured" hidden>
+            <span data-demo-mode="local">This local build runs in your browser;</span><span
+            data-demo-mode="opt-in" hidden>The demo runs in your browser;</span> your diagrams and
+            downloaded files stay on your device.
+            Searches in the server-backed code systems named in section 1 (search term and, as with any web
+            request, your IP address) are sent to <strong data-demo-server-host></strong>, whose operator
+            processes them under its own privacy policy<span data-demo-operator="tx.fhir.de" hidden> (HL7
+            Deutschland e.V.:
+            <a href="https://hl7.de/datenschutz/" target="_blank" rel="noopener noreferrer">privacy
+            policy</a>)</span>.<span data-demo-mode="opt-in" hidden> They are sent only because you
+            consented (Art. 6(1)(a) GDPR), and only from three characters on, after you pause typing. You can
+            withdraw your consent at any time with <em>Turn off live search</em> in the banner; the
+            <button type="button" class="license-dialog__link" data-live-search-open>live-search
+            notice</button> explains what is sent, to whom, and your rights.</span> Searches in the code
+            systems bundled with the package stay in your browser. Do not enter patient data.
+            <span data-demo-mode="local">The software is provided by</span><span data-demo-mode="opt-in"
+            hidden>Responsible for this demo and for asking your consent:</span> Technische Universität
+            Dresden, Forschungsgruppe Digital Health
+            (<a href="https://tu-dresden.de/impressum" target="_blank" rel="noopener noreferrer">Impressum</a>).
+          </p>
+        </section>
+
+        <section class="license-dialog__section">
+          <h3>4. Disclaimer of warranty</h3>
           <p>
-            No warranty is provided for the accuracy, completeness, currency, or availability of displayed
-            codes, mappings, or the external demo server. See
+            No warranty is provided for the accuracy, completeness, or currency of displayed codes or
+            mappings. See
             <a href="../licensing/">Licensing &amp; terminology rights</a> in the documentation for full
             details.
           </p>
@@ -143,6 +297,200 @@
     </div>
   </div>
 
+  <div
+    id="live-search-overlay"
+    class="license-overlay license-overlay--hidden live-search-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="live-search-title"
+    lang="en"
+    hidden
+  >
+    <div class="license-dialog">
+      <div class="license-dialog__header">
+        <div>
+          <span class="license-dialog__eyebrow">OPTIONAL · OFF BY DEFAULT</span>
+          <h2 id="live-search-title">Live terminology search via <span data-live-search-host></span></h2>
+        </div>
+      </div>
+
+      <div class="license-dialog__body">
+        <p class="license-dialog__summary">
+          The demo works without this: the code systems bundled with the package are searched in your
+          browser. Switch on the live search only if you also want to search LOINC®, ICD-10-GM, OPS, and
+          ATC on a public terminology server. <strong>Never enter patient data or other personal data as a
+          search term.</strong>
+        </p>
+        <p data-live-search-state="on" hidden>
+          <strong>The live search is on</strong> in this browser tab. You can turn it off below or with
+          <em>Turn off live search</em> in the banner.
+        </p>
+
+        <section class="license-dialog__section">
+          <h3>What is sent, and to whom</h3>
+          <p>
+            For every search in LOINC®, ICD-10-GM, OPS, or ATC<span data-snomed-offered hidden> (and
+            SNOMED&nbsp;CT®, if you unlock it)</span>, your browser sends a request directly to
+            <strong data-live-search-host></strong>. It contains the search term and the code system and, as
+            with any web request, your IP address, the time, browser details (user agent, preferred
+            languages) and the address of this demo. To keep the number of requests low, a search is sent
+            only from three characters on and after you pause typing.
+            <span data-snomed-offered-none>SNOMED&nbsp;CT® stays unavailable in this public demo.</span>
+            <span data-snomed-offered hidden>SNOMED&nbsp;CT® is not switched on by this consent: licensed
+            users can unlock it afterwards with a separate licence self-declaration.</span>
+          </p>
+          <p data-live-search-operator="tx.fhir.de" hidden>
+            <strong>Recipient:</strong> HL7 Deutschland e.V., Luisenstraße 65, 10117 Berlin, Germany, which
+            operates tx.fhir.de for development and non-commercial research and processes the requests as
+            its own controller —
+            <a href="https://hl7.de/datenschutz/" target="_blank" rel="noopener noreferrer">privacy policy</a>,
+            <a href="https://tx.fhir.de/de/terms" target="_blank" rel="noopener noreferrer">terms of use</a>,
+            <a href="https://tx.fhir.de/de/licenses" target="_blank" rel="noopener noreferrer">licences</a>.
+          </p>
+        </section>
+
+        <section class="license-dialog__section">
+          <h3>Purpose, legal basis, and storage</h3>
+          <p>
+            Purpose: showing live search results in this demo. Legal basis: your consent
+            (Art. 6(1)(a) GDPR). Giving it is voluntary; without it you can use the demo as before. Your
+            choice is kept only in this browser tab's session storage until you turn the live search off
+            or close the tab. If you reopen or duplicate the tab, your browser may restore it; the banner
+            then shows that the live search is on.
+          </p>
+          <p>
+            <strong>Controller</strong> for asking this consent and for your browser sending the requests:
+            Technische Universität Dresden, Forschungsgruppe Digital Health, 01062 Dresden
+            (<a href="https://tu-dresden.de/impressum" target="_blank" rel="noopener noreferrer">Impressum</a>,
+            including the data protection officer). TU Dresden does not receive or store your search terms.
+            The processing of the requests on <span data-live-search-host></span> is the responsibility of
+            its operator<span data-live-search-operator="tx.fhir.de" hidden>, HL7 Deutschland e.V. (see
+            <em>Recipient</em> above)</span>.
+          </p>
+        </section>
+
+        <section class="license-dialog__section">
+          <h3>Withdrawal and your rights</h3>
+          <p>
+            You can withdraw your consent at any time with <em>Turn off live search</em> in the banner or
+            in this dialog; this does not affect the lawfulness of searches already sent. You have the right
+            of access, rectification, erasure, restriction of processing and data portability, and the
+            right to lodge a complaint with a data protection supervisory authority. The right to object
+            (Art. 21 GDPR) does not apply to processing based on consent; withdrawing your consent stops
+            further requests instead. For this demo, contact the controller named above; for the
+            processing on <span data-live-search-host></span>, contact its operator. The terminology
+            content shown is subject to the notices in the licence dialog.
+          </p>
+        </section>
+      </div>
+
+      <div class="license-dialog__footer">
+        <button id="btn-live-search-cancel" type="button" class="license-dialog__choice"
+          data-live-search-state="off">
+          Not now
+        </button>
+        <button id="btn-live-search-enable" type="button" class="license-dialog__choice"
+          data-live-search-state="off">
+          Switch on live search
+        </button>
+        <button id="btn-live-search-close" type="button" class="license-dialog__choice"
+          data-live-search-state="on" hidden>
+          Close
+        </button>
+        <button id="btn-live-search-dialog-off" type="button" class="license-dialog__choice"
+          data-live-search-state="on" data-live-search-disable hidden>
+          Turn off live search
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="snomed-unlock-overlay"
+    class="license-overlay license-overlay--hidden snomed-unlock-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="snomed-unlock-title"
+    lang="en"
+    hidden
+  >
+    <div class="license-dialog">
+      <div class="license-dialog__header">
+        <div>
+          <span class="license-dialog__eyebrow">SNOMED CT · LICENSED USERS ONLY</span>
+          <h2 id="snomed-unlock-title">Unlock SNOMED&nbsp;CT® (German National Edition)</h2>
+        </div>
+      </div>
+
+      <div class="license-dialog__body">
+        <p class="license-dialog__summary">
+          SNOMED&nbsp;CT® is licensed content. You may search it here only if you are licensed yourself:
+          this demo grants <strong>no licence</strong>. Your confirmation below is a self-declaration that
+          the demo does not verify; you are responsible for its accuracy.
+        </p>
+
+        <section class="license-dialog__section">
+          <h3>What you unlock</h3>
+          <p>
+            Searches in the German National Edition (module <code data-snomed-optin-edition></code><span
+            data-snomed-optin-release-info hidden>, release <code data-snomed-optin-release></code></span>)
+            on <strong data-live-search-host></strong>, under the live-search consent you have already given.
+            In Germany, SNOMED&nbsp;CT licences (Affiliate Licences) are issued by BfArM via the Member
+            Licensing and Distribution Service —
+            <a href="https://www.bfarm.de/EN/Code-systems/Terminologies/SNOMED-CT/affiliate-licence/_node.html"
+              target="_blank" rel="noopener noreferrer">BfArM: Affiliate Licence</a>,
+            <a href="https://mlds.ihtsdotools.org/" target="_blank" rel="noopener noreferrer">MLDS</a>.
+          </p>
+          <p>
+            This material includes SNOMED Clinical Terms® (SNOMED CT®) which is used by permission of SNOMED
+            International. All rights reserved. SNOMED CT®, was originally created by The College of American
+            Pathologists. "SNOMED" and "SNOMED CT" are registered trademarks of SNOMED International.
+          </p>
+        </section>
+
+        <section class="license-dialog__section">
+          <h3>Self-declaration</h3>
+          <ul class="license-dialog__checks">
+            <li>
+              <label>
+                <input type="checkbox" data-snomed-statement />
+                I hold a SNOMED&nbsp;CT Affiliate Licence that covers this edition, or I use SNOMED&nbsp;CT as
+                an end user under such a licence.
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="checkbox" data-snomed-statement />
+                I use SNOMED&nbsp;CT in this demo only in Germany.
+              </label>
+            </li>
+            <li>
+              <label>
+                <input type="checkbox" data-snomed-statement />
+                I use it only to evaluate this extension, not for patient care, and I enter no patient data.
+              </label>
+            </li>
+          </ul>
+          <p>
+            Your declaration and its time are kept only in this browser tab (session storage); Technische
+            Universität Dresden does not receive them. It ends when you lock SNOMED&nbsp;CT again or switch
+            off the live search, and usually when you close the tab (a reopened or duplicated tab may keep
+            it).
+          </p>
+        </section>
+      </div>
+
+      <div class="license-dialog__footer">
+        <button id="btn-snomed-cancel" type="button" class="license-dialog__choice">
+          Cancel
+        </button>
+        <button id="btn-snomed-unlock" type="button" class="license-dialog__choice" disabled>
+          Unlock SNOMED CT
+        </button>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer">
     <span>Demo für <code>@forschungsgruppe-digital-health/bpmn-extension-medical-terminology</code></span>
     <span>·</span>
@@ -151,6 +499,10 @@
     <button id="btn-footer-license" type="button" class="app-footer__link">
       Licence &amp; usage notice (demo only)
     </button>
+    <span>·</span>
+    <a class="app-footer__link" href="./THIRD_PARTY_LICENSES.txt" target="_blank" rel="noopener">Third-party licences</a>
+    <span>·</span>
+    <a class="app-footer__link" href="https://tu-dresden.de/impressum" target="_blank" rel="noopener noreferrer">Impressum</a>
   </footer>
 
   <script type="module" src="./src/app.js"></script>

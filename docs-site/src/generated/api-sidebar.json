@@ -64,6 +64,10 @@
           {
             "label": "createDefaultTerminologyConfig",
             "link": "/api/functions/createdefaultterminologyconfig/"
+          },
+          {
+            "label": "createSnomedEditionUri",
+            "link": "/api/functions/createsnomededitionuri/"
           }
         ]
       },

@@ -254,6 +254,7 @@ export {
 /** @category Configuration */
 export {
   createDefaultServerConfig,
+  createSnomedEditionUri,
   createDefaultFhirProviderConfigs,
   createDefaultPackageProviders,
   createDefaultTerminologyConfig

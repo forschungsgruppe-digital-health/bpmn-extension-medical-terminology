@@ -5,7 +5,8 @@ import { TerminologyRequestError } from '../../src/core/TerminologyRequestError.
 import {
   createDefaultPackageProviders,
   createDefaultTerminologyConfig,
-  createDefaultTerminologyServices
+  createDefaultTerminologyServices,
+  createSnomedEditionUri
 } from '../../src/config/terminology-config.js';
 
 const DEFAULT_PROVIDER_IDS = [
@@ -45,10 +46,24 @@ function createSuccessfulFhirFetch() {
   }));
 }
 
+const BUNDLED_PROVIDER_IDS = [
+  'hl7-terminology-r4-package',
+  'ihe-xds-class',
+  'ihe-xds-type',
+  'kdl'
+];
+
+// A server and an edition chosen by the integrator; nothing is preconfigured.
+const LICENSED_SERVER_CONFIG = Object.freeze({
+  serverConfig: { fhirBaseUrl: 'https://fhir.example.test/fhir' },
+  snomedConfig: { edition: '11000274103' }
+});
+
 function getProviderIds(config = {}) {
   return createDefaultTerminologyServices({
     loaderConfig: false,
     packageAutoDiscovery: false,
+    ...LICENSED_SERVER_CONFIG,
     ...config
   }).terminologyRegistry.listProviders().map(provider => provider.id);
 }
@@ -58,12 +73,326 @@ describe('default terminology configuration matrix', () => {
     vi.restoreAllMocks();
   });
 
-  it('standard configuration registers the expected provider IDs', () => {
+  it('standard configuration registers only bundled providers and contacts no server', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const config = createDefaultTerminologyConfig();
     const providerIds = createDefaultTerminologyServices({
       loaderConfig: false
     }).terminologyRegistry.listProviders().map(provider => provider.id);
 
-    expect(providerIds).toEqual(DEFAULT_PROVIDER_IDS);
+    expect(providerIds).toEqual(BUNDLED_PROVIDER_IDS);
+    expect(config.providers).toEqual([]);
+    expect(config.fhirProviders).toEqual([]);
+    expect(config.loaderConfig).toBe(false);
+  });
+
+  it('a configured server and SNOMED CT edition register every default provider', () => {
+    expect(getProviderIds()).toEqual(DEFAULT_PROVIDER_IDS);
+  });
+
+  it('warns once when licensed providers are disabled for lack of a server', async () => {
+    vi.resetModules();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const freshConfigModule = await import('../../src/config/terminology-config.js');
+
+    freshConfigModule.createDefaultTerminologyConfig({ enablePackageDefaults: false });
+    freshConfigModule.createDefaultTerminologyConfig({ enablePackageDefaults: false });
+
+    const messages = warn.mock.calls.map(([message]) => message);
+    expect(messages.filter(message => message.includes('SNOMED CT is disabled'))).toHaveLength(1);
+    expect(messages.filter(message => message.includes('LOINC, ICD-10-GM, OPS, ATC are disabled')))
+      .toHaveLength(1);
+  });
+
+  it('keeps SNOMED CT disabled when a server but no edition is configured', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    expect(getProviderIds({
+      enablePackageDefaults: false,
+      snomedConfig: {}
+    })).toEqual([
+      'loinc',
+      'icd-10-gm',
+      'ops',
+      'atc'
+    ]);
+  });
+
+  it('snomedConfig.edition pins search, lookup and stored version to that edition', async () => {
+    const fetchFn = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        expansion: { contains: [{ code: '1', display: 'Example', system: 'http://snomed.info/sct' }], total: 1 },
+        parameter: [{ name: 'display', valueString: 'Example' }]
+      })
+    }));
+    const config = createDefaultTerminologyConfig({
+      ...LICENSED_SERVER_CONFIG,
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      loaderConfig: false,
+      fetchFn,
+      snomedConfig: { edition: '11000274103', editionVersion: '20260815' }
+    });
+    const provider = config.providers[0];
+
+    const result = await provider.search('example');
+    await provider.lookup('1');
+
+    const searchUrl = new URL(fetchFn.mock.calls[0][0]);
+    const lookupUrl = new URL(fetchFn.mock.calls[1][0]);
+    expect(searchUrl.searchParams.get('url'))
+      .toBe('http://snomed.info/sct/11000274103/version/20260815?fhir_vs');
+    expect(lookupUrl.searchParams.get('version'))
+      .toBe('http://snomed.info/sct/11000274103/version/20260815');
+    expect(result.concepts[0].version).toBe('http://snomed.info/sct/11000274103/version/20260815');
+  });
+
+  it('snomedConfig.edition without editionVersion leaves the version to the server', async () => {
+    const fetchFn = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        expansion: {
+          parameter: [{
+            name: 'used-codesystem',
+            valueUri: 'http://snomed.info/sct|http://snomed.info/sct/11000274103/version/20260815'
+          }],
+          contains: [{ code: '1', display: 'Example', system: 'http://snomed.info/sct' }],
+          total: 1
+        }
+      })
+    }));
+    const services = createDefaultTerminologyServices({
+      ...LICENSED_SERVER_CONFIG,
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      packageAutoDiscovery: false,
+      loaderConfig: false,
+      fetchFn
+    });
+    const registry = services.terminologyRegistry;
+    const provider = registry.getProvider('snomed-ct');
+
+    expect(provider.version).toBeUndefined();
+
+    const result = await provider.search('example');
+    await provider.lookup('1');
+
+    const lookupUrl = new URL(fetchFn.mock.calls[1][0]);
+    expect(lookupUrl.searchParams.get('version')).toBe('http://snomed.info/sct/11000274103');
+    expect(result.concepts[0].version)
+      .toBe('http://snomed.info/sct/11000274103/version/20260815');
+    expect(registry.isCodeSystemVersionOutdated(
+      'http://snomed.info/sct',
+      'http://snomed.info/sct/11000274103/version/20260815'
+    )).toBe(false);
+  });
+
+  it('snomedConfig.editionVersion makes the pinned release the version label', () => {
+    const registry = createDefaultTerminologyServices({
+      ...LICENSED_SERVER_CONFIG,
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      packageAutoDiscovery: false,
+      loaderConfig: false,
+      snomedConfig: { edition: '11000274103', editionVersion: '20260815' }
+    }).terminologyRegistry;
+
+    expect(registry.getProvider('snomed-ct').version)
+      .toBe('http://snomed.info/sct/11000274103/version/20260815');
+    expect(registry.isCodeSystemVersionOutdated(
+      'http://snomed.info/sct',
+      'http://snomed.info/sct/11000274103/version/20260815'
+    )).toBe(false);
+    expect(registry.isCodeSystemVersionOutdated(
+      'http://snomed.info/sct',
+      'http://snomed.info/sct/11000274103/version/20251115'
+    )).toBe(true);
+  });
+
+  it('default FHIR providers pin no release and ATC uses the BfArM ATC-GM', () => {
+    const config = createDefaultTerminologyConfig({
+      ...LICENSED_SERVER_CONFIG,
+      enableSnomed: false,
+      enablePackageDefaults: false,
+      loaderConfig: false
+    });
+
+    expect(config.fhirProviders.map(({ id, systemUri, valueSetUri }) => ({
+      id,
+      systemUri,
+      valueSetUri
+    }))).toEqual([
+      { id: 'loinc', systemUri: 'http://loinc.org', valueSetUri: 'http://loinc.org/vs' },
+      {
+        id: 'icd-10-gm',
+        systemUri: 'http://fhir.de/CodeSystem/bfarm/icd-10-gm',
+        valueSetUri: 'http://fhir.de/ValueSet/bfarm/icd-10-gm'
+      },
+      {
+        id: 'ops',
+        systemUri: 'http://fhir.de/CodeSystem/bfarm/ops',
+        valueSetUri: 'http://fhir.de/ValueSet/bfarm/ops'
+      },
+      {
+        id: 'atc',
+        systemUri: 'http://fhir.de/CodeSystem/bfarm/atc',
+        valueSetUri: 'http://fhir.de/ValueSet/bfarm/atc'
+      }
+    ]);
+    expect(config.fhirProviders.find(provider => provider.id === 'atc').displayName).toBe('ATC');
+
+    for (const provider of config.fhirProviders) {
+      expect(provider).not.toHaveProperty('expandParameters');
+      expect(provider).not.toHaveProperty('lookupParameters');
+      expect(provider).not.toHaveProperty('version');
+    }
+  });
+
+  it('default FHIR providers store the release the server reports', async () => {
+    const fetchFn = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        expansion: {
+          parameter: [{
+            name: 'used-codesystem',
+            valueUri: 'http://fhir.de/CodeSystem/bfarm/ops|2026'
+          }],
+          contains: [{ code: '5-324', display: 'Example procedure' }],
+          total: 1
+        }
+      })
+    }));
+    const registry = createDefaultTerminologyServices({
+      ...LICENSED_SERVER_CONFIG,
+      enableSnomed: false,
+      enablePackageDefaults: false,
+      packageAutoDiscovery: false,
+      loaderConfig: false,
+      fetchFn
+    }).terminologyRegistry;
+
+    const result = await registry.search('example', 'ops');
+    const requestUrl = new URL(fetchFn.mock.calls[0][0]);
+
+    expect(requestUrl.searchParams.get('url')).toBe('http://fhir.de/ValueSet/bfarm/ops');
+    expect(requestUrl.searchParams.has('valueSetVersion')).toBe(false);
+    expect(requestUrl.searchParams.has('system-version')).toBe(false);
+    expect(registry.getProvider('ops').version).toBeUndefined();
+    expect(result.concepts[0]).toMatchObject({
+      system: 'http://fhir.de/CodeSystem/bfarm/ops',
+      version: '2026'
+    });
+    expect(registry.isCodeSystemVersionOutdated('http://fhir.de/CodeSystem/bfarm/ops', '2026'))
+      .toBe(false);
+  });
+
+  it('fhirProviderOverrides can pin a release with valueSetVersion', async () => {
+    const fetchFn = createSuccessfulFhirFetch();
+    const registry = createDefaultTerminologyServices({
+      ...LICENSED_SERVER_CONFIG,
+      enableSnomed: false,
+      enablePackageDefaults: false,
+      packageAutoDiscovery: false,
+      loaderConfig: false,
+      fetchFn,
+      fhirProviderOverrides: [{ id: 'icd-10-gm', expandParameters: { valueSetVersion: '2026' } }]
+    }).terminologyRegistry;
+
+    await registry.search('example', 'icd-10-gm');
+
+    expect(new URL(fetchFn.mock.calls[0][0]).searchParams.get('valueSetVersion')).toBe('2026');
+    expect(registry.getProvider('icd-10-gm').version).toBe('2026');
+    expect(registry.isCodeSystemVersionOutdated('http://fhir.de/CodeSystem/bfarm/icd-10-gm', '2025'))
+      .toBe(true);
+  });
+
+  it('rejects a SNOMED CT edition that is not a module id', () => {
+    expect(() => createSnomedEditionUri('german')).toThrow(/not a module id/);
+    expect(() => createSnomedEditionUri('11000274103', '2026-08-15')).toThrow(/YYYYMMDD/);
+    expect(createSnomedEditionUri('900000000000207008'))
+      .toBe('http://snomed.info/sct/900000000000207008');
+  });
+
+  it('accepts an explicit SNOMED CT value set instead of an edition', async () => {
+    const fetchFn = createSuccessfulFhirFetch();
+    const config = createDefaultTerminologyConfig({
+      ...LICENSED_SERVER_CONFIG,
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      loaderConfig: false,
+      fetchFn,
+      snomedConfig: { valueSetUri: 'http://snomed.info/sct/11000274103?fhir_vs=isa/404684003' }
+    });
+
+    await config.providers[0].search('example');
+    await config.providers[0].lookup('1');
+
+    expect(new URL(fetchFn.mock.calls[0][0]).searchParams.get('url'))
+      .toBe('http://snomed.info/sct/11000274103?fhir_vs=isa/404684003');
+    // The implicit value set names the edition, so $lookup is scoped to it too.
+    expect(new URL(fetchFn.mock.calls[1][0]).searchParams.get('version'))
+      .toBe('http://snomed.info/sct/11000274103');
+    expect(config.providers[0].version).toBeUndefined();
+  });
+
+  it('takes the version label from a release-specific SNOMED CT value set', async () => {
+    const fetchFn = createSuccessfulFhirFetch();
+    const config = createDefaultTerminologyConfig({
+      ...LICENSED_SERVER_CONFIG,
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      loaderConfig: false,
+      fetchFn,
+      snomedConfig: { valueSetUri: 'http://snomed.info/sct/11000274103/version/20260815?fhir_vs' }
+    });
+
+    await config.providers[0].lookup('1');
+
+    expect(new URL(fetchFn.mock.calls[0][0]).searchParams.get('version'))
+      .toBe('http://snomed.info/sct/11000274103/version/20260815');
+    expect(config.providers[0].version)
+      .toBe('http://snomed.info/sct/11000274103/version/20260815');
+  });
+
+  it('keeps an explicit lookupParameters.version over the value set edition', async () => {
+    const fetchFn = createSuccessfulFhirFetch();
+    const config = createDefaultTerminologyConfig({
+      ...LICENSED_SERVER_CONFIG,
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      loaderConfig: false,
+      fetchFn,
+      snomedConfig: {
+        valueSetUri: 'http://snomed.info/sct/11000274103?fhir_vs=isa/404684003',
+        lookupParameters: { version: 'http://snomed.info/sct/900000000000207008' }
+      }
+    });
+
+    await config.providers[0].lookup('1');
+
+    expect(new URL(fetchFn.mock.calls[0][0]).searchParams.get('version'))
+      .toBe('http://snomed.info/sct/900000000000207008');
+  });
+
+  it('leaves $lookup unscoped for a SNOMED CT value set that names no edition', async () => {
+    const fetchFn = createSuccessfulFhirFetch();
+    const config = createDefaultTerminologyConfig({
+      ...LICENSED_SERVER_CONFIG,
+      enableFhirDefaults: false,
+      enablePackageDefaults: false,
+      loaderConfig: false,
+      fetchFn,
+      snomedConfig: { valueSetUri: 'https://example.test/ValueSet/snomed-subset' }
+    });
+
+    await config.providers[0].lookup('1');
+
+    expect(new URL(fetchFn.mock.calls[0][0]).searchParams.has('version')).toBe(false);
+    expect(config.providers[0].version).toBeUndefined();
   });
 
   it('enableSnomed: false disables the complete SNOMED provider group', () => {
@@ -128,6 +457,7 @@ describe('default terminology configuration matrix', () => {
 
   it('uses FHIR for the default SNOMED provider', () => {
     const config = createDefaultTerminologyConfig({
+      ...LICENSED_SERVER_CONFIG,
       enablePackageDefaults: false,
       loaderConfig: false
     });
@@ -168,6 +498,7 @@ describe('default terminology configuration matrix', () => {
       snomedConfig: {
         transport: 'fhir',
         baseUrl: 'https://snomed-fhir.example.test/r4',
+        edition: '11000274103',
         fetchFn
       }
     });

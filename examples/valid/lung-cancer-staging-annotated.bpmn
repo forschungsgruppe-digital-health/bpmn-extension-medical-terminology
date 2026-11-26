@@ -8,9 +8,34 @@
        Same process as lung-cancer-staging.bpmn, enriched with:
 
        mt:annotations — medical terminology
-       (SNOMED CT, LOINC, OPS codes on each task)
+       (SNOMED CT, LOINC, OPS and ATC-GM codes on the tasks; LOINC,
+       IHE Deutschland XDS and KDL codes on the data objects)
 
        The annotations use the mt: namespace only.
+
+       Terminology notices (the codes below are illustrative examples):
+       This material includes SNOMED Clinical Terms® (SNOMED CT®) which is
+       used by permission of SNOMED International. All rights reserved.
+       SNOMED CT®, was originally created by The College of American
+       Pathologists. "SNOMED" and "SNOMED CT" are registered trademarks of
+       SNOMED International. SNOMED CT edition: German National Edition
+       (http://snomed.info/sct/11000274103/version/20260815). Using SNOMED CT
+       requires an Affiliate Licence (in Germany via BfArM / MLDS).
+       This material contains content from LOINC (http://loinc.org). LOINC is
+       copyright © Regenstrief Institute, Inc. and the Logical Observation
+       Identifiers Names and Codes (LOINC) Committee and is available at no
+       cost under the license at http://loinc.org/license. LOINC® is a
+       registered United States trademark of Regenstrief Institute, Inc.
+       OPS (version 2026): © BfArM. Die Erstellung erfolgt unter
+       Verwendung der maschinenlesbaren Fassung des Bundesinstituts
+       für Arzneimittel und Medizinprodukte (BfArM).
+       ATC-GM (version 2026): Das Wissenschaftliche Institut der AOK
+       (WIdO) ist Urheber der ATC-GM mit DDD, die auf dem vom WHO
+       Collaborating Centre for Drug Statistics Methodology
+       herausgegebenen Werk mit dem Titel „ATC Index with DDDs and
+       Guidelines for ATC Classification and DDD Assignment“ beruht.
+       Die amtliche Veröffentlichung erfolgt durch das Bundesinstitut
+       für Arzneimittel und Medizinprodukte (BfArM).
        ============================================================ -->
 
   <bpmn2:process id="Process_LungCaMin" name="Lung Cancer Treatment Decision" isExecutable="false">
@@ -26,10 +51,10 @@
         <mt:annotations>
           <mt:annotation id="mt-ann-1" text="MRI scan report of the thorax as input document for TNM staging">
             <mt:coding system="http://loinc.org" version="2.82" code="18748-4" display="Diagnostic imaging study"/>
-            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="ERGE" display="Diagnostic imaging results"/>
+            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDStypeCode" version="2020-02-07T07:55:58" code="BILD" display="Ergebnisse bildgebender Diagnostik"/>
           </mt:annotation>
           <mt:annotation id="mt-ann-2">
-            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Clinical reports"/>
+            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BEF" display="Befundbericht"/>
           </mt:annotation>
         </mt:annotations>
       </bpmn2:extensionElements>
@@ -40,7 +65,7 @@
       <bpmn2:extensionElements>
         <mt:annotations>
           <mt:annotation id="mt-ann-3" text="Clinical TNM staging to determine tumor stage">
-            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="254292007" display="Tumor staging (tumor staging)"/>
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/11000274103/version/20260815" code="254292007" display="Tumor staging (tumor staging)"/>
             <mt:coding system="http://loinc.org" version="2.82" code="21908-9" display="Stage group.clinical Cancer"/>
           </mt:annotation>
         </mt:annotations>
@@ -71,8 +96,8 @@
       <bpmn2:extensionElements>
         <mt:annotations>
           <mt:annotation id="mt-ann-5" text="Lobectomy or pneumonectomy for operable lung cancer Stage I-II">
-            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="359615001" display="Partial lobectomy of lung (procedure)"/>
-            <mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"/>
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/11000274103/version/20260815" code="359615001" display="Partial lobectomy of lung (procedure)"/>
+            <mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2026" code="5-324" display="Einfache Lobektomie und Bilobektomie der Lunge"/>
           </mt:annotation>
         </mt:annotations>
       </bpmn2:extensionElements>
@@ -85,8 +110,8 @@
       <bpmn2:extensionElements>
         <mt:annotations>
           <mt:annotation id="mt-ann-6" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">
-            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="367336001" display="Chemotherapy (procedure)"/>
-            <mt:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"/>
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/11000274103/version/20260815" code="367336001" display="Chemotherapy (procedure)"/>
+            <mt:coding system="http://fhir.de/CodeSystem/bfarm/atc" version="2026" code="L01XA01" display="Cisplatin"/>
           </mt:annotation>
         </mt:annotations>
       </bpmn2:extensionElements>
@@ -107,10 +132,10 @@
         <mt:annotations>
           <mt:annotation id="mt-ann-7" text="Medical discharge report upon completion of follow-up">
             <mt:coding system="http://loinc.org" version="2.82" code="18842-5" display="Discharge summary"/>
-            <mt:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2024" code="AD010101" display="Medical discharge report"/>
+            <mt:coding system="http://dvmd.de/fhir/CodeSystem/kdl" version="2026.0.0" code="AD010115" display="Entlassungsbericht"/>
           </mt:annotation>
           <mt:annotation id="mt-ann-8">
-            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Physician letters"/>
+            <mt:coding system="http://ihe-d.de/CodeSystems/IHEXDSclassCode" version="2021-06-25T13:44:47" code="BRI" display="Brief"/>
           </mt:annotation>
         </mt:annotations>
       </bpmn2:extensionElements>
@@ -121,7 +146,7 @@
       <bpmn2:extensionElements>
         <mt:annotations>
           <mt:annotation id="mt-ann-9" text="Structured follow-up assessment with imaging surveillance and lab monitoring">
-            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/32506021000036107/version/20260731" code="390906007" display="Follow-up encounter (procedure)"/>
+            <mt:coding system="http://snomed.info/sct" version="http://snomed.info/sct/11000274103/version/20260815" code="390906007" display="Follow-up encounter (procedure)"/>
             <mt:coding system="http://loinc.org" version="2.82" code="18776-5" display="Plan of care note"/>
           </mt:annotation>
         </mt:annotations>

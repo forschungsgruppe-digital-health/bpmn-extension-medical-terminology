@@ -13,12 +13,14 @@ graph TD
     HOST["Consumer bpmn-js application<br/>browser or Node"]
     DEMO["GitHub Pages<br/>static demo"]
     EXT["External Snowstorm / FHIR terminology server"]
+    TX["tx.fhir.de (HL7 Deutschland)"]
 
     REPO --> RELEASE
     RELEASE --> PKG
     PKG -->|npm install| HOST
     REPO -->|pages.yml: build demo/dist| DEMO
     HOST -.->|optional HTTPS terminology calls| EXT
+    DEMO -.->|optional live search, only after visitor consent| TX
 ```
 
 ## Distributed artifacts
@@ -52,7 +54,23 @@ already-published version on rerun.
 `pages.yml` runs on pushes to `main`, tests with Node 24, builds the private
 `demo` workspace using Vite, uploads `demo/dist`, and deploys it to GitHub
 Pages. The demo imports synthetic BPMN samples from `examples/valid/` and uses
-the extension's default terminology services.
+the extension's default terminology services. The Pages build sets only one
+terminology variable, `VITE_OPT_IN_FHIR_BASE_URL`, taken from the repository
+variable `DEMO_OPT_IN_FHIR_BASE_URL`; while that variable is unset or empty, the
+public demo offers no live search. The `docs-preview.yml` artifact build sets
+`VITE_OPT_IN_FHIR_BASE_URL=https://tx.fhir.de/fhir` directly. The public demo
+therefore contacts no terminology server by default and offers only the bundled
+code systems. If the build names tx.fhir.de, a visitor can switch on a live
+search for LOINC, ICD-10-GM, OPS and ATC with separate consent
+(`demo/src/live-search.js`); the browser then queries tx.fhir.de directly,
+throttled, and the consent lasts for the browser tab. The live search is
+offered only for a host whose operator `demo/index.html` names. SNOMED CT is
+not offered in the public demo: the Pages workflows set no
+`VITE_OPT_IN_SNOMED_EDITION`, which would let a visitor unlock it on top of the
+live search by licence self-declaration (`demo/src/snomed-unlock.js`). A
+terminology server contacted from the start, including SNOMED CT, is configured
+only for local previews through the git-ignored `demo/.env.local`; it takes
+precedence over the opt-in.
 
 ## Execution environments
 
@@ -63,6 +81,7 @@ the extension's default terminology services.
 | GitHub Pages | static demo assets | project |
 | Consumer host | bpmn-js, extension modules, and optional terminology calls | integrator |
 | Snowstorm/FHIR server | optional terminology operations | consumer or third party |
+| tx.fhir.de | public demo's optional live search, only after visitor consent | HL7 Deutschland e.V. |
 
 There is no Docker, Kubernetes, database, message broker, or application server
 in this repository. Hosting, scaling, credentials, and availability targets for

@@ -34,6 +34,37 @@ no additional npm registry configuration is required for those dependencies.
 Medical terminology data is stored only in `bpmn:extensionElements` under the
 `mt:` namespace.
 
+## Terminology licences
+
+No terminology server is preconfigured. Without configuration the package
+offers only its bundled code systems (HL7 Terminology, IHE XDS, KDL) and
+contacts no server. SNOMED CT, LOINC, ICD-10-GM, OPS, and ATC become available
+once you set `serverConfig.fhirBaseUrl` to a terminology server you are
+licensed to use, and, for SNOMED CT, `snomedConfig.edition` to the edition your
+licence covers (for example `11000274103`, German National Edition):
+
+```js
+createDefaultTerminologyModule({
+  serverConfig: { fhirBaseUrl: 'https://terminology.example.org/fhir' },
+  snomedConfig: { edition: '11000274103' }
+});
+```
+
+The built-in FHIR providers pin no release: the server answers from its current
+release, and each coding stores the version the server reports. The `atc`
+provider uses the German ATC-GM (`http://fhir.de/CodeSystem/bfarm/atc`). For a
+worked example against a FHIR terminology server, SNOMED CT, authentication and
+troubleshooting, see
+[Connecting a terminology server](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/terminology-server/).
+
+The MIT License covers only this package's code. You need your own licences for
+the terminologies you use (SNOMED CT: Affiliate Licence, in Germany via
+BfArM/MLDS; LOINC: <https://loinc.org/license>; ICD-10-GM and OPS: the BfArM
+terms; ATC-GM: the WIdO and BfArM terms) and must show the publishers' notices
+in your application. A public terminology server has its own terms of use as
+well. [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) lists every bundled
+source with its terms, and the notices to show.
+
 
 ## Funding
 
@@ -76,8 +107,11 @@ or application that uses it. See <https://bpmn.io/license/>.
 
 ### Terminology content
 
-This extension stores code system identifiers and codes only. It ships no SNOMED CT,
-LOINC or ICD-10 content — no display names, descriptions, hierarchies or excerpts.
-Using those terminologies in an application requires the licenses of their respective
-publishers: an Affiliate License via BfArM/MLDS for SNOMED CT, the LOINC Copyright
-Notice and License for LOINC, and the BfArM terms of use for ICD-10-GM.
+The package ships no SNOMED CT, LOINC, ICD-10-GM, OPS or ATC content — no display
+names, descriptions, hierarchies or excerpts. When a modeller selects a concept, the
+extension stores its code system URI, version, code and display text in the BPMN file.
+Using those terminologies in an application requires the licences of their respective
+publishers: an Affiliate Licence for SNOMED CT (in Germany via BfArM/MLDS), the LOINC
+Copyright Notice and License for LOINC, the BfArM terms of use for ICD-10-GM and OPS,
+and the WIdO and BfArM terms for ATC-GM. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+and [Licensing](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/licensing/).

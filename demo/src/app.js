@@ -12,8 +12,16 @@ import {
 
 import { DEMO_FEATURES } from './demo-config.js';
 import { setupLicenseNotice } from './license-notice.js';
+import { applyServerNotice } from './server-notice.js';
+import { createThrottledFetch } from './live-search.js';
+import { setupOptIn } from './opt-in.js';
 import {
-  createDemoTerminologyServices
+  createDemoOptInProviders,
+  createDemoOptInSnomedProvider,
+  createDemoTerminologyServices,
+  describeDemoOptInServer,
+  describeDemoOptInSnomed,
+  describeDemoTerminologyServer
 } from './terminology-config.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -74,8 +82,14 @@ function setVisibility(selector, isVisible) {
   return node;
 }
 
+// Read once at module load: bootstrap() and the notices below depend on them.
+const localServer = describeDemoTerminologyServer();
+const optInServer = describeDemoOptInServer();
+const optInSnomed = describeDemoOptInSnomed();
+
 async function bootstrap() {
   const additionalModules = [];
+  let terminologyServices = null;
   const moddleExtensions = {};
 
   if (DEMO_FEATURES.showPropertiesPanel) {
@@ -86,7 +100,12 @@ async function bootstrap() {
   }
 
   if (DEMO_FEATURES.showTerminology) {
-    const terminologyServices = await createDemoTerminologyServices();
+    // Requests to a server from demo/.env.local are delayed (a request is
+    // dropped while you keep typing) and cached per request URL. There is no
+    // minimum search length here; the public live search below keeps one.
+    terminologyServices = await createDemoTerminologyServices(import.meta.env, {
+      fetchFn: localServer ? createThrottledFetch({ minTermLength: 0 }) : undefined
+    });
     const terminologyServicesModule = createTerminologyModule(terminologyServices);
 
     additionalModules.push(
@@ -157,8 +176,21 @@ async function bootstrap() {
 
   setupSampleSelect();
   await loadSample('annotated');
+
+  // Public demo: live search on the opt-in server only after separate consent,
+  // and SNOMED CT on top of it only after a licence self-declaration. Each
+  // request checks its consent again right before it is sent, so a search
+  // still waiting in the delay is dropped once that consent is withdrawn.
+  setupOptIn({
+    server: terminologyServices ? optInServer : null,
+    snomed: optInSnomed,
+    registry: terminologyServices?.terminologyRegistry ?? null,
+    createProviders: createDemoOptInProviders,
+    createSnomedProvider: createDemoOptInSnomedProvider
+  });
 }
 
+applyServerNotice(document, localServer);
 setupLicenseNotice();
 
 void bootstrap().catch(err => {

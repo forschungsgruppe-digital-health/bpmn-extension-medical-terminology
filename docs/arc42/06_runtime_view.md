@@ -99,8 +99,10 @@ const concept = await terminologyRegistry.lookup('169069000', 'snomed-ct');
 ```
 
 The registry delegates to the selected provider. The default SNOMED provider
-is a `FhirProvider` configured for the Ontoserver FHIR endpoint and uses FHIR
-`$expand`/`$lookup`. When an integrator explicitly selects Snowstorm transport,
+is a `FhirProvider` for the server in `serverConfig.fhirBaseUrl` and the edition
+in `snomedConfig.edition` (or an explicit `snomedConfig.valueSetUri`), and uses
+FHIR `$expand`/`$lookup`; without a server and one of the two, no SNOMED
+provider is registered. When an integrator explicitly selects Snowstorm transport,
 the default factory instead registers a `SnomedCtProvider`. `StaticProvider`
 searches in-memory concepts. Package providers are built from FHIR
 `CodeSystem` resources and preserve each resource's canonical URL in returned
@@ -117,6 +119,91 @@ groups discovered resources by package, creates one provider per package, and
 combines those providers with the built-in defaults. Explicit
 `include`/`exclude` settings fail fast when a configured canonical URL does not
 exist.
+
+## Scenario 7 — Public demo: optional live search and SNOMED CT unlock
+
+The public demo build names an opt-in server in `VITE_OPT_IN_FHIR_BASE_URL`;
+the Pages workflow takes it from the repository variable
+`DEMO_OPT_IN_FHIR_BASE_URL`. `describeDemoOptInServer`
+(`demo/src/terminology-config.js`) returns `null` when that value is empty or a
+local server is configured (`VITE_FHIR_BASE_URL` or `VITE_SNOWSTORM_BASE_URL`),
+and then nothing is offered. After bootstrap, `demo/src/app.js` calls
+`setupOptIn` (`demo/src/opt-in.js`), which creates one throttled fetch for the
+FHIR providers and a separate one for SNOMED CT and then calls
+`setupLiveSearch` (`demo/src/live-search.js`). It offers the live search only
+if `demo/index.html` names the server's operator in a
+`[data-live-search-operator]` block, which exists for tx.fhir.de alone. Nothing
+is sent to the opt-in server until the visitor confirms the separate consent
+dialog; accepting the licence notice does not switch it on.
+
+```mermaid
+sequenceDiagram
+    actor Visitor
+    participant Live as setupLiveSearch
+    participant Snomed as setupSnomedUnlock
+    participant Registry as TerminologyRegistry
+    participant Entry as Annotation entry
+    participant Throttle as createThrottledFetch
+    participant TX as tx.fhir.de
+
+    Visitor->>Live: Switch on live search (consent dialog)
+    Live->>Registry: register LOINC, ICD-10-GM, OPS, ATC
+    Registry-->>Entry: provider:registered, re-render
+    Live->>Live: store consent in sessionStorage (bound to host)
+    Visitor->>Entry: type a search term
+    Entry->>Registry: search(term, providerId)
+    Registry->>Throttle: ValueSet/$expand request
+    Throttle->>Throttle: check cache, wait about 300 ms, check consent
+    Throttle->>TX: ValueSet/$expand (last term only)
+    TX-->>Entry: expansion
+    Visitor->>Snomed: Unlock SNOMED CT (three statements ticked)
+    Snomed->>Registry: register snomed-ct
+    Visitor->>Live: Turn off live search
+    Live->>Registry: unregister the four providers
+    Live->>Live: clear consent in sessionStorage
+    Live->>Snomed: notify(false)
+    Snomed->>Registry: unregister snomed-ct
+    Snomed->>Snomed: clear declaration in sessionStorage
+```
+
+1. `enable()` builds FHIR providers for LOINC, ICD-10-GM, OPS and ATC with
+   `createDemoOptInProviders` and registers each one whose ID is not yet in
+   the `TerminologyRegistry`. The annotation entry re-renders on
+   `provider:registered` and `provider:unregistered`.
+2. Consent is stored in `sessionStorage` (`fdh-demo-live-search-consent-v1`,
+   bound to the host), and the server notice switches to its opt-in variant.
+   Stored consent for the same host re-enables the search on reload without
+   storing it again; consent stored for another host is ignored.
+3. Searches go through `createThrottledFetch`. A `ValueSet/$expand` filter
+   shorter than three characters is answered locally with an empty
+   expansion, and a cached URL is answered from the cache. Every other request
+   waits about 300 ms; the properties panel aborts the previous search on each
+   keystroke, so only the last one is sent. After the delay, the wrapper checks
+   again that the live search (or, for SNOMED CT, the unlock) is still on and
+   otherwise sends nothing. Successful, non-redirected responses are cached by
+   URL.
+4. `disable()` (*Turn off live search*) unregisters the providers it added,
+   clears the stored consent, restores the default notice and notifies the
+   subscribers. While the live search is on, *Live search details* reopens the
+   consent information.
+5. If the build also sets `VITE_OPT_IN_SNOMED_EDITION` (optionally
+   `VITE_OPT_IN_SNOMED_EDITION_VERSION`), `describeDemoOptInSnomed` returns
+   the edition, but only for `11000274103` (German National Edition), the
+   one edition the self-declaration describes; any other module id is
+   refused with a console warning. `setupSnomedUnlock`
+   (`demo/src/snomed-unlock.js`) subscribes to the live search. *SNOMED CT…* appears only while the live
+   search is on and opens a dialog with three unticked self-declaration
+   statements; *Unlock SNOMED CT* stays disabled until all are ticked. The
+   unlock registers a SNOMED CT `FhirProvider` from
+   `createDemoOptInSnomedProvider` and stores the declaration in
+   `sessionStorage` (`fdh-demo-snomed-self-declaration-v1`, bound to host and
+   edition). The declaration is not verified. *Lock SNOMED CT*, or the live
+   search being switched off, unregisters the provider and clears the
+   declaration. The Pages workflows set no `VITE_OPT_IN_SNOMED_EDITION`.
+
+A local preview uses the same `createThrottledFetch` for a server from
+`demo/.env.local`, with the delay and the cache but without a minimum term
+length.
 
 ## Error and edge behavior
 

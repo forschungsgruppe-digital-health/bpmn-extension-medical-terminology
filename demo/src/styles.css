@@ -1,3 +1,8 @@
+/* The demo toggles variants with the hidden attribute; keep it authoritative. */
+[hidden] {
+  display: none !important;
+}
+
 /* ─── Reset & Base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -15,6 +20,19 @@
   --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --radius: 6px;
+
+  /* bpmn.io design tokens (diagram-js palette, properties panel), shared by
+   * the demo notice banner and the demo's dialogs. */
+  --bpmn-surface: hsl(225, 10%, 97%);
+  --bpmn-border: hsl(225, 10%, 75%);
+  --bpmn-divider: hsl(225, 10%, 85%);
+  --bpmn-text: hsl(225, 10%, 15%);
+  --bpmn-text-dim: hsl(225, 10%, 35%);
+  --bpmn-accent: hsl(205, 100%, 35%);
+  --bpmn-accent-hover: hsl(205, 100%, 45%);
+  --bpmn-accent-tint: hsl(205, 100%, 97%);
+  --bpmn-focus: hsl(205, 100%, 50%);
+  --bpmn-live: hsl(150, 86%, 25%);
 }
 
 html, body { height: 100%; font-family: var(--font-sans); background: var(--c-bg); color: var(--c-text); font-size: 13px; }
@@ -84,60 +102,116 @@ body {
 }
 
 /* ─── Demo Non-Production & License Notice ──────────────── */
+/* ─── Demo notice banner ─────────────────────────────────
+ * Styled with the bpmn.io design tokens (diagram-js palette and
+ * properties panel): light grey surface, hairline borders, 2px radii and
+ * the bpmn.io blue as accent. It sits between the dark app header and the
+ * white canvas, so it reads as part of the modeler while the accent rail and
+ * the solid badge keep it visible as a structural element.
+ */
 .demo-notice {
+  --notice-surface: var(--bpmn-surface);
+  --notice-border: var(--bpmn-border);
+  --notice-text: var(--bpmn-text);
+  --notice-text-dim: var(--bpmn-text-dim);
+  --notice-accent: var(--bpmn-accent);
+  --notice-accent-hover: var(--bpmn-accent-hover);
+  --notice-focus: var(--bpmn-focus);
+  --notice-live: var(--bpmn-live);
+
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 20px;
-  background: #2b2313;
-  border-bottom: 1px solid #6b5220;
-  color: #f6e2b3;
+  gap: 8px 12px;
+  padding: 7px 16px 7px 20px;
+  background: var(--notice-surface);
+  border-bottom: 1px solid var(--notice-border);
+  box-shadow: inset 4px 0 0 var(--notice-accent);
+  color: var(--notice-text);
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.4;
   flex-shrink: 0;
   flex-wrap: wrap;
+}
+
+/* A server is in use (local preview or live search switched on): the rail
+ * turns green so the state is visible at a glance. */
+.demo-notice:has(.demo-notice__text[data-server-mode="configured"]:not([hidden])) {
+  box-shadow: inset 4px 0 0 var(--notice-live);
 }
 
 .demo-notice__badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: #d99a26;
-  color: #1a1306;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--notice-accent);
+  color: hsl(0, 0%, 100%);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   flex-shrink: 0;
+}
+
+.demo-notice:has(.demo-notice__text[data-server-mode="configured"]:not([hidden])) .demo-notice__badge {
+  background: var(--notice-live);
 }
 
 .demo-notice__text {
   flex: 1 1 360px;
   min-width: 0;
+  color: var(--notice-text-dim);
 }
 
 .demo-notice__text strong {
-  color: #fff3d6;
-}
-
-.demo-notice__btn {
-  padding: 4px 10px;
-  background: rgba(217, 154, 38, 0.16);
-  border: 1px solid #d99a26;
-  color: #fff3d6;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 11px;
+  color: var(--notice-text);
   font-weight: 600;
-  white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
 }
 
-.demo-notice__btn:hover,
+/* Buttons follow the properties panel: white, hairline border, 2px radius,
+ * blue on hover and a blue focus ring. */
+.demo-notice__btn {
+  padding: 3px 10px;
+  background: hsl(0, 0%, 100%);
+  border: 1px solid var(--notice-border);
+  border-radius: 2px;
+  color: var(--notice-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.demo-notice__btn:hover {
+  border-color: var(--notice-accent-hover);
+  color: var(--notice-accent);
+  background: var(--bpmn-accent-tint);
+}
+
 .demo-notice__btn:focus-visible {
-  background: #d99a26;
-  color: #1a1306;
-  outline: none;
+  outline: 2px solid var(--notice-focus);
+  outline-offset: 1px;
+}
+
+/* Withdrawing consent or locking SNOMED CT is an action, not navigation:
+ * mark it with the accent so it is easy to find. */
+.demo-notice__btn[data-live-search-disable],
+.demo-notice__btn[data-snomed-lock] {
+  border-color: var(--notice-accent);
+  color: var(--notice-accent);
+}
+
+@media (max-width: 720px) {
+  .demo-notice {
+    padding: 6px 12px 6px 16px;
+  }
+
+  .demo-notice__text {
+    flex-basis: 100%;
+  }
 }
 
 .app-footer__link {
@@ -158,16 +232,20 @@ body {
 }
 
 /* ─── License Notice Dialog ─────────────────────────────── */
+/* ─── Dialogs (licence notice, live-search consent, SNOMED CT unlock) ───
+ * Same bpmn.io look as the demo notice banner: white panel, hairline
+ * borders, 2px radii, a light grey header with the blue accent rail and a
+ * solid label, properties-panel style buttons and a blue focus ring.
+ */
 .license-overlay {
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: rgba(8, 10, 15, 0.78);
+  background: hsla(225, 10%, 15%, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  backdrop-filter: blur(4px);
 }
 
 .license-overlay--hidden {
@@ -180,12 +258,13 @@ body {
   max-height: 86vh;
   display: flex;
   flex-direction: column;
-  background: var(--c-surface);
-  border: 1px solid #6b5220;
-  border-radius: 10px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+  background: hsl(0, 0%, 100%);
+  border: 1px solid var(--bpmn-border);
+  border-radius: 2px;
+  box-shadow: 0 8px 24px hsla(225, 10%, 15%, 0.25);
   overflow: hidden;
-  color: var(--c-text);
+  color: var(--bpmn-text);
+  font-family: var(--font-sans);
 }
 
 .license-dialog__header {
@@ -193,31 +272,37 @@ body {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 20px;
-  background: #241d11;
-  border-bottom: 1px solid #6b5220;
+  padding: 14px 20px 14px 24px;
+  background: var(--bpmn-surface);
+  border-bottom: 1px solid var(--bpmn-border);
+  box-shadow: inset 4px 0 0 var(--bpmn-accent);
 }
 
 .license-dialog__eyebrow {
   display: inline-block;
-  margin-bottom: 4px;
-  color: #f0b94a;
+  margin-bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--bpmn-accent);
+  color: hsl(0, 0%, 100%);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .license-dialog__header h2 {
   font-size: 16px;
   font-weight: 600;
-  color: #fff;
+  color: var(--bpmn-text);
   line-height: 1.3;
 }
 
 .license-dialog__close {
   background: none;
   border: none;
-  color: var(--c-text-dim);
+  border-radius: 2px;
+  color: var(--bpmn-text-dim);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
@@ -225,7 +310,7 @@ body {
 }
 
 .license-dialog__close:hover {
-  color: #fff;
+  color: var(--bpmn-accent);
 }
 
 .license-dialog__body {
@@ -240,22 +325,34 @@ body {
 
 .license-dialog__summary {
   padding: 10px 12px;
-  background: var(--c-surface2);
-  border-left: 3px solid #d99a26;
-  border-radius: 4px;
-  color: #e6e9f2;
+  background: var(--bpmn-surface);
+  border: 1px solid var(--bpmn-divider);
+  border-left: 4px solid var(--bpmn-accent);
+  border-radius: 2px;
+  color: var(--bpmn-text);
 }
 
 .license-dialog__section h3 {
   font-size: 12.5px;
   font-weight: 600;
-  color: #fff;
+  color: var(--bpmn-text);
   margin-bottom: 5px;
 }
 
 .license-dialog__section p,
 .license-dialog__list li {
-  color: var(--c-text);
+  color: var(--bpmn-text-dim);
+}
+
+.license-dialog__section strong,
+.license-dialog__list strong {
+  color: var(--bpmn-text);
+}
+
+.license-dialog__section p + p,
+.license-dialog__section > div[data-server-mode],
+.license-dialog__section > div[data-server-mode] > * + * {
+  margin-top: 6px;
 }
 
 .license-dialog__list {
@@ -265,64 +362,131 @@ body {
   gap: 6px;
 }
 
-.license-dialog__body a {
-  color: var(--c-accent);
+.license-dialog__body a,
+.license-dialog__link {
+  color: var(--bpmn-accent);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+.license-dialog__body a:hover,
+.license-dialog__link:hover {
+  color: var(--bpmn-accent-hover);
 }
 
 .license-dialog__body code {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: #f6e2b3;
-  background: var(--c-bg);
-  padding: 1px 4px;
-  border-radius: 3px;
+  color: var(--bpmn-text);
+  background: var(--bpmn-surface);
+  border: 1px solid var(--bpmn-divider);
+  padding: 0 4px;
+  border-radius: 2px;
 }
 
 .license-dialog__footer {
   padding: 12px 20px;
-  border-top: 1px solid var(--c-border);
-  background: var(--c-bg);
+  border-top: 1px solid var(--bpmn-border);
+  background: var(--bpmn-surface);
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
 }
 
-.license-dialog__reject {
-  padding: 8px 16px;
-  background: var(--c-danger);
-  border: 1px solid #e46a6a;
-  color: #fff;
-  border-radius: var(--radius);
+/* Buttons as in the properties panel. Secondary: white with a hairline
+ * border. Primary (licence Accept only): solid accent. The consent and
+ * SNOMED CT choices are both secondary, so neither is nudged. */
+.license-dialog__reject,
+.license-dialog__choice,
+.license-dialog__accept {
+  padding: 6px 14px;
+  border-radius: 2px;
   cursor: pointer;
+  font: inherit;
   font-size: 12.5px;
-  font-weight: 700;
-  transition: background 0.15s;
+  font-weight: 600;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.license-dialog__reject,
+.license-dialog__choice {
+  background: hsl(0, 0%, 100%);
+  border: 1px solid var(--bpmn-border);
+  color: var(--bpmn-text);
 }
 
 .license-dialog__reject:hover,
-.license-dialog__reject:focus-visible {
-  background: #e35d5d;
-  outline: none;
+.license-dialog__choice:hover {
+  border-color: var(--bpmn-accent-hover);
+  color: var(--bpmn-accent);
+  background: var(--bpmn-accent-tint);
 }
 
 .license-dialog__accept {
-  padding: 8px 16px;
-  background: var(--c-success);
-  border: 1px solid #45ae6b;
-  color: #fff;
-  border-radius: var(--radius);
-  cursor: pointer;
-  font-size: 12.5px;
-  font-weight: 700;
-  transition: background 0.15s;
+  background: var(--bpmn-accent);
+  border: 1px solid var(--bpmn-accent);
+  color: hsl(0, 0%, 100%);
 }
 
-.license-dialog__accept:hover,
-.license-dialog__accept:focus-visible {
-  background: #3eab65;
-  outline: none;
+.license-dialog__accept:hover {
+  background: var(--bpmn-accent-hover);
+  border-color: var(--bpmn-accent-hover);
+}
+
+.license-dialog__reject:focus-visible,
+.license-dialog__choice:focus-visible,
+.license-dialog__accept:focus-visible,
+.license-dialog__close:focus-visible,
+.license-dialog__link:focus-visible,
+.license-dialog__checks input:focus-visible {
+  outline: 2px solid var(--bpmn-focus);
+  outline-offset: 1px;
+}
+
+.license-dialog__choice:disabled,
+.license-dialog__choice:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: var(--bpmn-border);
+  color: var(--bpmn-text);
+  background: hsl(0, 0%, 100%);
+}
+
+.license-dialog__link {
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.live-search-overlay {
+  z-index: 210;
+}
+
+.snomed-unlock-overlay {
+  z-index: 220;
+}
+
+.license-dialog__checks {
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+
+.license-dialog__checks label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: start;
+  cursor: pointer;
+  color: var(--bpmn-text);
+}
+
+.license-dialog__checks input {
+  margin-top: 3px;
+  accent-color: var(--bpmn-accent);
 }
 
 .app-main {

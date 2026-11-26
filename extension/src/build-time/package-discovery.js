@@ -59,11 +59,6 @@ function findResourceFiles(packageDir, resourceTypes) {
   return getResourceFilesFromGlob(packageDir);
 }
 
-function getResourceSelector(packageDir, filename) {
-  const resource = readPackageResource(packageDir, filename);
-  return resource?.url;
-}
-
 export function readPackageResource(packageDir, filename) {
   return JSON.parse(readFileSync(join(packageDir, filename), 'utf-8'));
 }
@@ -108,10 +103,19 @@ function filterResourceFiles(packageDir, packageName, resourceFiles, resourceFil
     return resourceFiles.filter(filename => includeFiles.includes(filename));
   }
 
-  const resources = resourceFiles.map(filename => ({
-    filename,
-    selector: getResourceSelector(packageDir, filename)
-  }));
+  // Each resource is read once, for its selector (`CodeSystem.url`) and for
+  // the optional `excludeResource` predicate of a default filter, which
+  // returns the reason a resource is left out, or null.
+  const excludeResource = resourceFilter?.excludeResource;
+  const resources = resourceFiles.map(filename => {
+    const resource = readPackageResource(packageDir, filename);
+
+    return {
+      filename,
+      selector: resource?.url,
+      exclusionReason: excludeResource ? excludeResource(resource) : null
+    };
+  });
   const include = resourceFilter?.include;
   const exclude = resourceFilter?.exclude || [];
   const availableSelectors = new Set(resources.map(resource => resource.selector).filter(Boolean));
@@ -128,9 +132,19 @@ function filterResourceFiles(packageDir, packageName, resourceFiles, resourceFil
     );
   }
 
+  const excludedCount = resources.filter(resource => resource.exclusionReason).length;
+
+  if (excludedCount > 0) {
+    console.info(
+      `[fdh-terminology] Left out ${excludedCount} third-party CodeSystem resource(s) of "${packageName}" ` +
+      'that default discovery does not redistribute; see THIRD_PARTY_NOTICES.md.'
+    );
+  }
+
   return resources
-    .filter(({ selector }) =>
-      (!include
+    .filter(({ selector, exclusionReason }) =>
+      !exclusionReason
+      && (!include
         || include.includes('*')
         || include.includes(selector))
       && !exclude.includes(selector)
@@ -400,6 +414,12 @@ function resolveDiscoveredPackageDir(packageName, root, transitiveRoots = []) {
 
 /**
  * Resolve package directories and selected FHIR resource files at build time.
+ *
+ * Packages found by automatic discovery get the default resource filter: only
+ * the IHE XDS and KDL code systems of their packages, and no third-party code
+ * systems of hl7.terminology.r4 (SNODENT, ADA, NUCC, W3C colour codes). An
+ * explicit `packages`
+ * selection is used as given.
  *
  * @param {{
  *   root: string,

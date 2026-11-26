@@ -23,19 +23,54 @@ import {
 } from '../core/request-signal.js';
 import languageConfig from '../config/terminology-language-config.js';
 
-function resolveBaseUrl(baseUrl) {
+/**
+ * Resolve a FHIR base URL to an absolute URL without a trailing slash.
+ *
+ * Only a string with a URL scheme (`https:`, `http:`, `data:`, `blob:`, ...)
+ * is absolute. Anything else, including a protocol-relative `//host/path` or
+ * a same-origin route such as `/api/terminology`, is resolved like `fetch`
+ * resolves it: against the document base URL, which honours `<base href>` and
+ * which `about:blank` and `about:srcdoc` documents inherit from their
+ * creator. Workers have no document, so `location.href` follows, then
+ * `location.origin` (the string `'null'` on opaque origins, hence each
+ * candidate is tried in turn).
+ *
+ * @param {string} baseUrl
+ * @returns {string | null} The absolute base URL, or `null` when a relative
+ *   URL cannot be resolved because there is no web page to resolve it against.
+ */
+export function resolveFhirBaseUrl(baseUrl) {
   const rawBaseUrl = String(baseUrl || '').trim();
 
   if (!rawBaseUrl) {
     throw new Error('FhirTerminologyAdapter requires a baseUrl.');
   }
 
-  if (/^(?:[a-z]+:)?\/\//i.test(rawBaseUrl) || rawBaseUrl.startsWith('data:') || rawBaseUrl.startsWith('blob:')) {
+  if (/^[a-z][a-z\d+.-]*:/i.test(rawBaseUrl)) {
     return rawBaseUrl.replace(/\/$/, '');
   }
 
-  const origin = globalThis.location?.origin || globalThis.location?.href || 'http://localhost';
-  return new URL(rawBaseUrl, origin).toString().replace(/\/$/, '');
+  const candidates = [
+    globalThis.document?.baseURI,
+    globalThis.location?.href,
+    globalThis.location?.origin
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    try {
+      return new URL(rawBaseUrl, candidate).toString().replace(/\/$/, '');
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  // There is no hard-coded fallback such as http://localhost: requests would
+  // silently go to whatever listens there. Every request fails instead.
+  return null;
 }
 
 /**
@@ -52,7 +87,9 @@ export class FhirTerminologyAdapter {
 
   /**
    * @param {Object} config
-   * @param {string} config.baseUrl - FHIR base URL (e.g. 'https://fhir.bfarm.de/fhir')
+   * @param {string} config.baseUrl - FHIR base URL (e.g. 'https://fhir.bfarm.de/fhir'); a
+   *   relative URL resolves against the current page, and every request fails
+   *   when there is no page to resolve it against
    * @param {string} config.systemUri - CodeSystem URI (e.g. 'http://fhir.de/CodeSystem/bfarm/icd-10-gm')
    * @param {string} [config.valueSetUri] - Explicit ValueSet URI for $expand
    * @param {ConnectionConfig['auth']} [config.auth]
@@ -64,7 +101,9 @@ export class FhirTerminologyAdapter {
    */
   constructor(config) {
     /** @internal */
-    this._baseUrl = resolveBaseUrl(config.baseUrl);
+    this._rawBaseUrl = String(config.baseUrl || '').trim();
+    /** @internal */
+    this._baseUrl = resolveFhirBaseUrl(config.baseUrl);
     /** @internal */
     this._systemUri = config.systemUri;
     /** @internal */
@@ -102,7 +141,7 @@ export class FhirTerminologyAdapter {
    * @returns {Promise<{ items: Concept[], total?: number }>}
    */
   async search(params) {
-    const url = new URL(`${this._baseUrl}/ValueSet/$expand`);
+    const url = this._createRequestUrl('/ValueSet/$expand');
 
     const targetUrl = this._valueSetUri || getImplicitValueSetUri(this._systemUri);
     url.searchParams.set('url', targetUrl);
@@ -184,7 +223,7 @@ export class FhirTerminologyAdapter {
       throw createDataError(url);
     }
 
-    const expansionVersion = getExpansionVersion(data.expansion);
+    const expansionVersion = getExpansionVersion(data.expansion, this._systemUri);
 
     try {
       return {
@@ -208,28 +247,36 @@ export class FhirTerminologyAdapter {
    * Lookup via CodeSystem/$lookup.
    *
    * The response is a FHIR R4 Parameters resource containing the
-   * display name and other properties of the requested code.
+   * display name and other properties of the requested code. The display
+   * language is requested the same way as for `search`: the `displayLanguage`
+   * input parameter, or the `Accept-Language` header with the `'header'`
+   * strategy.
    *
    * @param {string} code
    * @returns {Promise<Concept | null>}
    */
   async lookup(code) {
-    const url = new URL(`${this._baseUrl}/CodeSystem/$lookup`);
+    const url = this._createRequestUrl('/CodeSystem/$lookup');
     url.searchParams.set('system', this._systemUri);
     url.searchParams.set('code', code);
+
+    // Apply the language strategy as for search; without it the display
+    // depends on whatever Accept-Language the client happens to send.
+    const lookupResolvedLanguage = this._resolveLanguage();
+    const lookupExtraHeaders = {};
+    if (lookupResolvedLanguage) {
+      if (this._languageStrategy === 'param') {
+        url.searchParams.set('displayLanguage', lookupResolvedLanguage);
+      } else if (this._languageStrategy === 'header') {
+        lookupExtraHeaders['Accept-Language'] = lookupResolvedLanguage;
+      }
+    }
 
     Object.entries(this._lookupParameters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         url.searchParams.set(key, value);
       }
     });
-
-    // apply language strategy to lookup as well
-    const lookupResolvedLanguage = this._resolveLanguage();
-    const lookupExtraHeaders = {};
-    if (lookupResolvedLanguage && this._languageStrategy === 'header') {
-      lookupExtraHeaders['Accept-Language'] = lookupResolvedLanguage;
-    }
 
     let res;
     try {
@@ -325,6 +372,36 @@ export class FhirTerminologyAdapter {
   }
 
   /**
+   * Build the URL of a FHIR operation below the base URL.
+   *
+   * Throws a `TerminologyRequestError` of kind `'network'`, never a raw
+   * `TypeError`, when the base URL is relative and could not be resolved or
+   * does not form a valid URL, so the failure reaches the panel and the
+   * error event like any other unreachable server.
+   *
+   * @param {string} path - Operation path such as `/ValueSet/$expand`.
+   * @returns {URL}
+   * @private
+   */
+  _createRequestUrl(path) {
+    if (!this._baseUrl) {
+      throw new TerminologyRequestError(
+        `Cannot resolve the relative terminology server URL "${this._rawBaseUrl}" outside a web page.`,
+        { kind: 'network' }
+      );
+    }
+
+    try {
+      return new URL(`${this._baseUrl}${path}`);
+    } catch (error) {
+      throw new TerminologyRequestError(
+        `The terminology server URL "${this._rawBaseUrl}" is not a valid URL.`,
+        { kind: 'network', cause: error }
+      );
+    }
+  }
+
+  /**
    * Perform an authenticated FHIR HTTP request.
    *
    * Applies the configured `Accept` header, any headers supplied to the
@@ -349,28 +426,66 @@ function normalizeLanguage(lang) {
   return String(lang).split(',')[0].split(';')[0].split('-')[0];
 }
 
+/**
+ * FHIR implicit value set containing every concept of a code system,
+ * `<systemUri>?fhir_vs`. URIs that already name a value set are kept.
+ *
+ * @param {string} systemUri
+ * @returns {string}
+ */
 function getImplicitValueSetUri(systemUri) {
   const isValueSet = systemUri.includes('/ValueSet/') || systemUri.includes('?');
 
-  return isValueSet ? systemUri : `${systemUri}?vs`;
+  return isValueSet ? systemUri : `${systemUri}?fhir_vs`;
 }
 
-function getExpansionVersion(expansion) {
-  const versionParameter = expansion?.parameter?.find(parameter =>
-    parameter.name === 'version'
-    || parameter.name === 'system-version'
-    || parameter.name === 'used-codesystem'
-  );
-  const rawVersion = versionParameter?.valueUri
-    || versionParameter?.valueCanonical
-    || versionParameter?.valueString;
+function getParameterCanonical(parameter) {
+  return parameter?.valueUri
+    || parameter?.valueCanonical
+    || parameter?.valueString;
+}
 
-  if (!rawVersion) {
+/**
+ * Release of the code system the server used for an expansion.
+ *
+ * Prefers the `used-codesystem` parameter for the provider's own code system,
+ * so a value set that draws on several code systems cannot attach another
+ * system's release. Otherwise the first `version`, `system-version` or
+ * `used-codesystem` parameter is used. A plain `version` value is the release
+ * itself; a `used-codesystem` or `system-version` canonical without a
+ * `|version` part reports no release, so it yields no version.
+ *
+ * @param {fhir4.ValueSetExpansion | undefined} expansion
+ * @param {string} [systemUri]
+ * @returns {string | undefined}
+ */
+function getExpansionVersion(expansion, systemUri) {
+  const parameters = Array.isArray(expansion?.parameter) ? expansion.parameter : [];
+  const ownUsedCodeSystem = systemUri
+    ? parameters.find(parameter => {
+      const canonical = getParameterCanonical(parameter);
+
+      return parameter?.name === 'used-codesystem'
+        && typeof canonical === 'string'
+        && canonical.split('|')[0] === systemUri;
+    })
+    : undefined;
+  const versionParameter = ownUsedCodeSystem || parameters.find(parameter =>
+    parameter?.name === 'version'
+    || parameter?.name === 'system-version'
+    || parameter?.name === 'used-codesystem'
+  );
+  const rawVersion = getParameterCanonical(versionParameter);
+
+  if (!rawVersion || typeof rawVersion !== 'string') {
     return undefined;
   }
 
   const separatorIndex = rawVersion.lastIndexOf('|');
-  return separatorIndex === -1
-    ? rawVersion
-    : rawVersion.slice(separatorIndex + 1);
+
+  if (separatorIndex === -1) {
+    return versionParameter.name === 'version' ? rawVersion : undefined;
+  }
+
+  return rawVersion.slice(separatorIndex + 1) || undefined;
 }

@@ -64,9 +64,10 @@ standard `bpmn:extensionElements` under the versioned `mt:` namespace
   into a bundler-based `bpmn-js` web application. If you use Camunda or another BPMN editor,
   you can exchange the XML format directly without installing the JavaScript package.
 - **Terminology sources and licences:** Offline search works out of the box with bundled HL7,
-  IHE XDS, and KDL code systems. For production use with SNOMED CT, LOINC, ICD-10-GM, OPS, or
-  ATC, your organisation must hold the required publisher licences and connect its own
-  terminology server (the public demo server is for evaluation only). See
+  IHE XDS, and KDL code systems. No terminology server is preconfigured: to use SNOMED CT,
+  LOINC, ICD-10-GM, OPS, or ATC, your organisation must hold the required publisher licences
+  and connect a terminology server it is licensed to use. See
+  [Connecting a terminology server](/configuration/terminology-server/) and
   [Licensing & terminology rights](/licensing/).
 - **Data protection:** Annotations describe clinical *processes* with standardized codes and
   short notes — never enter or store patient data in BPMN models.
@@ -113,9 +114,11 @@ const modeler = new BpmnModeler({
 ```
 
 `createDefaultTerminologyModule()` supplies the searchable providers and automatically enables
-`MT` badges and generated BPMN comments. See [Properties panel](/properties-panel/) and
-[Configuration](/configuration/) to point at your own FHIR/Snowstorm server or switch to
-offline-only mode.
+`MT` badges and generated BPMN comments. Without further options it offers only the bundled
+code systems; to add SNOMED CT, LOINC, ICD-10-GM, OPS, or ATC, follow
+[Connecting a terminology server](/configuration/terminology-server/). See
+[Properties panel](/properties-panel/) and [Configuration](/configuration/) for the other
+options, including offline-only mode.
 
 ### 2. JavaScript without the UI
 
@@ -144,7 +147,8 @@ dependencies), [compatibility constraints](/compatibility/), and
 | Goal | Page |
 | --- | --- |
 | Install the package and check runtime requirements | [Compatibility](/compatibility/) |
-| Configure default, self-hosted, mTLS, or offline terminology sources | [Configuration](/configuration/) |
+| Connect a FHIR or Snowstorm terminology server, step by step | [Connecting a terminology server](/configuration/terminology-server/) |
+| Configure self-hosted, mTLS, or offline terminology sources | [Configuration](/configuration/) |
 | Customise supported elements, badges, and BPMN comments | [Properties panel](/properties-panel/) |
 | Integrate with another BPMN/XML tool | [XML schema](/schema/) |
 | Add a custom terminology source | [Extending](/extending/) |

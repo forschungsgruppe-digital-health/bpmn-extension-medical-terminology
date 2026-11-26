@@ -75,8 +75,9 @@ namespace under BPMN `extensionElements`.
 
 - Multi-code annotations on BPMN Tasks, DataObjects, Events, Gateways, and
   MessageFlows.
-- Provider architecture for SNOMED CT via Ontoserver/FHIR by default or a
-  custom Snowstorm endpoint, package-backed HL7 resources, IHE XDS, and KDL.
+- Provider architecture for SNOMED CT via a FHIR terminology server or a
+  Snowstorm endpoint that you configure and license, package-backed HL7
+  resources, IHE XDS, and KDL. No terminology server is preconfigured.
 - Stable annotation IDs and optional coded entries.
 - Offline static providers for small terminology systems.
 - Interactive bpmn-js properties-panel integration.
@@ -263,10 +264,14 @@ field is only present when the provider can supply a reliable total; clients
 must not infer a total from the number of returned concepts.
 
 `createDefaultTerminologyServices()` provides the standard service setup used
-by the demo and by a plain app after installation: SNOMED CT, FHIR
-terminology-server providers, and package-backed terminology providers are all
-available with sensible defaults, so the extension works out of the box after
-`npm install`.
+by the demo and by a plain app after installation. Without arguments it
+registers only the package-backed providers (HL7 Terminology, IHE XDS, KDL) and
+contacts no server. SNOMED CT, LOINC, ICD-10-GM, OPS, and ATC are licensed
+content: they become available once you set `serverConfig.fhirBaseUrl` to a
+terminology server you are licensed to use, and, for SNOMED CT,
+`snomedConfig.edition` to the edition your licence covers. A step-by-step setup
+with a worked example, the demo and troubleshooting is in
+[Connecting a terminology server](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/terminology-server/).
 
 ### Default service configuration
 
@@ -277,7 +282,7 @@ available with sensible defaults, so the extension works out of the box after
 | `enableFhirDefaults` | Enable or disable built-in FHIR providers |
 | `enablePackageDefaults` | Enable or disable bundled package providers; explicit `packageDiscovery` providers remain available |
 | `disabledProviderIds` | Disable providers by ID |
-| `snomedConfig` | Override SNOMED provider settings |
+| `snomedConfig` | SNOMED CT edition (`edition`, required for the FHIR transport) and other SNOMED provider settings |
 | `fhirProviderOverrides` | Override built-in FHIR providers |
 | `additionalFhirProviders` | Add additional FHIR providers |
 | `additionalPackageProviders` | Add package-backed providers |
@@ -299,8 +304,8 @@ CodeSystems, it falls back to the package name. This means a bundled preset and
 an additional installed version use the same naming rule; neither relies on a
 hard-coded preset label. `sourceName` and `componentLabel` configuration values
 remain explicit overrides. For example, a KDL resource is displayed as
-`CodeSystem Klinische Dokumentenklassen-Liste (Version 2025)
-(dvmd.kdl.r4@2025.0.1)`.
+`CodeSystem Klinische Dokumentenklassen-Liste 2026
+(dvmd.kdl.r4@2026.0.0)`.
 
 The provider's internal `displayName` still contains the package identity and
 component for API consumers. Generated registries use the canonical package
@@ -331,15 +336,15 @@ When npm resolves one package version for both a direct and a transitive
 requirement, discovery keeps one provider and emits this non-blocking warning:
 
 ```text
-[terminology] Package "hl7.terminology.r4" version "7.1.0" is installed directly and transitively. The package was deduplicated; one terminology provider will be used.
+[terminology] Package "hl7.terminology.r4" version "7.5.0" is installed directly and transitively. The package was deduplicated; one terminology provider will be used.
 ```
 
 When different versions are installed in different `node_modules` paths, the
 registry keeps both entries instead of overwriting one by package name. Their
 keys are version-qualified (`hl7.terminology.r4@6.0.2` and
-`hl7.terminology.r4@7.1.0`), their display names include the package version,
+`hl7.terminology.r4@7.5.0`), their display names include the package version,
 and their provider IDs are stable IDs such as
-`pkg-hl7-terminology-r4-6-0-2` and `pkg-hl7-terminology-r4-7-1-0`.
+`pkg-hl7-terminology-r4-6-0-2` and `pkg-hl7-terminology-r4-7-5-0`.
 `disabledProviderIds` can therefore disable one installed version without
 disabling the other. A single unversioned or legacy package entry keeps the
 existing `pkg-<package-name>` ID; explicit package data without npm metadata
@@ -372,24 +377,40 @@ import {
 
 const terminologyServices = createDefaultTerminologyServices({
   serverConfig: {
-    fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
+    // A terminology server you are licensed to use.
+    fhirBaseUrl: 'https://terminology.example.org/fhir'
   },
   snomedConfig: {
-    transport: 'fhir'
+    transport: 'fhir',
+    // German National Edition; use the edition your SNOMED CT licence covers.
+    edition: '11000274103'
   },
   disabledProviderIds: ['atc'],
   fhirProviderOverrides: [
     {
       id: 'icd-10-gm',
-      expandParameters: { valueSetVersion: '2024' }
+      // Optional pin; the release must exist on the server (default: its current release).
+      expandParameters: { valueSetVersion: '2026' }
     }
   ]
 });
 ```
 
-The default SNOMED provider uses the FHIR API at
-`https://r4.ontoserver.csiro.au/fhir`. To use a custom Snowstorm deployment
+The SNOMED provider uses the FHIR API of the configured server. It stays
+disabled until a server and either `snomedConfig.edition` (the module id of the
+edition, for example `11000274103` for the German National Edition or
+`900000000000207008` for the International Edition) or an explicit
+`snomedConfig.valueSetUri` are set, so a server can never silently answer from
+an edition you did not choose. Prefer `edition`, and configure only an edition
+your licence covers. The edition determines the value set
+(`http://snomed.info/sct/<edition>?fhir_vs`) and the `$lookup` version. If
+`valueSetUri` is an implicit SNOMED CT value set such as
+`http://snomed.info/sct/11000274103?fhir_vs`, `$lookup` uses the edition named
+in it; for any other value set, set `lookupParameters.version` yourself, or
+lookups answer from the server's default edition. Each selected concept stores
+the release the server reports, for example
+`http://snomed.info/sct/11000274103/version/20260815`; pin one release with
+`editionVersion: 'YYYYMMDD'`. To use a custom Snowstorm deployment
 or an application-owned same-origin endpoint, keep the provider ID unchanged
 and change its transport and base URL. `baseUrl` is the Snowstorm API context
 path, without the edition branch or `/concepts`; the provider appends both.
@@ -432,10 +453,20 @@ proxy and expose that route as the configured `baseUrl`. The extension only
 uses the URL or `fetchFn` supplied by the application; it does not implement
 the routing service.
 
-The public config API supports this directly:
+The public config API supports this directly. Configure the upstream server as
+usual; `fetchFn` then receives every request URL the providers build and can
+forward it to your own backend route. Without `serverConfig.fhirBaseUrl` (or a
+provider-level `baseUrl`), every network provider stays disabled and `fetchFn`
+is never called:
 
 ```js
 const terminologyServices = createDefaultTerminologyServices({
+  serverConfig: {
+    // Upstream FHIR terminology server you are licensed to use.
+    fhirBaseUrl: 'https://terminology.example.org/fhir'
+  },
+  // Only with a SNOMED CT Affiliate Licence for this edition.
+  snomedConfig: { edition: '11000274103' },
   fetchFn: async (url, init) => {
     const response = await fetch(`/api/terminology?target=${encodeURIComponent(url)}`, {
       ...init,
@@ -462,14 +493,24 @@ allow its preflight request and the `Authorization` header.
 
 ### Out-of-the-box defaults and external overrides
 
-After installation in a bpmn-js app, the extension is designed to work without
-manual provider registration. It ships with sensible defaults for:
+After installation in a bpmn-js app, the extension works without manual
+provider registration. Its defaults are:
 
-- SNOMED CT via Ontoserver/FHIR (`https://r4.ontoserver.csiro.au/fhir` by
-  default)
-- FHIR terminology servers such as LOINC, ICD-10-GM, OPS, and ATC
-- default package-backed providers for common bundled terminology packages
+- package-backed providers for the bundled HL7 Terminology, IHE XDS, and KDL
+  code systems, searchable offline
 - automatic discovery of already installed terminology packages in the app
+- provider definitions for SNOMED CT, LOINC, ICD-10-GM, OPS, and ATC, which
+  stay disabled until you configure a terminology server you are licensed to
+  use (and, for SNOMED CT, an edition); they pin no release, so the server
+  answers from its current release and each coding stores the version the
+  server reports
+
+**Breaking change:** the built-in `atc` provider uses the German ATC-GM
+published by BfArM (`http://fhir.de/CodeSystem/bfarm/atc`, value set
+`http://fhir.de/ValueSet/bfarm/atc`) instead of the WHO ATC
+(`http://www.whocc.no/atc`). New codings carry the ATC-GM system URI; existing
+WHO ATC codings remain valid data. To keep WHO ATC, override the `atc` provider
+with its `systemUri` and a `valueSetUri` your server can expand.
 
 The app can override any of these defaults from the outside by passing the
 public configuration object into `createDefaultTerminologyServices(...)`:
@@ -477,11 +518,11 @@ public configuration object into `createDefaultTerminologyServices(...)`:
 ```js
 const terminologyServices = createDefaultTerminologyServices({
   serverConfig: {
-    fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir',
-    snomedBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
+    fhirBaseUrl: 'https://terminology.example.org/fhir'
   },
   snomedConfig: {
-    transport: 'fhir'
+    transport: 'fhir',
+    edition: '11000274103'
   },
   packageDiscovery: {
     enabled: true,
@@ -541,16 +582,16 @@ registered as providers. Use `packageDiscovery.packages` for any other
 terminology package; explicit package discovery is not subject to this
 default allowlist.
 
-The published package keeps URL-pinned FHIR core and extension dependencies as
-installation-time resolution anchors because the upstream Simplifier package
-manifests refer to those packages by bare version. These technical packages
-remain excluded from automatic terminology discovery and are never registered
-as providers.
+The published package keeps the URL-pinned FHIR core package
+(`hl7.fhir.r4.core`) as an installation-time resolution anchor because the
+upstream Simplifier package manifests refer to it by bare version. This
+technical package remains excluded from automatic terminology discovery and is
+never registered as a provider.
 
 The default IHE and KDL filters select resources by their canonical
 `CodeSystem.url`, not by a single package filename. This supports compatible
-package layouts such as `codesystem-kdl.xml.json` and
-`codesystem-kdl.json`. If a default package contains no matching resource, the
+package layouts such as `codesystem-kdl.xml.json` (KDL 2025) and
+`CodeSystem-kdl-2026-0-0.json` (KDL 2026). If a default package contains no matching resource, the
 Vite plugin emits a warning and skips that package instead of failing with an
 unresolved filename.
 
@@ -696,16 +737,16 @@ provided manually, use version-qualified keys and matching metadata:
 packageDiscovery: {
   packages: {
     'hl7.terminology.r4@6.0.2': oldCodeSystems,
-    'hl7.terminology.r4@7.1.0': currentCodeSystems
+    'hl7.terminology.r4@7.5.0': currentCodeSystems
   },
   metadata: {
     'hl7.terminology.r4@6.0.2': {
       packageName: 'hl7.terminology.r4',
       version: '6.0.2'
     },
-    'hl7.terminology.r4@7.1.0': {
+    'hl7.terminology.r4@7.5.0': {
       packageName: 'hl7.terminology.r4',
-      version: '7.1.0'
+      version: '7.5.0'
     }
   }
 }
@@ -718,10 +759,12 @@ filenames. `exclude` takes precedence over `include`, and `include: ['*']`
 loads every CodeSystem from that package. A configured URL that does not exist
 in the package causes an error.
 
-The repository demo itself uses the bundled providers and default terminology
-configuration. The filtered `packages` examples above are integration
-configurations for applications that want to restrict the available package
-content.
+The repository demo uses the bundled providers without package filtering. It
+contacts a terminology server only when `demo/.env.local` configures one or, in
+the public demo, after a visitor switches on the optional live search (see
+[Demo terminology server configuration](#demo-terminology-server-configuration)).
+The filtered `packages` examples above are integration configurations for
+applications that want to restrict the available package content.
 
 ## Generated XML
 
@@ -768,27 +811,43 @@ architecture: an integrator can use a direct CORS-enabled terminology service,
 its own backend proxy, or only local package-backed providers. It does not
 ship a proxy or require one.
 
-### Demo Snowstorm configuration
+### Demo terminology server configuration
 
-To enable Snowstorm with `npm run dev`, set a redirect-free Snowstorm base URL
-in `demo/.env.local`. The configured endpoint must allow the demo's browser
-origin through CORS. The demo does not configure or provide a Vite proxy.
+By default the public demo contacts no terminology server and searches only the
+bundled code systems. A build can offer an optional live search for LOINC,
+ICD-10-GM, OPS and ATC on HL7 Deutschland's server `tx.fhir.de`, which each
+visitor must switch on in a separate consent dialog (*Live search…* in the
+banner). Accepting the licence notice does not switch it on. The consent lasts
+for the browser tab; while it is on, *Live search details* reopens the consent
+information and *Turn off live search* withdraws it. Searches are sent only from
+three characters on and about 300 ms after typing stops, and repeated searches
+are answered from a cache. The live search is offered only for a host whose
+operator the consent dialog names, which is `tx.fhir.de` alone.
 
-```dotenv
-VITE_SNOWSTORM_BASE_URL=https://snowstorm.example.test/snowstorm/snomed-ct
-VITE_SNOWSTORM_BRANCH=MAIN
-VITE_SNOWSTORM_LANGUAGE=de
-VITE_SNOWSTORM_LANGUAGE_STRATEGY=header
-VITE_SNOWSTORM_DEFAULT_ECL=< 404684003
-VITE_SNOWSTORM_MAX_RESULTS=15
-```
+The Pages workflow passes the repository variable `DEMO_OPT_IN_FHIR_BASE_URL` to
+the build as `VITE_OPT_IN_FHIR_BASE_URL`; while that variable is unset or empty,
+the public demo offers no live search. The `docs-preview` workflow builds its
+review artifact with `VITE_OPT_IN_FHIR_BASE_URL=https://tx.fhir.de/fhir`
+directly. Neither workflow sets another terminology variable. The demo code can
+also unlock SNOMED CT on top of the live search after a licence
+self-declaration (`VITE_OPT_IN_SNOMED_EDITION`, optionally
+`VITE_OPT_IN_SNOMED_EDITION_VERSION`), but SNOMED CT is not offered in the
+public demo: the Pages workflows set no `VITE_OPT_IN_SNOMED_EDITION`. Only
+`11000274103` (German National Edition) is accepted, because the
+self-declaration describes that edition and use in Germany alone; any other
+value offers no unlock.
 
-Without `VITE_SNOWSTORM_BASE_URL`, the demo keeps the package's default FHIR
-SNOMED configuration. GitHub Pages and other static deployments can enable
-Snowstorm only with a CORS-capable external endpoint. If an organization uses
-its own backend or reverse proxy, configure the resulting same-origin route in
-the host application's `baseUrl`; that infrastructure is outside this
-package.
+To try the demo locally against a server you are allowed to use, copy
+`demo/.env.example` to `demo/.env.local`, set for example
+`VITE_FHIR_BASE_URL=https://tx.fhir.de/fhir` (HL7 Deutschland; development and
+non-commercial research only), and restart `npm run dev`. A server configured
+there takes precedence: the demo contacts it from the start and offers no
+live-search opt-in. The demo throttles that server too: each request waits for
+a short pause in typing, and repeated searches are answered from a cache; there
+is no minimum length. Enable SNOMED CT (`VITE_SNOMED_EDITION`, or the
+`VITE_SNOWSTORM_*` variables) only with a licence for that edition. All
+variables, the production preview and troubleshooting are covered in
+[Connecting a terminology server](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/terminology-server/#try-it-in-the-demo).
 
 ## Documentation
 
@@ -799,8 +858,9 @@ matrix, and it is rebuilt from this repository on every push to `main`. Build it
 
 | Page | Audience | Content |
 |---|---|---|
-| [Use cases](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/use-cases/) | Anyone evaluating the extension | The problem it solves and worked scenarios |
+| [Decision and quick start](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/) | Anyone evaluating the extension | The problem it solves, fit, and integration paths |
 | [Configuration](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/) | Integrators | Composition roots, providers, servers, authentication, language |
+| [Connecting a terminology server](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/terminology-server/) | Integrators | Worked example against a FHIR server, SNOMED CT, authentication, the demo, troubleshooting |
 | [Properties panel](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/properties-panel/) | Integrators and modellers | The user-facing surface, its wiring contract and its current limits |
 | [Namespace v1](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/ns/terminology/v1/) | XML/tooling integrators | Generated namespace contract, moddle descriptor and XSD |
 | [XML schema](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/schema/) | Tooling integrators | Namespace, content model, serialisation, forward compatibility |
@@ -864,8 +924,22 @@ application built on this extension. See <https://bpmn.io/license/>.
 
 ### Terminology content
 
-This extension stores code system identifiers and codes only. It ships no SNOMED CT,
-LOINC or ICD-10 content — no display names, descriptions, hierarchies or excerpts.
-Using those terminologies in an application requires the licenses of their respective
-publishers: an Affiliate License via BfArM/MLDS for SNOMED CT, the LOINC Copyright
-Notice and License for LOINC, and the BfArM terms of use for ICD-10-GM.
+The package ships no SNOMED CT, LOINC, ICD-10-GM, OPS or ATC content — no display
+names, descriptions, hierarchies or excerpts — and preconfigures no terminology server
+for them. When a modeller selects a concept, the extension stores its code system URI,
+code, version and display text in the BPMN file.
+
+Using those terminologies in an application requires your own licences and the
+publishers' notices: an Affiliate Licence for SNOMED CT (in Germany via BfArM/MLDS),
+the LOINC licence, the BfArM terms of use for ICD-10-GM and OPS, and the WIdO
+and BfArM terms for ATC-GM (the WHO Collaborating Centre's terms if you
+configure WHO ATC instead). Public terminology servers have their own terms of
+use as well. The example diagrams in `examples/` and the demo
+contain a few such codes for illustration and carry the SNOMED CT, LOINC, OPS and
+ATC-GM notices.
+
+The package does bundle HL7 Terminology (CC0-1.0, without the third-party code systems
+SNODENT, ADA tooth codes, the NUCC taxonomy and the W3C colour codes), and it imports the IHE Deutschland XDS
+value sets and the KDL, whose packages declare no licence.
+[`extension/THIRD_PARTY_NOTICES.md`](extension/THIRD_PARTY_NOTICES.md) lists every
+source with its terms and the notices to show, and it ships inside the npm package.

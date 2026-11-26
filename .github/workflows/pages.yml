@@ -114,6 +114,16 @@ jobs:
         env:
           BASE_PATH: /bpmn-extension-medical-terminology/demo/
           BUILD_SOURCEMAP: 'false'
+          # Optional live search, only after the visitor's consent in the demo.
+          # The repository variable DEMO_OPT_IN_FHIR_BASE_URL is set to
+          # https://tx.fhir.de/fhir only after the go-live checks in
+          # docs/RELEASE-TESTING.md (written confirmation by HL7 Deutschland,
+          # review of the consent dialog by the TU Dresden data protection
+          # officer). Unset or empty = the public demo offers no live search.
+          # Never set VITE_FHIR_BASE_URL, VITE_SNOMED_* or VITE_SNOWSTORM_* here.
+          # VITE_OPT_IN_SNOMED_EDITION (SNOMED CT unlock by licence self-declaration)
+          # stays unset until BfArM has confirmed in writing that this is acceptable.
+          VITE_OPT_IN_FHIR_BASE_URL: ${{ vars.DEMO_OPT_IN_FHIR_BASE_URL }}
         run: npm run build
 
       - name: Assemble the published tree

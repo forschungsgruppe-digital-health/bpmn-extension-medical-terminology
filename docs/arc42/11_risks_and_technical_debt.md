@@ -24,7 +24,7 @@ prioritization require maintainer review._
 
 | ID | Item | Evidence / consequence | Suggested follow-up |
 |---|---|---|---|
-| R-8 | The private demo has no dedicated unit-test script | `demo/package.json` | Keep integration smoke coverage in the build or add focused tests if demo behavior grows |
+| R-8 | The private demo has no dedicated unit-test script, yet it now contains privacy-relevant consent gating: the optional live search and the SNOMED CT self-declaration unlock | `demo/package.json`; `demo/src/live-search.js`; `demo/src/snomed-unlock.js`; demo tests run from `extension/test/demo/` | Cover consent gating, throttling, withdrawal and the host operator check with tests under `extension/test/demo/`; run the public-demo checks in `docs/RELEASE-TESTING.md` (section 7) when `demo/` or the Pages workflows change |
 | R-9 | The package-convention tool intentionally checks only `extension/` | `tools/check-package-conventions.mjs` | Update the tool if another workspace becomes publishable |
 | R-10 | Raw ESM publishing delegates compatibility to consumer bundlers and Node versions | `extension/package.json`; no build script | Keep peer/runtime support documented and test representative host versions |
 | R-11 | Optional package discovery depends on bundler-visible JSON resources | `extension/src/vite/plugin.js`; ADR-0002 | Keep explicit package registration and clear missing-resource errors as supported paths; bundled defaults must not use this path |
@@ -38,6 +38,12 @@ prioritization require maintainer review._
   reviewed for provenance and licensing before a production release.
 - BPMN fixtures are synthetic by rule; contributors must not replace them with
   real or realistic patient data.
+- The public demo's optional live search sends visitors' search terms from
+  their browsers to tx.fhir.de after consent. Whether it is offered depends on
+  the repository variable `DEMO_OPT_IN_FHIR_BASE_URL`; the SNOMED CT unlock
+  depends on `VITE_OPT_IN_SNOMED_EDITION`, which no public build sets.
+  `docs/RELEASE-TESTING.md` (section 7) lists the checks and sign-offs before
+  either is set.
 
 ## 11.5 Lifecycle
 

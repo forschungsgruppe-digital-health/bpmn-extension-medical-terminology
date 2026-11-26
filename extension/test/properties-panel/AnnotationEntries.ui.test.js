@@ -143,8 +143,8 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
 const PROVIDERS = [
   { id: 'snomed-ct', displayName: 'SNOMED CT', systemUri: 'http://snomed.info/sct' },
   { id: 'loinc', displayName: 'LOINC', systemUri: 'http://loinc.org' },
-  { id: 'ops', displayName: 'OPS', systemUri: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2021' },
-  { id: 'atc', displayName: 'ATC', systemUri: 'http://www.whocc.no/atc', version: '2025.0.0' },
+  { id: 'ops', displayName: 'OPS', systemUri: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2026' },
+  { id: 'atc', displayName: 'ATC', systemUri: 'http://fhir.de/CodeSystem/bfarm/atc', version: '2026' },
   { id: 'kdl', displayName: 'KDL', systemUri: 'http://dvmd.de/fhir/CodeSystem/kdl', version: '2024' },
   { id: 'ihe-xds-type', displayName: 'IHE XDS typeCode', systemUri: 'http://ihe-d.de/CodeSystems/IHEXDStypeCode', version: '2020-02-07T07:55:58' },
   { id: 'ihe-xds-class', displayName: 'IHE XDS classCode', systemUri: 'http://ihe-d.de/CodeSystems/IHEXDSclassCode', version: '2021-06-25T13:44:47' }
@@ -164,10 +164,10 @@ const SEARCH_RESULTS = {
     { code: '18776-5', display: 'Plan of care note', system: 'http://loinc.org' }
   ],
   ops: [
-    { code: '5-324', display: 'Simple lobectomy and bilobectomy of the lung', system: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2021' }
+    { code: '5-324', display: 'Simple lobectomy and bilobectomy of the lung', system: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2026' }
   ],
   atc: [
-    { code: 'L01XA01', display: 'Cisplatin', system: 'http://www.whocc.no/atc', version: '2025.0.0' }
+    { code: 'L01XA01', display: 'Cisplatin', system: 'http://fhir.de/CodeSystem/bfarm/atc', version: '2026' }
   ],
   kdl: [
     { code: 'AD010101', display: 'Medical discharge report', system: 'http://dvmd.de/fhir/CodeSystem/kdl', version: '2024' }
@@ -602,7 +602,7 @@ describe('terminology properties panel UI', () => {
     setServices(context, {
       terminologyRegistry: {
         listProviders: () => [
-          { id: 'atc', displayName: 'ATC', sourceType: 'api', sourceName: 'ATC', sourceLabel: 'r4.ontoserver.csiro.au', systemUri: 'http://www.whocc.no/atc' },
+          { id: 'atc', displayName: 'ATC', sourceType: 'api', sourceName: 'ATC', sourceLabel: 'fhir.example.test', systemUri: 'http://fhir.de/CodeSystem/bfarm/atc' },
           { id: 'ihe-xds-class', displayName: 'IHE XDS Document Class', sourceType: 'package', sourceName: 'IHE XDS Document Class', sourceLabel: 'de.ihe-d.terminology@3.0.1', systemUri: 'http://ihe-d.de/CodeSystems/IHEXDSclassCode' }
         ],
         search: vi.fn(),
@@ -619,7 +619,7 @@ describe('terminology properties panel UI', () => {
       .toEqual(['Terminology servers (API)', 'Installed terminology packages']);
     expect(Array.from(terminologySelect.options).map(option => option.textContent)).toEqual([
       '– select –',
-      'ATC (http://www.whocc.no/atc, r4.ontoserver.csiro.au)',
+      'ATC (http://fhir.de/CodeSystem/bfarm/atc, fhir.example.test)',
       'IHE XDS Document Class (de.ihe-d.terminology@3.0.1)'
     ]);
   });
@@ -830,6 +830,53 @@ describe('terminology properties panel UI', () => {
     expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
     expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
     expect(screen.queryByText('Please select a coding from the search results or provide free text before saving.')).toBeNull();
+  });
+
+  it.each([400, 404])('explains HTTP %i as a configuration problem instead of an outage', async status => {
+    const context = await createTestContext({
+      id: `Task_SearchConfigError${status}`,
+      type: 'bpmn:Task',
+      name: 'Search Configuration Error Task'
+    });
+    const requestError = new TerminologyRequestError(
+      `Terminology server terminology.example.test returned HTTP ${status}.`,
+      { kind: 'server', host: 'terminology.example.test', status }
+    );
+    const fire = vi.spyOn(context.eventBus, 'fire');
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw requestError;
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'glucose serum plasma' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(
+        `LOINC could not answer this request (HTTP ${status}). ` +
+        'The configured value set or version may not exist on this server.'
+      )).toBeTruthy();
+    });
+    expect(screen.queryByText(/is currently unavailable/)).toBeNull();
+    expect(fire).toHaveBeenCalledWith('medicalTerminology.error', {
+      element: context.element,
+      error: requestError,
+      operation: 'search',
+      providerId: 'loinc'
+    });
   });
 
   it('exposes the structured provider error to the host while keeping the UI fallback', async () => {
@@ -1660,7 +1707,7 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('id="Task_Chemo"');
     expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
     expect(xml).toContain('<mt:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
-    expect(xml).toContain('<mt:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
+    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/atc" version="2026" code="L01XA01" display="Cisplatin"');
   });
 
   it('recreates the discharge letter data object annotations via the UI', async () => {
@@ -1898,7 +1945,7 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('id="Gateway_Split"');
     expect(xml).toContain('Treatment decision based on TNM stage: Stage I-II (operable) vs. Stage III-IV (inoperable)');
     expect(xml).toContain('id="Task_Surgery"');
-    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
+    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2026" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
     expect(xml).toContain('id="Task_Followup"');
     expect(xml).toContain('<mt:coding system="http://loinc.org" code="18776-5" display="Plan of care note"');
   });

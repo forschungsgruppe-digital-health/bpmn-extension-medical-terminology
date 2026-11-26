@@ -183,6 +183,54 @@ describe('SnomedCtProvider', () => {
       await expect(provider.search('test'))
         .rejects.toMatchObject({ kind: 'redirect', status: 302 });
     });
+
+    it('does not warn about a search the caller aborted', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const controller = new AbortController();
+        const fetchFn = vi.fn(async (url, init) => {
+          controller.abort();
+          throw init.signal.reason ?? new DOMException('The operation was aborted.', 'AbortError');
+        });
+        const provider = createProvider({ fetchFn });
+
+        await expect(provider.search('test', { signal: controller.signal }))
+          .rejects.toMatchObject({ kind: 'aborted' });
+        expect(fetchFn).toHaveBeenCalledTimes(1);
+        expect(warn).not.toHaveBeenCalled();
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('still warns about other search errors', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const cases = [
+          [ vi.fn(async () => { throw new TypeError('Failed to fetch'); }), { kind: 'network' } ],
+          [ vi.fn(async () => ({ ok: false, status: 503 })), { kind: 'server', status: 503 } ],
+          [ createMockFetch({ items: [{ pt: { term: 'Missing concept id' } }] }), { kind: 'data' } ]
+        ];
+
+        for (const [ fetchFn, expected ] of cases) {
+          warn.mockClear();
+
+          const provider = createProvider({ fetchFn });
+          const failure = provider.search('test');
+
+          await expect(failure).rejects.toMatchObject(expected);
+          expect(warn).toHaveBeenCalledTimes(1);
+          expect(warn).toHaveBeenCalledWith(
+            '[terminology] Search failed for provider "snomed-ct" at snowstorm.example.com.',
+            await failure.catch(error => error)
+          );
+        }
+      } finally {
+        warn.mockRestore();
+      }
+    });
   });
 
   describe('lookup()', () => {

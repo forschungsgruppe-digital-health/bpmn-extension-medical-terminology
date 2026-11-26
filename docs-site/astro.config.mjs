@@ -115,6 +115,7 @@ export default defineConfig({
         ] },
         { label: 'Configuration & integration', items: [
           { label: 'Default configuration', link: '/configuration/defaults/' },
+          { label: 'Connecting a terminology server', link: '/configuration/terminology-server/' },
           { label: 'Configuration options', link: '/configuration/' },
           { label: 'Properties panel', link: '/properties-panel/' },
           { label: 'Terminology packages', link: '/configuration/discovery/' },

@@ -15,58 +15,86 @@ These are the values in effect when you call
 [`createDefaultTerminologyModule`](/api/functions/createdefaultterminologymodule/) or
 [`createDefaultTerminologyConfig`](/api/functions/createdefaultterminologyconfig/) with no
 arguments. Every one of them can be overridden — see [Configuration](/configuration/).
+For a worked example with a real server, see [Connecting a terminology server](/configuration/terminology-server/).
 
 ## Terminology server
 
 | Setting | Default |
 | --- | --- |
-| `fhirBaseUrl` | `https://r4.ontoserver.csiro.au/fhir` |
+| `fhirBaseUrl` | — |
 
-The public Ontoserver instance is a convenience for getting started, not a service this
-project operates or guarantees. Point `fhirBaseUrl` at a terminology server you control
-before relying on it, and note that the licensed content it serves — SNOMED CT, LOINC,
-ICD-10-GM, OPS, ATC — is licensed by whoever operates that server, not by this package.
+No terminology server is preconfigured, so the default configuration contacts no
+server at all. SNOMED CT, LOINC, ICD-10-GM, OPS and ATC are licensed content: set
+`serverConfig.fhirBaseUrl` to a server you are licensed to use. The content it serves is
+licensed by its publishers, not by this package — see [Licensing](/licensing/).
 
 ## Providers contacted over the network
 
-| Id | Display name | Code system | Source |
-| --- | --- | --- | --- |
-| `snomed-ct` | SNOMED CT | `http://snomed.info/sct` | r4.ontoserver.csiro.au |
+None by default.
+
+With a configured server and SNOMED CT edition, for example
+`serverConfig: { fhirBaseUrl: 'https://terminology.example.org/fhir' }` and
+`snomedConfig: { edition: '11000274103' }` (German National Edition), the
+SNOMED CT provider is registered as follows. Without `snomedConfig.edition` (or an explicit
+`snomedConfig.valueSetUri`) it stays disabled, so the server cannot silently answer from an
+edition you are not licensed for.
+
+| Id | Display name | Code system | Value set | `$lookup` version | Version label |
+| --- | --- | --- | --- | --- | --- |
+| `snomed-ct` | SNOMED CT | `http://snomed.info/sct` | `http://snomed.info/sct/11000274103?fhir_vs` | `http://snomed.info/sct/11000274103` | — |
+| `snomed-ct` | SNOMED CT | `http://snomed.info/sct` | `http://snomed.info/sct/11000274103/version/20260815?fhir_vs` | `http://snomed.info/sct/11000274103/version/20260815` | `http://snomed.info/sct/11000274103/version/20260815` |
+
+The first row is `snomedConfig: { edition }` alone, the second adds
+`editionVersion: '20260815'`. Each coding stores the release the server reports
+for it, for example `http://snomed.info/sct/11000274103/version/20260815`. The provider has a version label
+only when `editionVersion` pins a release; only then are stored codings of another release
+marked "Version unavailable".
 
 ## FHIR-backed code systems
 
-Each of these is served by the terminology server above, through the FHIR
-`$expand`, `$lookup` and `$validate-code` operations.
+These are registered only once `serverConfig.fhirBaseUrl` is set. Each is then served
+by that server through the FHIR `$expand` and `$lookup` operations.
 
-| Id | Display name | Code system URI | Value set | Pinned version |
+| Id | Display name | Code system URI | Value set | Release |
 | --- | --- | --- | --- | --- |
-| `loinc` | LOINC | `http://loinc.org` | `http://loinc.org/vs` | — |
-| `icd-10-gm` | ICD-10-GM | `http://fhir.de/CodeSystem/bfarm/icd-10-gm` | `http://fhir.de/ValueSet/bfarm/icd-10-gm` | `2020` |
-| `ops` | OPS | `http://fhir.de/CodeSystem/bfarm/ops` | `http://fhir.de/ValueSet/bfarm/ops` | `2021` |
-| `atc` | ATC | `http://www.whocc.no/atc` | `http://www.whocc.no/atc/vs` | `2025.0.0` |
+| `loinc` | LOINC | `http://loinc.org` | `http://loinc.org/vs` | Server's current release |
+| `icd-10-gm` | ICD-10-GM | `http://fhir.de/CodeSystem/bfarm/icd-10-gm` | `http://fhir.de/ValueSet/bfarm/icd-10-gm` | Server's current release |
+| `ops` | OPS | `http://fhir.de/CodeSystem/bfarm/ops` | `http://fhir.de/ValueSet/bfarm/ops` | Server's current release |
+| `atc` | ATC | `http://fhir.de/CodeSystem/bfarm/atc` | `http://fhir.de/ValueSet/bfarm/atc` | Server's current release |
 
-A pinned version means the expansion is requested for exactly that release of the code
-system. Override it per provider if your server carries a different release.
+Release: the server's current release; each coding stores the release the server reports
+(`used-codesystem` in `$expand`, the `version` output of `$lookup`). No release is pinned,
+because a hard-coded year stops working once a server drops that release. To pin one, see
+[Pin a release](/configuration/terminology-server/#pin-a-release).
+
+:::caution[Breaking change: ATC is ATC-GM]
+The `atc` provider uses the BfArM ATC-GM, `http://fhir.de/CodeSystem/bfarm/atc` with the value set
+`http://fhir.de/ValueSet/bfarm/atc`, instead of the WHO ATC (`http://www.whocc.no/atc`). New codings
+carry the ATC-GM system URI; existing codings with the WHO ATC system URI remain valid data.
+:::
 
 ## Code systems bundled with the package
 
-These need no network access: the concepts ship inside the package from openly
-licensed FHIR packages (`hl7.terminology.r4` is generated by
-`tools/generate-hl7-code-systems.mjs`; IHE XDS and KDL are imported directly from their
-installed FHIR packages).
+These need no network access. `hl7.terminology.r4` is generated by
+`tools/generate-hl7-code-systems.mjs`, which leaves out code systems owned by third parties
+(SNODENT, the ADA tooth codes, the NUCC provider taxonomy and the W3C colour codes).
+Automatic package discovery
+(the Vite plugin, `fdh-terminology-discover` and `packageAutoDiscovery`) leaves them out as
+well; only an explicit package selection imports them. IHE XDS and KDL are imported
+directly from their installed FHIR packages, which declare no licence. See
+[Licensing](/licensing/) and the package's `THIRD_PARTY_NOTICES.md`.
 
 | Id | Display name | Package | Package version |
 | --- | --- | --- | --- |
-| `hl7-terminology-r4-package` | hl7.terminology.r4 (7.1.0) | `hl7.terminology.r4` | `7.1.0` |
+| `hl7-terminology-r4-package` | hl7.terminology.r4 (7.5.0) | `hl7.terminology.r4` | `7.5.0` |
 | `ihe-xds-class` | de.ihe-d.terminology (3.0.1) — IHEXDSclassCode | `de.ihe-d.terminology` | `3.0.1` |
 | `ihe-xds-type` | de.ihe-d.terminology (3.0.1) — IHEXDStypeCode | `de.ihe-d.terminology` | `3.0.1` |
-| `kdl` | dvmd.kdl.r4 (2025.0.1) — CodeSystem Klinische Dokumentenklassen-Liste (Version 2025) | `dvmd.kdl.r4` | `2025.0.1` |
+| `kdl` | dvmd.kdl.r4 (2026.0.0) — CodeSystem Klinische Dokumentenklassen-Liste 2026 | `dvmd.kdl.r4` | `2026.0.0` |
 
 ## Lazy provider loader
 
-| Setting | Default |
-| --- | --- |
-| `fhirBaseUrl` | `https://r4.ontoserver.csiro.au/fhir` |
+Disabled by default, because no terminology server is configured. It is enabled with
+`serverConfig.fhirBaseUrl` or an explicit `loaderConfig.fhirBaseUrl`.
 
 ## Properties panel
 

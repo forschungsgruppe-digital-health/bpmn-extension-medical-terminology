@@ -93,9 +93,20 @@ export interface FhirProviderConfig {
   displayName: string;
   systemUri: string;
   valueSetUri?: string;
+  /**
+   * FHIR base URL. A relative URL such as `/api/terminology` (or a
+   * protocol-relative `//host/fhir`) resolves against the current page, like
+   * `fetch`; without a page to resolve it against, every request fails.
+   */
   baseUrl?: string;
   fetchFn?: typeof fetch;
+  /**
+   * Extra `$expand` parameters. The default providers pin no release; to pin
+   * one, set for example `{ valueSetVersion: '2026' }`. A server that does not
+   * hold that release answers HTTP 404.
+   */
   expandParameters?: Record<string, string>;
+  /** Extra `$lookup` parameters, for example `{ version: '2026' }`. */
   lookupParameters?: Record<string, string>;
 }
 
@@ -165,11 +176,42 @@ export interface LoaderConfig {
 export interface SnomedProviderConfig {
   transport?: 'fhir' | 'snowstorm';
   baseUrl?: string;
+  /**
+   * Module id of the SNOMED CT edition covered by your licence, for example
+   * `11000274103` (German National Edition) or `900000000000207008`
+   * (International Edition). Required for the FHIR transport unless
+   * `valueSetUri` is set explicitly; without either, SNOMED CT stays disabled.
+   */
+  edition?: string;
+  /**
+   * Release of the edition as `YYYYMMDD`, for example `20260815`; omit to use
+   * the server's latest release of it. Each coding stores the release the
+   * server reports. Only a pinned release becomes the provider's version, so
+   * only then are stored codings of another release flagged as unavailable.
+   */
+  editionVersion?: string;
+  /**
+   * Explicit ValueSet URI for `$expand`; overrides the one derived from
+   * `edition`. An implicit SNOMED CT value set such as
+   * `http://snomed.info/sct/11000274103?fhir_vs=isa/404684003` also scopes
+   * `$lookup` to that edition; any other value set leaves `$lookup` unscoped
+   * unless `edition` or `lookupParameters.version` is set.
+   */
+  valueSetUri?: string;
+  lookupParameters?: Record<string, string>;
   displayName?: string;
   fetchFn?: typeof fetch;
   /** Snowstorm edition branch, without the `/concepts` path. */
   branch?: string;
+  /**
+   * Snowstorm transport only. The FHIR transport uses the package language
+   * setting: `displayLanguage=de`.
+   */
   language?: string;
+  /**
+   * Snowstorm transport only (default `'header'`). The FHIR transport uses the
+   * package language setting: `displayLanguage=de`.
+   */
   languageStrategy?: 'param' | 'header';
   maxResults?: number;
   defaultEcl?: string;

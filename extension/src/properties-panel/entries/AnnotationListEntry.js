@@ -143,6 +143,15 @@ export function AnnotationListEntry(props) {
       );
     }
 
+    // HTTP 400 and 404 point to the configuration (a value set or release the
+    // server does not hold), not to an outage, so retrying would not help.
+    if (error?.kind === 'server' && (error.status === 400 || error.status === 404)) {
+      return translate(
+        '{providerName} could not answer this request (HTTP {status}). The configured value set or version may not exist on this server.',
+        { providerName, status: error.status }
+      );
+    }
+
     if (error?.kind === 'server') {
       return translate(
         '{providerName} is currently unavailable (HTTP {status}). Please try again later.',

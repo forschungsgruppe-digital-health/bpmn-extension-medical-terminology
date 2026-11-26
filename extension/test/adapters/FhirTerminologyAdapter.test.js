@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { FhirTerminologyAdapter } from '../../src/adapters/FhirTerminologyAdapter.js';
+import { TerminologyRequestError } from '../../src/core/TerminologyRequestError.js';
 
 function createMockFetch(responseBody, ok = true) {
   return vi.fn(async () => ({
@@ -59,8 +60,8 @@ describe('FhirTerminologyAdapter', () => {
         baseUrl: BASE_URL,
         systemUri: 'http://fhir.de/ValueSet/bfarm/icd-10-gm',
         expandParameters: {
-          valueSetVersion: '2020',
-          'system-version': 'http://fhir.de/CodeSystem/bfarm/icd-10-gm|2020'
+          valueSetVersion: '2026',
+          'system-version': 'http://fhir.de/CodeSystem/bfarm/icd-10-gm|2026'
         },
         fetchFn: mockFetch
       });
@@ -68,11 +69,11 @@ describe('FhirTerminologyAdapter', () => {
       await adapter.search({ term: '', limit: 10, offset: 0 });
 
       const calledUrl = new URL(mockFetch.mock.calls[0][0]);
-      expect(calledUrl.searchParams.get('valueSetVersion')).toBe('2020');
-      expect(calledUrl.searchParams.get('system-version')).toBe('http://fhir.de/CodeSystem/bfarm/icd-10-gm|2020');
+      expect(calledUrl.searchParams.get('valueSetVersion')).toBe('2026');
+      expect(calledUrl.searchParams.get('system-version')).toBe('http://fhir.de/CodeSystem/bfarm/icd-10-gm|2026');
     });
 
-    it('should use an explicit valueSetUri without appending ?vs', async () => {
+    it('should use an explicit valueSetUri without appending ?fhir_vs', async () => {
       const mockFetch = createMockFetch({ expansion: { contains: [] } });
 
       const adapter = new FhirTerminologyAdapter({
@@ -263,6 +264,173 @@ describe('FhirTerminologyAdapter', () => {
       expect(result.items[0].version).toBe('2.82');
     });
 
+    it('expands the FHIR implicit value set <systemUri>?fhir_vs without a valueSetUri', async () => {
+      const mockFetch = createMockFetch({ expansion: { contains: [] } });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: mockFetch
+      });
+
+      await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+      expect(calledUrl.searchParams.get('url')).toBe(`${SYSTEM_URI}?fhir_vs`);
+    });
+
+    it('keeps a system URI that already names a value set', async () => {
+      const mockFetch = createMockFetch({ expansion: { contains: [] } });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: 'http://fhir.de/ValueSet/bfarm/icd-10-gm',
+        fetchFn: mockFetch
+      });
+
+      await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+      expect(calledUrl.searchParams.get('url')).toBe('http://fhir.de/ValueSet/bfarm/icd-10-gm');
+    });
+
+    it('prefers the used-codesystem release of its own code system', async () => {
+      const mockFetch = createMockFetch({
+        expansion: {
+          parameter: [
+            { name: 'version', valueUri: 'http://example.test/CodeSystem/other|9.9' },
+            { name: 'used-codesystem', valueUri: 'http://example.test/CodeSystem/other|9.9' },
+            { name: 'used-codesystem', valueUri: `${SYSTEM_URI}|2026` }
+          ],
+          contains: [{ code: 'C34.1', display: 'Bösartige Neubildung: Oberlappen' }],
+          total: 1
+        }
+      });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        valueSetUri: 'http://fhir.de/ValueSet/bfarm/icd-10-gm',
+        fetchFn: mockFetch
+      });
+
+      const result = await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+      expect(result.items[0].version).toBe('2026');
+    });
+
+    it('keeps a SNOMED CT release URI reported by used-codesystem', async () => {
+      const mockFetch = createMockFetch({
+        expansion: {
+          parameter: [{
+            name: 'used-codesystem',
+            valueUri: 'http://snomed.info/sct|http://snomed.info/sct/11000274103/version/20260815'
+          }],
+          contains: [{ code: '1', display: 'Example' }],
+          total: 1
+        }
+      });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: 'http://snomed.info/sct',
+        valueSetUri: 'http://snomed.info/sct/11000274103?fhir_vs',
+        fetchFn: mockFetch
+      });
+
+      const result = await adapter.search({ term: 'example', limit: 10, offset: 0 });
+
+      expect(result.items[0].version).toBe('http://snomed.info/sct/11000274103/version/20260815');
+    });
+
+    it('falls back to another system release when its own is not reported', async () => {
+      const mockFetch = createMockFetch({
+        expansion: {
+          parameter: [
+            { name: 'used-codesystem', valueUri: 'http://loinc.org|2.81' }
+          ],
+          contains: [{ code: 'LP149706-6', display: 'Discharge' }]
+        }
+      });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: 'http://loinc.org/other',
+        fetchFn: mockFetch
+      });
+
+      const result = await adapter.search({ term: 'discharge', limit: 10, offset: 0 });
+
+      expect(result.items[0].version).toBe('2.81');
+    });
+
+    it('stores no version when used-codesystem names its own system without a release', async () => {
+      const mockFetch = createMockFetch({
+        expansion: {
+          parameter: [
+            { name: 'used-codesystem', valueUri: 'http://example.test/CodeSystem/other|1.0' },
+            { name: 'used-codesystem', valueUri: SYSTEM_URI }
+          ],
+          contains: [{ code: 'C34.1', display: 'Bösartige Neubildung: Oberlappen' }],
+          total: 1
+        }
+      });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        valueSetUri: 'http://fhir.de/ValueSet/bfarm/icd-10-gm',
+        fetchFn: mockFetch
+      });
+
+      const result = await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+      expect(result.items[0].version).toBeUndefined();
+    });
+
+    it.each([
+      ['used-codesystem', 'valueUri'],
+      ['system-version', 'valueCanonical']
+    ])('stores no version for a %s canonical without a release', async (name, valueKey) => {
+      const mockFetch = createMockFetch({
+        expansion: {
+          parameter: [{ name, [valueKey]: 'http://example.test/CodeSystem/other' }],
+          contains: [{ code: 'C34.1', display: 'Bösartige Neubildung: Oberlappen' }],
+          total: 1
+        }
+      });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: mockFetch
+      });
+
+      const result = await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+      expect(result.items[0].version).toBeUndefined();
+    });
+
+    it('keeps a plain version parameter value as the release', async () => {
+      const mockFetch = createMockFetch({
+        expansion: {
+          parameter: [{ name: 'version', valueString: '2026' }],
+          contains: [{ code: 'C34.1', display: 'Bösartige Neubildung: Oberlappen' }],
+          total: 1
+        }
+      });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        fetchFn: mockFetch
+      });
+
+      const result = await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+      expect(result.items[0].version).toBe('2026');
+    });
+
     it('should strip trailing slash from baseUrl', async () => {
       const mockFetch = createMockFetch({ expansion: { contains: [] } });
       const adapter = new FhirTerminologyAdapter({
@@ -276,17 +444,183 @@ describe('FhirTerminologyAdapter', () => {
       expect(calledUrl).not.toContain('fhir//ValueSet');
     });
 
-    it('should resolve relative base URLs against the current origin', async () => {
+    it('fails every request for a relative base URL outside a web page', async () => {
+      const mockFetch = createMockFetch({ expansion: { contains: [] } });
+      let adapter;
+
+      expect(() => {
+        adapter = new FhirTerminologyAdapter({
+          baseUrl: '/fhir',
+          systemUri: SYSTEM_URI,
+          fetchFn: mockFetch
+        });
+      }).not.toThrow();
+
+      const expectedError = {
+        name: 'TerminologyRequestError',
+        kind: 'network',
+        message: 'Cannot resolve the relative terminology server URL "/fhir" outside a web page.'
+      };
+      await expect(adapter.search({ term: 'Lunge', limit: 10, offset: 0 }))
+        .rejects.toMatchObject(expectedError);
+      await expect(adapter.lookup('C34.1')).rejects.toBeInstanceOf(TerminologyRequestError);
+      await expect(adapter.lookup('C34.1')).rejects.toMatchObject(expectedError);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('resolves a same-origin route against the current page', async () => {
+      vi.stubGlobal('location', {
+        href: 'https://modeler.example.test/app/index.html',
+        origin: 'https://modeler.example.test'
+      });
+
+      try {
+        const mockFetch = createMockFetch({ expansion: { contains: [] } });
+        const adapter = new FhirTerminologyAdapter({
+          baseUrl: '/api/terminology/',
+          systemUri: SYSTEM_URI,
+          fetchFn: mockFetch
+        });
+
+        await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+        await adapter.lookup('C34.1');
+
+        const searchUrl = new URL(mockFetch.mock.calls[0][0]);
+        const lookupUrl = new URL(mockFetch.mock.calls[1][0]);
+        expect(searchUrl.origin).toBe('https://modeler.example.test');
+        expect(searchUrl.pathname).toBe('/api/terminology/ValueSet/$expand');
+        expect(lookupUrl.pathname).toBe('/api/terminology/CodeSystem/$lookup');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('resolves a relative base URL against the inherited document base on about:srcdoc', async () => {
+      vi.stubGlobal('location', { href: 'about:srcdoc', origin: 'null' });
+      vi.stubGlobal('document', { baseURI: 'https://modeler.example.test/app/' });
+
+      try {
+        const mockFetch = createMockFetch({ expansion: { contains: [] } });
+        const adapter = new FhirTerminologyAdapter({
+          baseUrl: '/api/terminology',
+          systemUri: SYSTEM_URI,
+          fetchFn: mockFetch
+        });
+
+        await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+        const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+        expect(calledUrl.origin).toBe('https://modeler.example.test');
+        expect(calledUrl.pathname).toBe('/api/terminology/ValueSet/$expand');
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('resolves a relative base URL against <base href> before the page URL', async () => {
+      vi.stubGlobal('location', {
+        href: 'https://modeler.example.test/app/index.html',
+        origin: 'https://modeler.example.test'
+      });
+      vi.stubGlobal('document', { baseURI: 'https://static.example.test/modeler/' });
+
+      try {
+        const mockFetch = createMockFetch({ expansion: { contains: [] } });
+        const adapter = new FhirTerminologyAdapter({
+          baseUrl: 'api/fhir',
+          systemUri: SYSTEM_URI,
+          fetchFn: mockFetch
+        });
+
+        await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+
+        expect(mockFetch.mock.calls[0][0])
+          .toMatch(/^https:\/\/static\.example\.test\/modeler\/api\/fhir\/ValueSet\/\$expand\?/);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('fails requests instead of guessing a host when the page has no resolvable base', async () => {
+      vi.stubGlobal('location', { href: 'about:blank', origin: 'null' });
+      vi.stubGlobal('document', { baseURI: 'about:blank' });
+
+      try {
+        const mockFetch = createMockFetch({ expansion: { contains: [] } });
+        let adapter;
+
+        expect(() => {
+          adapter = new FhirTerminologyAdapter({
+            baseUrl: '/api/terminology',
+            systemUri: SYSTEM_URI,
+            fetchFn: mockFetch
+          });
+        }).not.toThrow();
+
+        await expect(adapter.search({ term: 'Lunge', limit: 10, offset: 0 }))
+          .rejects.toMatchObject({
+            name: 'TerminologyRequestError',
+            kind: 'network',
+            message: 'Cannot resolve the relative terminology server URL "/api/terminology" outside a web page.'
+          });
+        expect(mockFetch).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('resolves a protocol-relative base URL against the current page', async () => {
+      vi.stubGlobal('location', {
+        href: 'https://example.test/app/',
+        origin: 'https://example.test'
+      });
+
+      try {
+        const mockFetch = createMockFetch({ expansion: { contains: [] } });
+        const adapter = new FhirTerminologyAdapter({
+          baseUrl: '//tx.example/fhir',
+          systemUri: SYSTEM_URI,
+          fetchFn: mockFetch
+        });
+
+        await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
+        await adapter.lookup('C34.1');
+
+        expect(mockFetch.mock.calls[0][0])
+          .toMatch(/^https:\/\/tx\.example\/fhir\/ValueSet\/\$expand\?/);
+        expect(mockFetch.mock.calls[1][0])
+          .toMatch(/^https:\/\/tx\.example\/fhir\/CodeSystem\/\$lookup\?/);
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    });
+
+    it('rejects a protocol-relative base URL outside a web page with a request error', async () => {
       const mockFetch = createMockFetch({ expansion: { contains: [] } });
       const adapter = new FhirTerminologyAdapter({
-        baseUrl: '/fhir',
+        baseUrl: '//tx.example/fhir',
         systemUri: SYSTEM_URI,
         fetchFn: mockFetch
       });
 
-      await adapter.search({ term: 'Lunge', limit: 10, offset: 0 });
-      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
-      expect(calledUrl.pathname).toContain('/fhir/ValueSet/$expand');
+      await expect(adapter.search({ term: 'Lunge', limit: 10, offset: 0 }))
+        .rejects.toMatchObject({ name: 'TerminologyRequestError', kind: 'network' });
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('rejects an absolute base URL that is not a valid URL with a request error', async () => {
+      const mockFetch = createMockFetch({ expansion: { contains: [] } });
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: 'https://exa mple.test/fhir',
+        systemUri: SYSTEM_URI,
+        fetchFn: mockFetch
+      });
+
+      await expect(adapter.search({ term: 'Lunge', limit: 10, offset: 0 }))
+        .rejects.toMatchObject({ name: 'TerminologyRequestError', kind: 'network' });
+      await expect(adapter.lookup('C34.1'))
+        .rejects.toMatchObject({ name: 'TerminologyRequestError', kind: 'network' });
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 
@@ -346,7 +680,7 @@ describe('FhirTerminologyAdapter', () => {
         baseUrl: BASE_URL,
         systemUri: SYSTEM_URI,
         lookupParameters: {
-          version: '2025.0.0'
+          version: '2026'
         },
         fetchFn: mockFetch
       });
@@ -354,7 +688,61 @@ describe('FhirTerminologyAdapter', () => {
       await adapter.lookup('C34.1');
 
       const calledUrl = new URL(mockFetch.mock.calls[0][0]);
-      expect(calledUrl.searchParams.get('version')).toBe('2025.0.0');
+      expect(calledUrl.searchParams.get('version')).toBe('2026');
+    });
+
+    it('requests the display language with the param strategy', async () => {
+      const mockFetch = createMockFetch({ parameter: [] });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        language: 'de',
+        languageStrategy: 'param',
+        fetchFn: mockFetch
+      });
+
+      await adapter.lookup('C34.1');
+
+      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+      expect(calledUrl.searchParams.get('displayLanguage')).toBe('de');
+      expect(mockFetch.mock.calls[0][1].headers['Accept-Language']).toBeUndefined();
+    });
+
+    it('lets an explicit lookup parameter override the display language', async () => {
+      const mockFetch = createMockFetch({ parameter: [] });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        language: 'de',
+        languageStrategy: 'param',
+        lookupParameters: { displayLanguage: 'en' },
+        fetchFn: mockFetch
+      });
+
+      await adapter.lookup('C34.1');
+
+      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+      expect(calledUrl.searchParams.getAll('displayLanguage')).toEqual(['en']);
+    });
+
+    it('sends the display language as Accept-Language with the header strategy', async () => {
+      const mockFetch = createMockFetch({ parameter: [] });
+
+      const adapter = new FhirTerminologyAdapter({
+        baseUrl: BASE_URL,
+        systemUri: SYSTEM_URI,
+        language: 'de-DE',
+        languageStrategy: 'header',
+        fetchFn: mockFetch
+      });
+
+      await adapter.lookup('C34.1');
+
+      const calledUrl = new URL(mockFetch.mock.calls[0][0]);
+      expect(calledUrl.searchParams.has('displayLanguage')).toBe(false);
+      expect(mockFetch.mock.calls[0][1].headers['Accept-Language']).toBe('de');
     });
 
     it('should return null only when the code is not found', async () => {
