@@ -47,3 +47,26 @@ commit or transmit real patient data or realistic clinical identifiers. See the 
 GitHub Actions are pinned to commit SHAs; production-dependency advisories are gated at `high` in CI
 (`npm audit --omit=dev --audit-level=high`) and tracked via Dependabot. Releases publish to GitHub
 Packages through the `release-please` workflow.
+
+### Known audit finding: `hl7.fhir.r4.core` (GHSA-qg8x-2hq5-hwf3)
+
+`npm audit` reports the critical advisory
+[GHSA-qg8x-2hq5-hwf3](https://github.com/advisories/GHSA-qg8x-2hq5-hwf3), "Malicious code in
+hl7.fhir.r4.core". It also flags every FHIR package that depends on it (`hl7.terminology.r4`,
+`hl7.fhir.uv.extensions.r4`, `dvmd.kdl.r4` and `de.ihe-d.terminology`). This is a **registry name
+collision**, not a compromised dependency:
+
+- The advisory covers the unrelated package published under that name on the public npm registry.
+- This repository never installs that package. `extension/package.json` declares
+  `hl7.fhir.r4.core` as a tarball URL on the FHIR package registry
+  (`https://packages.simplifier.net/hl7.fhir.r4.core/4.0.1`). `package-lock.json` pins that
+  `resolved` URL together with its `integrity` hash.
+- `npm audit` matches advisories by package name only, so it cannot tell the two sources apart.
+
+The production audit gate in `validate.yml` removes exactly this finding before it enforces
+`high`, and only when two conditions hold: the advisory is the package's only finding, and the
+lockfile resolves the package from Simplifier. Do not "fix" the finding with `npm audit fix`, an
+override, or a different source. Treat a changed `resolved` URL or `integrity` value for
+`hl7.fhir.r4.core` as a real supply-chain incident. Consumers of the published package see the
+same finding in their own audit. The same check applies to them: their lockfile must resolve
+`hl7.fhir.r4.core` from `packages.simplifier.net`.
