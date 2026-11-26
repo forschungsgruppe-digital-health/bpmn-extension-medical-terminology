@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@bpmn-io/properties-panel": "^3.40.5",
+    "@bpmn-io/properties-panel": "^3.42.0",
     "@forschungsgruppe-digital-health/bpmn-extension-medical-terminology": "file:../extension",
     "bpmn-js": "^18.14.0",
     "bpmn-js-properties-panel": "^5.53.0"

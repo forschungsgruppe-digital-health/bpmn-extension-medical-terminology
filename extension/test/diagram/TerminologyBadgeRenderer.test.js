@@ -40,6 +40,20 @@ SVGElement.prototype.getBBox ??= function() {
     height: 14
   };
 };
+// diagram-js >= 15.12 measures label text with canvas measureText(), which
+// jsdom lacks without the native canvas package. Mirror the getBBox metrics.
+const textMeasureContext = {
+  font: '',
+  letterSpacing: '0px',
+  measureText: (text) => ({
+    width: Array.from(text).length * 6.2,
+    fontBoundingBoxAscent: 11,
+    fontBoundingBoxDescent: 3
+  })
+};
+HTMLCanvasElement.prototype.getContext = function(type) {
+  return type === '2d' ? textMeasureContext : null;
+};
 SVGSVGElement.prototype.createSVGMatrix ??= () => ({ a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 });
 SVGSVGElement.prototype.createSVGTransform ??= () => ({ setMatrix() {}, setTranslate() {}, setScale() {}, setRotate() {}, matrix: { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 } });
 globalThis.SVGMatrix ??= class SVGMatrix {};

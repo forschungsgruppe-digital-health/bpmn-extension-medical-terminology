@@ -4,5 +4,8 @@
   "private": true,
   "description": "Custom bpmnlint rules for the terminology BPMN extension.",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "bpmnlint-utils": "^1.1.1"
+  }
 }
