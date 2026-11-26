@@ -57,7 +57,7 @@
   ],
   "devDependencies": {
     "@testing-library/preact": "^3.2.4",
-    "@types/fhir": "^0.0.41",
+    "@types/fhir": "^0.0.44",
     "@types/node": "^24.13.5",
     "@xmldom/xmldom": "^0.9.10",
     "bpmn-moddle": "^10.0.0",
