@@ -43,8 +43,9 @@ library plus the data files and CI/publishing pipeline around it.
   an untrusted trigger.
 - **Unsafe XML / moddle parsing.** The tools in `tools/` and the library parsers
   read attacker-influenceable `.bpmn` XML. Flag XXE-prone parsing (external
-  entities / DTD enabled in `@xmldom/xmldom` or `bpmn-moddle` usage), and any
-  parse path that can be driven into unbounded resource use by a hostile file.
+  entities / DTD enabled in `bpmn-moddle` usage or in any newly added XML
+  parser), and any parse path that can be driven into unbounded resource use
+  by a hostile file.
 - **Dangerous DOM / template sinks.** In the properties-panel providers and the
   Vue wrapper: `innerHTML`, `v-html`, `eval`, `new Function`, dynamic
   `dangerouslySet*`, or interpolating unsanitised extension content (which is
