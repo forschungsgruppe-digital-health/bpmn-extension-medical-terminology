@@ -78,10 +78,21 @@ body {
   white-space: nowrap;
 }
 
+/* The subtitle gives way first (ellipsis), so the longer German texts never
+ * push the example picker and the XML buttons out of the viewport. */
 .app-header__subtitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: var(--c-text-dim);
   font-size: 12px;
   white-space: nowrap;
+}
+
+.app-header__title,
+.app-header__actions {
+  flex-shrink: 0;
 }
 
 .app-header__actions {
