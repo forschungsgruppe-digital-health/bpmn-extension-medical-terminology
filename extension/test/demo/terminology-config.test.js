@@ -7,22 +7,52 @@ import {
 } from '../../../demo/src/terminology-config.js';
 
 describe('demo terminology configuration', () => {
-  it('uses an explicit external Snowstorm base URL when configured', () => {
+  it('uses an explicit external Snowstorm base URL and branch when configured', () => {
     expect(createDemoTerminologyConfig({
       DEV: true,
-      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
     })).toEqual({
       enableFhirDefaults: false,
       snomedConfig: {
         transport: 'snowstorm',
         baseUrl: 'https://snowstorm.example.test/snomed-ct',
-        branch: 'MAIN',
+        branch: 'MAIN/SNOMEDCT-DE',
         language: 'de',
         languageStrategy: 'header',
         defaultEcl: undefined,
         maxResults: 15
       }
     });
+  });
+
+  it('keeps SNOMED CT off and warns for a Snowstorm base URL without a branch', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      // No MAIN fallback: MAIN holds the International Edition.
+      expect(createDemoTerminologyConfig({
+        DEV: true,
+        VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+      })).toEqual({ enableSnomed: false, enableFhirDefaults: false });
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0][0]).toContain('VITE_SNOWSTORM_BRANCH');
+      expect(warn.mock.calls[0][0]).toContain('International Edition');
+
+      // Nor does SNOMED CT fall back to the FHIR server.
+      warn.mockClear();
+      expect(createDemoTerminologyConfig({
+        VITE_FHIR_BASE_URL: 'https://fhir.example.test/fhir',
+        VITE_SNOMED_EDITION: '11000274103',
+        VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+      })).toEqual({
+        serverConfig: { fhirBaseUrl: 'https://fhir.example.test/fhir' },
+        enableSnomed: false
+      });
+      expect(warn).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it('preserves the configured Snowstorm request settings', () => {
@@ -78,6 +108,7 @@ describe('demo terminology configuration', () => {
     expect(() => createDemoTerminologyConfig({
       DEV: true,
       VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE',
       VITE_SNOWSTORM_MAX_RESULTS: '0'
     })).toThrow('VITE_SNOWSTORM_MAX_RESULTS must be a positive integer.');
   });
@@ -131,7 +162,8 @@ describe('demo terminology server description', () => {
 
   it('describes a Snowstorm server, which takes precedence for SNOMED CT', () => {
     expect(describeDemoTerminologyServer({
-      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
     })).toEqual({
       fhirBaseUrl: null,
       fhirHost: null,
@@ -145,6 +177,7 @@ describe('demo terminology server description', () => {
     expect(describeDemoTerminologyServer({
       VITE_FHIR_BASE_URL: 'https://fhir.example.test/fhir',
       VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE',
       VITE_SNOMED_EDITION: '11000274103',
       VITE_SNOWSTORM_MAX_RESULTS: '0'
     })).toEqual({
@@ -156,6 +189,21 @@ describe('demo terminology server description', () => {
         editionVersion: null,
         host: 'snowstorm.example.test'
       }
+    });
+  });
+
+  it('names no Snowstorm server without a branch, because the demo then contacts none', () => {
+    expect(describeDemoTerminologyServer({
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+    })).toBeNull();
+    expect(describeDemoTerminologyServer({
+      VITE_FHIR_BASE_URL: 'https://fhir.example.test/fhir',
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOMED_EDITION: '11000274103'
+    })).toEqual({
+      fhirBaseUrl: 'https://fhir.example.test/fhir',
+      fhirHost: 'fhir.example.test',
+      snomed: null
     });
   });
 
@@ -181,16 +229,30 @@ describe('demo terminology server description', () => {
       { VITE_FHIR_BASE_URL: 'https://fhir.example.test/fhir' },
       { VITE_SNOMED_EDITION: '11000274103' },
       { VITE_FHIR_BASE_URL: 'https://fhir.example.test/fhir', VITE_SNOMED_EDITION: '11000274103' },
-      { VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct' }
+      { VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct' },
+      {
+        VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+        VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
+      },
+      {
+        VITE_FHIR_BASE_URL: 'https://fhir.example.test/fhir',
+        VITE_SNOMED_EDITION: '11000274103',
+        VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+      }
     ];
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    for (const env of envs) {
-      const config = createDemoTerminologyConfig(env);
-      const description = describeDemoTerminologyServer(env);
+    try {
+      for (const env of envs) {
+        const config = createDemoTerminologyConfig(env);
+        const description = describeDemoTerminologyServer(env);
 
-      expect(description?.fhirBaseUrl ?? undefined).toBe(config.serverConfig?.fhirBaseUrl);
-      expect(Boolean(description?.snomed)).toBe(Boolean(config.snomedConfig));
-      expect(description === null).toBe(config.enableFhirDefaults === false && config.enableSnomed === false);
+        expect(description?.fhirBaseUrl ?? undefined).toBe(config.serverConfig?.fhirBaseUrl);
+        expect(Boolean(description?.snomed)).toBe(Boolean(config.snomedConfig));
+        expect(description === null).toBe(config.enableFhirDefaults === false && config.enableSnomed === false);
+      }
+    } finally {
+      warn.mockRestore();
     }
   });
 });
@@ -227,13 +289,24 @@ describe('demo opt-in live search configuration', () => {
     })).toBeNull();
     expect(describeDemoOptInServer({
       ...OPT_IN,
-      VITE_SNOWSTORM_BASE_URL: 'http://localhost:8081/snowstorm'
+      VITE_SNOWSTORM_BASE_URL: 'http://localhost:8081/snowstorm',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
     })).toBeNull();
     expect(describeDemoOptInServer({
       ...OPT_IN,
       VITE_FHIR_BASE_URL: 'http://localhost:8080/fhir',
       VITE_SNOMED_EDITION: '11000274103'
     })).toBeNull();
+  });
+
+  it('keeps the opt-in for a Snowstorm URL without a branch, which contacts no server', () => {
+    const env = { ...OPT_IN, VITE_SNOWSTORM_BASE_URL: 'http://localhost:8081/snowstorm' };
+
+    expect(describeDemoTerminologyServer(env)).toBeNull();
+    expect(describeDemoOptInServer(env)).toEqual({
+      fhirBaseUrl: 'https://tx.fhir.de/fhir',
+      fhirHost: 'tx.fhir.de'
+    });
   });
 
   it('keeps the opt-in when only VITE_SNOMED_EDITION is set, which needs VITE_FHIR_BASE_URL to take effect', () => {
@@ -274,7 +347,8 @@ describe('demo opt-in live search configuration', () => {
     })).toBeNull();
     expect(describeDemoOptInSnomed({
       ...OPT_IN_SNOMED,
-      VITE_SNOWSTORM_BASE_URL: 'http://localhost:8081/snowstorm'
+      VITE_SNOWSTORM_BASE_URL: 'http://localhost:8081/snowstorm',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
     })).toBeNull();
   });
 

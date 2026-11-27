@@ -14,6 +14,7 @@ import {
 } from '../../../demo/src/snomed-unlock.js';
 import { createDemoOptInSnomedProvider } from '../../../demo/src/terminology-config.js';
 import { TerminologyRegistry } from '../../src/core/TerminologyRegistry.js';
+import { visibleText } from './visible-text.js';
 
 // The package root pulls in the properties panel, which Node cannot load
 // without bundling; the opt-in path needs only the config helpers.
@@ -65,16 +66,6 @@ function isShown(node) {
   }
 
   return true;
-}
-
-function visibleText(node) {
-  const clone = node.cloneNode(true);
-
-  for (const hidden of clone.querySelectorAll('[hidden]')) {
-    hidden.remove();
-  }
-
-  return clone.textContent.replace(/\s+/g, ' ').trim();
 }
 
 function all(selector) {

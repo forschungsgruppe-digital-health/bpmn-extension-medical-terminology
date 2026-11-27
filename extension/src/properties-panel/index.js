@@ -16,11 +16,20 @@ import { resolveTerminologyPropertiesConfig } from './config.js';
  * @param {string[]} [config.targetTypes] - Replace the default annotatable BPMN types.
  * @param {string[]} [config.includeTypes] - Add types to the defaults or `targetTypes` override.
  * @param {string[]} [config.excludeTypes] - Exclude types after defaults, `targetTypes`, and `includeTypes`.
+ * @param {number} [config.serverSearchDebounceMs=300] - Milliseconds a search with a provider that
+ *   queries a terminology server (`sourceType: 'api'`, such as the FHIR and Snowstorm providers and
+ *   providers loaded on demand, or `remoteSearch: true`, such as an offline package with FHIR
+ *   fallback) waits after the last keystroke; only the last term is sent. `0` searches on every
+ *   keystroke. Local providers always search at once.
+ * @param {number} [config.serverSearchMinLength=3] - Minimum number of characters before such a
+ *   provider is queried; shorter terms show a hint instead. Local providers search from one character.
  * @example
  * ```js
  * createTerminologyPropertiesPanelModule({
  *   includeTypes: ['bpmn:Participant'],
- *   excludeTypes: ['bpmn:UserTask']
+ *   excludeTypes: ['bpmn:UserTask'],
+ *   serverSearchDebounceMs: 300,
+ *   serverSearchMinLength: 3
  * });
  * ```
  * @returns {TerminologyPropertiesPanelModuleDefinition}

@@ -11,8 +11,10 @@ Run `npm run verify` before release work. It combines:
 - `npm run check:packages` — publish conventions for `extension/package.json`
 - `npm run check:versions` — coupled release metadata and lockfile versions
 - `npm run generate:hl7:check` — generated bundled terminology data is current
-- `npm run check:conformance` — BPMN linting, terminology moddle roundtrip, and
-  informational BPMN-core XSD validation
+- `npm run check:conformance` — BPMN linting, terminology moddle roundtrip,
+  informational BPMN-core XSD validation, and the demo build gates
+  (`check:demo-gates`: no workflow or committed env file sets a demo
+  terminology variable outside the release gate in `docs/RELEASE-TESTING.md`)
 - `npm test` — Vitest suite
 
 Install dependencies with `npm install --legacy-peer-deps`.

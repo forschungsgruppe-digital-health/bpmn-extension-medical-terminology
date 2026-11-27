@@ -1,3 +1,5 @@
+const HOST_SEPARATORS = Object.freeze({ de: ' und ', en: ' and ' });
+
 /**
  * Show the variant of the demo's banner and licence dialog that matches the
  * terminology server this build contacts.
@@ -19,9 +21,13 @@
  *   exactly that host;
  * - `[data-demo-mode="local"]` is shown for a server configured at build time
  *   (local previews), `[data-demo-mode="opt-in"]` for the public demo's live
- *   search after the visitor's consent (`description.optIn`).
+ *   search after the visitor's consent (`description.optIn`);
+ * - `[data-demo-hosting]` (the notice on hosting the published demo) is shown
+ *   in the serverless variant and while the live search is on, and hidden only
+ *   for a server configured at build time (local previews).
  *
- * Values are written with `textContent` only.
+ * Values are written with `textContent` only. Several hosts are joined with
+ * "and", or "und" inside a German text (`[data-i18n][lang="de"]`).
  *
  * @param {ParentNode} root - Document or element that holds the notices.
  * @param {(ReturnType<typeof import('./terminology-config.js').describeDemoTerminologyServer> & { optIn?: boolean }) | null} description
@@ -40,9 +46,15 @@ export function applyServerNotice(root, description) {
   setHidden(root, '[data-server-mode="none"]', configured);
   setHidden(root, '[data-server-mode="configured"]', !configured);
 
-  setText(root, '[data-demo-server-host]', hosts.join(' and '));
+  for (const node of root.querySelectorAll('[data-demo-server-host]')) {
+    const language = node.closest('[data-i18n]')?.getAttribute('lang');
+
+    node.textContent = hosts.join(HOST_SEPARATORS[language] ?? HOST_SEPARATORS.en);
+  }
+
   setHidden(root, '[data-demo-mode="local"]', !configured || optIn);
   setHidden(root, '[data-demo-mode="opt-in"]', !configured || !optIn);
+  setHidden(root, '[data-demo-hosting]', configured && !optIn);
 
   setHidden(root, '[data-demo-fhir]', !fhirHost);
   setText(root, '[data-demo-fhir-host]', fhirHost ?? '');

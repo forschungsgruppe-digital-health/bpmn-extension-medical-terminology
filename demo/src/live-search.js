@@ -1,4 +1,4 @@
-import { inertBackground, refocus } from './modal.js';
+import { inertBackground, refocus, restoreFocus } from './modal.js';
 import { applyServerNotice } from './server-notice.js';
 
 /**
@@ -350,7 +350,9 @@ export function setupLiveSearch({
     overlay.hidden = true;
     restoreBackground?.();
     restoreBackground = null;
-    lastFocus?.focus?.();
+    // The opener may sit in a language variant that a switch inside this
+    // dialog has hidden meanwhile.
+    restoreFocus(doc, lastFocus, [ 'btn-live-search-details', 'btn-live-search-open', 'btn-license-notice' ]);
     lastFocus = null;
   }
 

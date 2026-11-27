@@ -4,7 +4,11 @@
  * Usage:
  *   const registry = new TerminologyRegistry();
  *   registry.register(new SnomedCtProvider({ ... }));
- *   registry.register(new SnomedCtProvider({ baseUrl: 'https://snowstorm.example.com' }));
+ *   // `branch` is the branch of the SNOMED CT edition your licence covers.
+ *   registry.register(new SnomedCtProvider({
+ *     baseUrl: 'https://snowstorm.example.com',
+ *     branch: 'MAIN/SNOMEDCT-DE'
+ *   }));
  *
  *   const results = await registry.search('pneumonia', 'snomed-ct');
  *   const concept = await registry.lookup('169069000', 'snomed-ct');
@@ -131,7 +135,7 @@ export class TerminologyRegistry {
 
   /**
    * List all registered providers with metadata.
-   * @returns {Array<{ id: string, displayName: string, systemUri: string, version?: string, packageKey?: string, packageName?: string, packageVersion?: string, capabilities: object }>}
+   * @returns {Array<{ id: string, displayName: string, systemUri: string, version?: string, packageKey?: string, packageName?: string, packageVersion?: string, sourceType?: string, sourceLabel?: string, sourceName?: string, remoteSearch?: boolean, capabilities: object }>}
    */
   listProviders() {
     return [...this._providers.values()].map(p => ({
@@ -145,6 +149,7 @@ export class TerminologyRegistry {
       sourceType: p.sourceType,
       sourceLabel: p.sourceLabel,
       sourceName: p.sourceName,
+      remoteSearch: p.remoteSearch,
       capabilities: p.capabilities
     }));
   }

@@ -33,6 +33,11 @@ export interface SearchResult {
   concepts: Concept[];
   /** Total matches when the provider can supply a reliable value. */
   total?: number;
+  /**
+   * Items of this page that the provider received but hid, for example
+   * through a FHIR provider's `codePattern`. `total` still counts them.
+   */
+  filteredOut?: number;
 }
 
 export type TerminologyRequestErrorKind =
@@ -59,7 +64,21 @@ export interface TerminologyProvider {
   /** Version of the installed npm terminology package. */
   readonly packageVersion?: string;
   readonly packageMetadata?: PackageMetadata;
+  /**
+   * `'api'` for a provider that sends searches to a terminology server; the
+   * properties panel throttles its searches (`serverSearchDebounceMs`,
+   * `serverSearchMinLength`). `'package'` for bundled package data. A custom
+   * provider that queries a server should report `'api'`.
+   */
   readonly sourceType?: 'api' | 'package';
+  /**
+   * `true` for a provider whose searches may reach a terminology server
+   * although it does not report `sourceType: 'api'`, such as a
+   * `FallbackProvider` (offline package with FHIR fallback). The properties
+   * panel throttles its searches like those of an `'api'` provider; the
+   * dropdown label still follows `sourceType`.
+   */
+  readonly remoteSearch?: boolean;
   /** Package source label, usually `packageName@packageVersion`. */
   readonly sourceLabel?: string;
   /** Dynamic resource or package name; explicit sourceName overrides it. */
@@ -108,6 +127,14 @@ export interface FhirProviderConfig {
   expandParameters?: Record<string, string>;
   /** Extra `$lookup` parameters, for example `{ version: '2026' }`. */
   lookupParameters?: Record<string, string>;
+  /**
+   * Show only search results whose code matches this pattern. The default
+   * `loinc` provider sets `'^\\d{1,7}-\\d$'` (LOINC term codes, no Parts,
+   * Answers, groups or answer lists). The filter runs on each page the server
+   * returns, so a page may hold fewer items while `offset` and `total` stay
+   * the server's. `null` or `''` disables it. Lookups are not filtered.
+   */
+  codePattern?: RegExp | string | null;
 }
 
 export interface PackageProviderConfig extends PackageProviderOptions {
@@ -194,14 +221,28 @@ export interface SnomedProviderConfig {
    * Explicit ValueSet URI for `$expand`; overrides the one derived from
    * `edition`. An implicit SNOMED CT value set such as
    * `http://snomed.info/sct/11000274103?fhir_vs=isa/404684003` also scopes
-   * `$lookup` to that edition; any other value set leaves `$lookup` unscoped
-   * unless `edition` or `lookupParameters.version` is set.
+   * `$lookup` to that edition, unless `edition` is set too: `edition` then
+   * scopes `$lookup`, and the console warns once if the two name different
+   * editions or releases. Any other value set, including
+   * `http://snomed.info/sct?fhir_vs…` without a module id, leaves `$lookup`
+   * unscoped unless `edition` or `lookupParameters.version` is set, and the
+   * console warns once.
    */
   valueSetUri?: string;
+  /**
+   * Extra `$expand` parameters for the FHIR transport, merged over the
+   * default `{ activeOnly: 'true' }`. `{ activeOnly: 'false' }` also returns
+   * inactive concepts.
+   */
+  expandParameters?: Record<string, string>;
   lookupParameters?: Record<string, string>;
   displayName?: string;
   fetchFn?: typeof fetch;
-  /** Snowstorm edition branch, without the `/concepts` path. */
+  /**
+   * Snowstorm edition branch, without the `/concepts` path, for example
+   * `MAIN/SNOMEDCT-DE`. Required for the Snowstorm transport: there is no
+   * default branch, and without one SNOMED CT stays disabled.
+   */
   branch?: string;
   /**
    * Snowstorm transport only. The FHIR transport uses the package language
@@ -231,6 +272,18 @@ export interface TerminologyPropertiesPanelConfig {
   includeTypes?: string[];
   /** Exclude matching BPMN types; exclusions take precedence over inclusions. */
   excludeTypes?: string[];
+  /**
+   * Milliseconds a search with a provider that queries a terminology server
+   * (`sourceType: 'api'` or `remoteSearch: true`) waits after the last
+   * keystroke (default `300`); only the last term is sent. `0` searches on
+   * every keystroke. Local providers always search at once.
+   */
+  serverSearchDebounceMs?: number;
+  /**
+   * Minimum number of characters before such a provider is queried (default
+   * `3`); shorter terms show a hint. Local providers search from one character.
+   */
+  serverSearchMinLength?: number;
 }
 
 export interface DefaultTerminologyConfig {

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { applyServerNotice } from '../../../demo/src/server-notice.js';
 import { describeDemoTerminologyServer } from '../../../demo/src/terminology-config.js';
+import { visibleText } from './visible-text.js';
 
 const DEMO_HTML_PATH = resolve(import.meta.dirname, '../../../demo/index.html');
 const DEMO_HTML = readFileSync(DEMO_HTML_PATH, 'utf8');
@@ -14,16 +15,6 @@ function loadDemoDocument() {
 
 function all(selector) {
   return [ ...document.querySelectorAll(selector) ];
-}
-
-function visibleText(node) {
-  const clone = node.cloneNode(true);
-
-  for (const hidden of clone.querySelectorAll('[hidden]')) {
-    hidden.remove();
-  }
-
-  return clone.textContent.replace(/\s+/g, ' ').trim();
 }
 
 function isShown(node) {
@@ -37,9 +28,15 @@ function isShown(node) {
 }
 
 function privacySection() {
-  return all('.license-dialog__section')
-    .find(section => section.querySelector('h3').textContent.includes('Privacy'))
-    .querySelector('[data-server-mode="configured"]');
+  return document.querySelector('[data-section="privacy"] [data-server-mode="configured"]');
+}
+
+function hostingNotice() {
+  return document.querySelector('[data-section="privacy"] [data-demo-hosting]');
+}
+
+function hostsIn(language) {
+  return all(`[data-i18n][lang="${language}"] [data-demo-server-host]`);
 }
 
 describe('demo terminology server notice', () => {
@@ -51,7 +48,7 @@ describe('demo terminology server notice', () => {
     const banner = document.querySelector('aside.demo-notice');
     const sections = all('.license-dialog__section');
     const sectionOne = sections[0];
-    const privacy = sections.find(section => section.querySelector('h3').textContent.includes('Privacy'));
+    const privacy = document.querySelector('[data-section="privacy"]');
 
     for (const container of [ banner, sectionOne, privacy ]) {
       expect(container.querySelectorAll('[data-server-mode="none"]').length).toBeGreaterThan(0);
@@ -142,26 +139,83 @@ describe('demo terminology server notice', () => {
   it('describes Snowstorm with its own host next to the FHIR host', () => {
     applyServerNotice(document, describeDemoTerminologyServer({
       VITE_FHIR_BASE_URL: 'https://tx.fhir.de/fhir',
-      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
     }));
 
     const snomed = document.querySelector('[data-demo-snomed]');
     expect(isShown(snomed)).toBe(true);
     expect(visibleText(snomed)).toContain('SNOMED CT® is searched on snowstorm.example.test via Snowstorm.');
     expect(visibleText(snomed)).not.toContain('edition 1');
-    expect(all('[data-demo-server-host]').every(
+    expect(hostsIn('en').every(
       node => node.textContent === 'tx.fhir.de and snowstorm.example.test'
     )).toBe(true);
     expect(all('[data-demo-operator="tx.fhir.de"]').every(isShown)).toBe(true);
 
     applyServerNotice(document, describeDemoTerminologyServer({
-      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct'
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
     }));
 
     expect(isShown(document.querySelector('[data-demo-fhir]'))).toBe(false);
     expect(isShown(snomed)).toBe(true);
     expect(all('[data-demo-operator]').some(isShown)).toBe(false);
     expect(all('[data-server-mode="configured"]').every(node => !node.hidden)).toBe(true);
+  });
+
+  it('joins several hosts with "und" in the German text and "and" in the English text', () => {
+    applyServerNotice(document, describeDemoTerminologyServer({
+      VITE_FHIR_BASE_URL: 'https://tx.fhir.de/fhir',
+      VITE_SNOWSTORM_BASE_URL: 'https://snowstorm.example.test/snomed-ct',
+      VITE_SNOWSTORM_BRANCH: 'MAIN/SNOMEDCT-DE'
+    }));
+
+    expect(hostsIn('de').length).toBeGreaterThanOrEqual(3);
+    expect(hostsIn('en').length).toBe(hostsIn('de').length);
+    expect(all('[data-demo-server-host]').length).toBe(hostsIn('de').length + hostsIn('en').length);
+    expect(hostsIn('de').every(node => node.textContent === 'tx.fhir.de und snowstorm.example.test')).toBe(true);
+    expect(hostsIn('en').every(node => node.textContent === 'tx.fhir.de and snowstorm.example.test')).toBe(true);
+
+    const banner = document.querySelector('aside.demo-notice');
+    expect(visibleText(banner, 'de')).toContain('an tx.fhir.de und snowstorm.example.test.');
+    expect(visibleText(banner, 'en')).toContain('to tx.fhir.de and snowstorm.example.test.');
+  });
+
+  describe('GitHub Pages hosting notice', () => {
+    const OPT_IN = { fhirBaseUrl: 'https://tx.fhir.de/fhir', fhirHost: 'tx.fhir.de', snomed: null, optIn: true };
+
+    it('is shown, in both languages, without a server', () => {
+      applyServerNotice(document, null);
+
+      expect(isShown(hostingNotice())).toBe(true);
+      expect(visibleText(hostingNotice())).toContain('The page is hosted on GitHub Pages');
+      expect(visibleText(hostingNotice(), 'de')).toContain('Die Seite wird auf GitHub Pages bereitgestellt');
+      expect([ ...hostingNotice().querySelectorAll('a') ].map(link => link.href)).toContain(
+        'https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement'
+      );
+    });
+
+    it('stays shown while the live search is on and after it is switched off again', () => {
+      applyServerNotice(document, OPT_IN);
+
+      expect(all('[data-section="privacy"] [data-server-mode="none"]').every(node => node.hidden)).toBe(true);
+      expect(isShown(hostingNotice())).toBe(true);
+      expect(visibleText(hostingNotice())).toContain('GitHub processes technical data such as your IP address');
+
+      applyServerNotice(document, { ...OPT_IN, snomed: { transport: 'fhir', edition: '11000274103', host: 'tx.fhir.de' } });
+      expect(isShown(hostingNotice())).toBe(true);
+
+      applyServerNotice(document, null);
+      expect(isShown(hostingNotice())).toBe(true);
+    });
+
+    it('is hidden only for a local build with a server configured at build time', () => {
+      applyServerNotice(document, describeDemoTerminologyServer({
+        VITE_FHIR_BASE_URL: 'https://tx.fhir.de/fhir'
+      }));
+
+      expect(isShown(hostingNotice())).toBe(false);
+    });
   });
 
   it('switches back to the serverless variant', () => {
@@ -228,6 +282,19 @@ describe('demo terminology server notice', () => {
     expect(privacy).not.toContain('The software is provided by');
 
     expect(isShown(document.querySelector('[data-demo-snomed]'))).toBe(false);
+
+    // The German variant says the same.
+    const bannerDe = visibleText(document.querySelector('aside.demo-notice'), 'de');
+    expect(bannerDe).toContain('Live-Suche ist an:');
+    expect(bannerDe).toContain('LOINC®, ICD-10-GM, OPS und ATC ab drei Zeichen');
+    expect(bannerDe).toContain('an tx.fhir.de.');
+    expect(bannerDe).not.toContain('Lokale Vorschau');
+    expect(bannerDe).not.toContain('SNOMED');
+
+    const privacyDe = visibleText(privacySection(), 'de');
+    expect(privacyDe).toContain('Art. 6 Abs. 1 lit. a DSGVO');
+    expect(privacyDe).toContain('Verantwortlich für diese Demo und für die Einholung Ihrer Einwilligung: Technische Universität Dresden');
+    expect(privacyDe).not.toContain('Die Software wird bereitgestellt von');
   });
 
   it('mentions the SNOMED CT self-declaration only in the opt-in variant', () => {
@@ -244,6 +311,8 @@ describe('demo terminology server notice', () => {
     expect(isShown(snomedItem)).toBe(true);
     expect(visibleText(snomedItem)).toContain('(edition 11000274103, release 20260815)');
     expect(visibleText(snomedItem)).toContain('You unlocked it with a self-declaration');
+    expect(visibleText(snomedItem, 'de')).toContain('(Edition 11000274103, Release 20260815)');
+    expect(visibleText(snomedItem, 'de')).toContain('Sie haben es mit einer Selbstauskunft freigeschaltet');
 
     applyServerNotice(document, describeDemoTerminologyServer({
       VITE_FHIR_BASE_URL: 'https://tx.fhir.de/fhir',

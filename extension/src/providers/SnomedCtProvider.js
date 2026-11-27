@@ -1,7 +1,8 @@
 import { TerminologyProvider } from '../core/TerminologyProvider.js';
 import {
   SnowstormAdapter,
-  resolveSnowstormBaseUrl
+  resolveSnowstormBaseUrl,
+  resolveSnowstormBranch
 } from '../adapters/SnowstormAdapter.js';
 
 function applyProviderVersion(concept, version) {
@@ -20,7 +21,9 @@ export class SnomedCtProvider extends TerminologyProvider {
   /**
    * @param {Object} config
    * @param {string} config.baseUrl - Snowstorm base URL
-   * @param {string} [config.branch='MAIN'] - SNOMED edition branch
+   * @param {string} [config.branch] - Branch of the SNOMED CT edition your
+   *   licence covers, for example `'MAIN/SNOMEDCT-DE'`. Without it the provider
+   *   queries `MAIN` (the International Edition) and the console warns once.
    * @param {string} [config.language='en']
    * @param {string} [config.languageStrategy='header']
    * @param {number} [config.maxResults=15]
@@ -40,7 +43,7 @@ export class SnomedCtProvider extends TerminologyProvider {
     /** @internal */
     this._sourceLabel = new URL(resolveSnowstormBaseUrl(config.baseUrl)).host;
     /** @internal */
-    this._branch = config.branch || 'MAIN';
+    this._branch = resolveSnowstormBranch(config.branch, 'SnomedCtProvider');
     /** @internal */
     this._version = config.version;
     /** @internal */

@@ -68,6 +68,9 @@
  * @typedef {Object} SearchResult - One page of terminology search results.
  * @property {Concept[]} concepts - Matching concepts in provider order.
  * @property {number} [total] - Total matches when the provider can supply it
+ * @property {number} [filteredOut] - Items of this page that the provider
+ *   received but hid, for example through a FHIR provider's `codePattern`.
+ *   `total` still counts them.
  * @category Core types
  */
 

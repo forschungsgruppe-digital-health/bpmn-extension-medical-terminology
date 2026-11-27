@@ -3,6 +3,13 @@
   display: none !important;
 }
 
+/* German and English texts sit side by side (src/i18n.js): show only the
+ * language that <html data-ui-lang> names. */
+html[data-ui-lang="de"] [data-i18n]:not([lang="de"]),
+html[data-ui-lang="en"] [data-i18n]:not([lang="en"]) {
+  display: none !important;
+}
+
 /* ─── Reset & Base ──────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -204,6 +211,51 @@ body {
   color: var(--notice-accent);
 }
 
+/* DE | EN switch, in the banner and in each dialog's header. */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.demo-notice .lang-switch {
+  margin-left: auto;
+}
+
+.lang-switch__btn {
+  padding: 3px 5px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--bpmn-text-dim);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.lang-switch__btn:hover {
+  color: var(--bpmn-accent-hover);
+}
+
+.lang-switch__btn[aria-pressed="true"] {
+  background: hsl(0, 0%, 100%);
+  border-color: var(--bpmn-accent);
+  color: var(--bpmn-accent);
+}
+
+.lang-switch__btn:focus-visible {
+  outline: 2px solid var(--bpmn-focus);
+  outline-offset: 1px;
+}
+
+.lang-switch__sep {
+  color: var(--bpmn-border);
+}
+
 @media (max-width: 720px) {
   .demo-notice {
     padding: 6px 12px 6px 16px;
@@ -298,6 +350,13 @@ body {
   line-height: 1.3;
 }
 
+.license-dialog__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .license-dialog__close {
   background: none;
   border: none;
@@ -353,6 +412,14 @@ body {
 .license-dialog__section > div[data-server-mode],
 .license-dialog__section > div[data-server-mode] > * + * {
   margin-top: 6px;
+}
+
+/* A notice quoted in its prescribed wording, set off from the remarks. */
+.license-dialog__notice {
+  display: block;
+  margin: 3px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--bpmn-divider);
 }
 
 .license-dialog__list {

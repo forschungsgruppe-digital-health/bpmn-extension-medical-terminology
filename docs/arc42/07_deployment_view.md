@@ -57,8 +57,13 @@ Pages. The demo imports synthetic BPMN samples from `examples/valid/` and uses
 the extension's default terminology services. The Pages build sets only one
 terminology variable, `VITE_OPT_IN_FHIR_BASE_URL`, taken from the repository
 variable `DEMO_OPT_IN_FHIR_BASE_URL`; while that variable is unset or empty, the
-public demo offers no live search. The `docs-preview.yml` artifact build sets
-`VITE_OPT_IN_FHIR_BASE_URL=https://tx.fhir.de/fhir` directly. The public demo
+public demo offers no live search. The `docs-preview.yml` artifact build reads
+the same repository variable, so the artifact offers no live search either while
+it is unset or empty; `tools/check-demo-gates.mjs` (`npm run check:demo-gates`)
+fails PR validation, the Pages build and the preview build when a workflow or a
+committed env file sets another demo terminology variable, or sets
+`VITE_OPT_IN_FHIR_BASE_URL` to anything but that repository variable. The public
+demo
 therefore contacts no terminology server by default and offers only the bundled
 code systems. If the build names tx.fhir.de, a visitor can switch on a live
 search for LOINC, ICD-10-GM, OPS and ATC with separate consent

@@ -12,12 +12,15 @@ import {
   setupLiveSearch,
   storeLiveSearchConsent
 } from '../../../demo/src/live-search.js';
+import { setupLanguageSwitch } from '../../../demo/src/i18n.js';
 import { LICENSE_NOTICE_ACK_KEY, setupLicenseNotice } from '../../../demo/src/license-notice.js';
+import { isShown as isShownInLanguage } from '../../../demo/src/modal.js';
 import { applyServerNotice } from '../../../demo/src/server-notice.js';
 import { createDemoOptInProviders } from '../../../demo/src/terminology-config.js';
 import { FhirTerminologyAdapter } from '../../src/adapters/FhirTerminologyAdapter.js';
 import { TerminologyRegistry } from '../../src/core/TerminologyRegistry.js';
 import { FhirProvider } from '../../src/providers/FhirProvider.js';
+import { visibleText } from './visible-text.js';
 
 // The package root pulls in the properties panel, which Node cannot load
 // without bundling; the opt-in path needs only the config helpers.
@@ -102,16 +105,6 @@ function isShown(node) {
   }
 
   return true;
-}
-
-function visibleText(node) {
-  const clone = node.cloneNode(true);
-
-  for (const hidden of clone.querySelectorAll('[hidden]')) {
-    hidden.remove();
-  }
-
-  return clone.textContent.replace(/\s+/g, ' ').trim();
 }
 
 function all(selector) {
@@ -426,6 +419,9 @@ describe('setupLiveSearch with the demo page', () => {
   }
 
   beforeEach(() => {
+    // The page language lives on <html>, which innerHTML does not replace.
+    document.documentElement.removeAttribute('lang');
+    document.documentElement.removeAttribute('data-ui-lang');
     document.documentElement.innerHTML = DEMO_HTML;
     registry = new TerminologyRegistry();
     storage = memoryStorage();
@@ -568,6 +564,79 @@ describe('setupLiveSearch with the demo page', () => {
     expect(isShown(licence())).toBe(true);
     expect(licence().hasAttribute('inert')).toBe(false);
     expect(document.activeElement).toBe($('btn-license-accept'));
+  });
+
+  it('returns focus to the opener in the shown language after a switch inside the consent dialog', async () => {
+    setupAcknowledgedLicence();
+    const controller = setup();
+
+    setupLanguageSwitch({ doc: document, languages: [ 'de-DE' ] });
+    $('btn-license-notice').click();
+
+    const link = language => document.querySelector(
+      `#license-overlay [data-server-mode="none"] [data-i18n][lang="${language}"] [data-live-search-open]`
+    );
+    const switchTo = language => {
+      const button = overlay().querySelector(`[data-lang-switch="${language}"]`);
+
+      button.focus();
+      button.click();
+      expect(document.documentElement.getAttribute('data-ui-lang')).toBe(language);
+    };
+    const openFrom = language => {
+      link(language).focus();
+      link(language).click();
+      expect(isShown(overlay())).toBe(true);
+    };
+    const expectFocusOn = node => {
+      expect(isShown(overlay())).toBe(false);
+      expect(isShown(licence())).toBe(true);
+      expect(document.activeElement).toBe(node);
+      expect(isShownInLanguage(document.activeElement)).toBe(true);
+    };
+
+    openFrom('de');
+    switchTo('en');
+    expect(isShownInLanguage(link('de'))).toBe(false);
+    $('btn-live-search-cancel').click();
+    expectFocusOn(link('en'));
+
+    openFrom('en');
+    switchTo('de');
+    pressEscape($('btn-live-search-cancel'));
+    expectFocusOn(link('de'));
+
+    openFrom('de');
+    switchTo('en');
+    overlay().dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expectFocusOn(link('en'));
+
+    // Without a switch, focus goes back to the opener itself.
+    openFrom('en');
+    $('btn-live-search-cancel').click();
+    expectFocusOn(link('en'));
+
+    // Switched on from a link whose variant is hidden now: the link hides
+    // itself, so focus moves to the open licence dialog.
+    openFrom('en');
+    switchTo('de');
+    $('btn-live-search-enable').click();
+    await vi.waitFor(() => expect(controller.isActive()).toBe(true));
+    await flush();
+    expect(isShown(licence())).toBe(true);
+    expect(document.activeElement).toBe($('btn-license-accept'));
+
+    // The active-state links of the licence dialog behave the same.
+    const optInLink = language => document.querySelector(
+      `#license-overlay [data-i18n][lang="${language}"] [data-demo-mode="opt-in"] [data-live-search-open]`
+    );
+
+    optInLink('de').focus();
+    optInLink('de').click();
+    expect(document.activeElement).toBe($('btn-live-search-close'));
+    switchTo('en');
+    $('btn-live-search-close').click();
+    expectFocusOn(optInLink('en'));
   });
 
   it('leaves providers that were already registered alone', async () => {
@@ -850,7 +919,8 @@ describe('setupLiveSearch with the demo page', () => {
 
     $('btn-live-search-off').click();
 
-    await expect(waiting).resolves.toEqual({ concepts: [], total: 0 });
+    // The provider may add bookkeeping fields such as `filteredOut`.
+    await expect(waiting).resolves.toMatchObject({ concepts: [], total: 0 });
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(networkFetch).not.toHaveBeenCalled();
   });

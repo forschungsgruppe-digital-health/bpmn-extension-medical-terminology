@@ -70,6 +70,10 @@ export default defineConfig({
       editLink: { baseUrl: `${REPO}/edit/main/docs-site/` },
       social: [{ icon: 'github', label: 'GitHub', href: REPO }],
       customCss: ['./src/styles/custom.css'],
+      // Adds the imprint link of TU Dresden below every page.
+      components: {
+        Footer: './src/components/Footer.astro'
+      },
 
       plugins: [
         starlightTypeDoc({

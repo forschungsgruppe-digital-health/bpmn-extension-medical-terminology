@@ -1,0 +1,26 @@
+---
+// Starlight's footer (edit link, last updated, pagination) followed by a link
+// to the imprint of TU Dresden, so that every page of the site carries it.
+// Registered as the `Footer` override in astro.config.mjs.
+import Default from '@astrojs/starlight/components/Footer.astro';
+---
+
+<Default><slot /></Default>
+<p class="site-imprint">
+  <a href="https://tu-dresden.de/impressum">Impressum</a>
+</p>
+
+<style>
+  .site-imprint {
+    margin-top: 1.5rem;
+    font-size: var(--sl-text-sm);
+    text-align: center;
+    color: var(--sl-color-gray-3);
+  }
+  .site-imprint a {
+    color: inherit;
+  }
+  .site-imprint a:hover {
+    color: var(--sl-color-white);
+  }
+</style>

@@ -15,20 +15,25 @@
 
        Terminology notices (the codes below are illustrative examples):
        This material includes SNOMED Clinical Terms® (SNOMED CT®) which is
-       used by permission of SNOMED International. All rights reserved.
-       SNOMED CT®, was originally created by The College of American
-       Pathologists. "SNOMED" and "SNOMED CT" are registered trademarks of
-       SNOMED International. SNOMED CT edition: German National Edition
-       (http://snomed.info/sct/11000274103/version/20260815). Using SNOMED CT
-       requires an Affiliate Licence (in Germany via BfArM / MLDS).
+       used by permission of the International Health Terminology Standards
+       Development Organisation (IHTSDO). All rights reserved. SNOMED CT®,
+       was originally created by The College of American Pathologists.
+       "SNOMED" and "SNOMED CT" are registered trademarks of the IHTSDO.
+       The IHTSDO trades as SNOMED International. SNOMED CT edition: German
+       National Edition (http://snomed.info/sct/11000274103/version/20260815).
+       Using SNOMED CT requires an Affiliate Licence (in Germany via BfArM /
+       MLDS).
        This material contains content from LOINC (http://loinc.org). LOINC is
        copyright © Regenstrief Institute, Inc. and the Logical Observation
        Identifiers Names and Codes (LOINC) Committee and is available at no
        cost under the license at http://loinc.org/license. LOINC® is a
        registered United States trademark of Regenstrief Institute, Inc.
-       OPS (version 2026): © BfArM. Die Erstellung erfolgt unter
-       Verwendung der maschinenlesbaren Fassung des Bundesinstituts
-       für Arzneimittel und Medizinprodukte (BfArM).
+       OPS (version 2026): Herausgegeben vom Bundesinstitut für
+       Arzneimittel und Medizinprodukte (BfArM) im Auftrag des
+       Bundesministeriums für Gesundheit (BMG)
+       Die Erstellung bzw. der Druck erfolgt unter Verwendung der
+       maschinenlesbaren Fassung des Bundesinstituts für Arzneimittel und
+       Medizinprodukte (BfArM).
        ATC-GM (version 2026): Das Wissenschaftliche Institut der AOK
        (WIdO) ist Urheber der ATC-GM mit DDD, die auf dem vom WHO
        Collaborating Centre for Drug Statistics Methodology
@@ -36,6 +41,9 @@
        Guidelines for ATC Classification and DDD Assignment“ beruht.
        Die amtliche Veröffentlichung erfolgt durch das Bundesinstitut
        für Arzneimittel und Medizinprodukte (BfArM).
+       KDL (version 2026.0.0): Copyright 2013–2018 DMI GmbH & Co. KG; since
+       2018 DVMD e.V. GPL-3.0-or-later; the KDL is provided without any
+       warranty (https://www.gnu.org/licenses/gpl-3.0.html).
        ============================================================ -->
 
   <bpmn2:process id="Process_LungCaMin" name="Lung Cancer Treatment Decision" isExecutable="false">

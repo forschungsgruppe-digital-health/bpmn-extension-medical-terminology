@@ -90,6 +90,12 @@ jobs:
       - name: Release version consistency
         run: npm run check:versions
 
+      # Blocking gate: the bundled HL7 code systems match what the generator
+      # produces from the installed hl7.terminology.r4, so third-party code
+      # systems it excludes cannot slip back into the package.
+      - name: Bundled HL7 code systems are current
+        run: npm run generate:hl7:check
+
       # Blocking gate: no high/critical CVEs in *production* (shipped) dependencies.
       # Dev-only advisories are tracked separately and do not block here. The
       # upstream npm package named hl7.fhir.r4.core is malicious (GHSA-qg8x-2hq5-hwf3),

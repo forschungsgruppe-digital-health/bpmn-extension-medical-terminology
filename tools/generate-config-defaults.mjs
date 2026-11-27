@@ -127,12 +127,29 @@ for (const provider of snomedRows) {
   );
 }
 const exampleStoredVersion = read(pinnedSnomedConfig.providers?.[0], 'version');
+const snomedExpandParameters = read(configuredConfig.providers?.[0], '_adapter')?._expandParameters || {};
+const snomedExpandList = Object.entries(snomedExpandParameters)
+  .map(([name, value]) => code(`${name}=${value}`))
+  .join(', ');
 lines.push('');
 lines.push('The first row is `snomedConfig: { edition }` alone, the second adds');
 lines.push(`\`editionVersion: '${EXAMPLE_SNOMED_RELEASE}'\`. Each coding stores the release the server reports`);
 lines.push(`for it, for example \`${exampleStoredVersion}\`. The provider has a version label`);
 lines.push('only when `editionVersion` pins a release; only then are stored codings of another release');
 lines.push('marked "Version unavailable".');
+lines.push('');
+if (snomedExpandList) {
+  lines.push(`Every \`$expand\` request of the SNOMED CT provider over FHIR sends ${snomedExpandList}, so`);
+  lines.push('searches return active concepts only; `snomedConfig.expandParameters` is merged over it.');
+  lines.push('The Snowstorm transport has no default branch: without `snomedConfig.branch` it stays');
+  lines.push('disabled, because `MAIN` holds the International Edition.');
+  lines.push('');
+}
+lines.push(':::caution[Breaking change: Snowstorm needs a branch]');
+lines.push('Earlier releases defaulted to `branch: \'MAIN\'`. A `transport: \'snowstorm\'` configuration without');
+lines.push('`snomedConfig.branch` now leaves SNOMED CT disabled; add the branch of the edition your licence');
+lines.push('covers, for example `\'MAIN/SNOMEDCT-DE\'`.');
+lines.push(':::');
 lines.push('');
 lines.push('## FHIR-backed code systems');
 lines.push('');
@@ -162,6 +179,16 @@ lines.push('(`used-codesystem` in `$expand`, the `version` output of `$lookup`).
 lines.push('because a hard-coded year stops working once a server drops that release. To pin one, see');
 lines.push('[Pin a release](/configuration/terminology-server/#pin-a-release).');
 lines.push('');
+const filteredEntries = (configuredConfig.fhirProviders || []).filter(entry => entry.codePattern);
+for (const entry of filteredEntries) {
+  lines.push(`\`${entry.id}\` shows only codes that match the \`codePattern\` ${code(entry.codePattern)}; set`);
+  lines.push(`\`fhirProviderOverrides: [{ id: '${entry.id}', codePattern: null }]\` to show every code the value set`);
+  lines.push('expands.');
+  if (entry.id === 'loinc') {
+    lines.push('This default is new: earlier releases also offered LOINC Parts and Answers.');
+  }
+  lines.push('');
+}
 const atcEntry = (configuredConfig.fhirProviders || []).find(entry => entry.id === 'atc');
 if (atcEntry) {
   lines.push(':::caution[Breaking change: ATC is ATC-GM]');
@@ -179,7 +206,8 @@ lines.push('(SNODENT, the ADA tooth codes, the NUCC provider taxonomy and the W3
 lines.push('Automatic package discovery');
 lines.push('(the Vite plugin, `fdh-terminology-discover` and `packageAutoDiscovery`) leaves them out as');
 lines.push('well; only an explicit package selection imports them. IHE XDS and KDL are imported');
-lines.push('directly from their installed FHIR packages, which declare no licence. See');
+lines.push('directly from their installed FHIR packages, whose manifests declare no licence; DVMD states');
+lines.push('GPL-3.0-or-later for the KDL in its implementation guide. See');
 lines.push('[Licensing](/licensing/) and the package\'s `THIRD_PARTY_NOTICES.md`.');
 lines.push('');
 lines.push('| Id | Display name | Package | Package version |');
@@ -219,6 +247,14 @@ lines.push(`| \`showAnnotations\` | ${code(panelConfig.showAnnotations)} |`);
 lines.push(`| \`showBadges\` | ${code(panelConfig.showBadges)} |`);
 lines.push(`| \`includeTypes\` | ${code(JSON.stringify(panelConfig.includeTypes))} |`);
 lines.push(`| \`excludeTypes\` | ${code(JSON.stringify(panelConfig.excludeTypes))} |`);
+lines.push(`| \`serverSearchDebounceMs\` | ${code(panelConfig.serverSearchDebounceMs)} |`);
+lines.push(`| \`serverSearchMinLength\` | ${code(panelConfig.serverSearchMinLength)} |`);
+lines.push('');
+lines.push('`serverSearchDebounceMs` and `serverSearchMinLength` apply only to providers that query a');
+lines.push('terminology server (`sourceType: \'api\'` or `remoteSearch: true`); see');
+lines.push('[Search throttling](/configuration/terminology-server/#search-throttling).');
+lines.push('Both defaults are new: earlier releases searched from the first character on every keystroke.');
+lines.push('`serverSearchMinLength: 1` and `serverSearchDebounceMs: 0` restore that behaviour.');
 lines.push('');
 lines.push('Default `targetTypes`:');
 lines.push('');

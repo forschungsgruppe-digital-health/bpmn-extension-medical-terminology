@@ -1,4 +1,4 @@
-import { inertBackground, refocus } from './modal.js';
+import { inertBackground, refocus, restoreFocus } from './modal.js';
 
 /**
  * Optional SNOMED CT unlock for the public demo's live search.
@@ -191,7 +191,9 @@ export function setupSnomedUnlock({
     overlay.hidden = true;
     restoreBackground?.();
     restoreBackground = null;
-    lastFocus?.focus?.();
+    restoreFocus(doc, lastFocus, [
+      'btn-snomed-open', 'btn-snomed-lock', 'btn-live-search-details', 'btn-license-notice'
+    ]);
     lastFocus = null;
   }
 

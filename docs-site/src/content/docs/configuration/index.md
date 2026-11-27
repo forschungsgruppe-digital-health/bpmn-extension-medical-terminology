@@ -14,7 +14,7 @@ Configuration is split across three layers:
 | Layer | Configured via | Page |
 | --- | --- | --- |
 | **Terminology services & providers** (servers, auth, offline mode, overrides, fallbacks) | `createDefaultTerminologyModule(options)` | **This page** |
-| **Properties panel & UI** (supported BPMN element types, initial `MT` badge visibility, hiding the panel, error events) | `createTerminologyPropertiesPanelModule(options)` | [Properties panel](/properties-panel/#options) |
+| **Properties panel & UI** (supported BPMN element types, initial `MT` badge visibility, hiding the panel, error events, [search throttling](/configuration/terminology-server/#search-throttling)) | `createTerminologyPropertiesPanelModule(options)` | [Properties panel](/properties-panel/#options) |
 | **Build-time & runtime FHIR packages** (Vite plugin, CLI, custom CodeSystem bundles) | `terminologyVitePlugin()` / `fdh-terminology-discover` / `packageDiscovery` | [Terminology packages](/configuration/discovery/) |
 
 :::caution
@@ -29,10 +29,10 @@ through GitHub Packages, while release candidates are staged on npm. See
 | --- | --- | --- |
 | `serverConfig` | Override `fhirBaseUrl`, `snomedBaseUrl`, or `snowstormBaseUrl` | [Terminology servers](#terminology-servers) |
 | `fetchFn` | Route requests through your backend, attach cookies/tokens, or use mTLS | [Terminology servers](#terminology-servers) |
-| `snomedConfig` | Set the SNOMED CT `edition` (or an explicit `valueSetUri`; one is required for FHIR) and `editionVersion`; set `auth`, `headers`, `requestTimeoutMs`, `maxResults`, and a `version` label; switch to Snowstorm and set its `branch`, `language`, `languageStrategy`, `defaultEcl` (Snowstorm only) | [SNOMED CT, Snowstorm & language](#snomed-ct-snowstorm-and-result-language) |
+| `snomedConfig` | Set the SNOMED CT `edition` (or an explicit `valueSetUri`; one is required for FHIR) and `editionVersion`; add `expandParameters` (default `activeOnly: 'true'`); set `auth`, `headers`, `requestTimeoutMs`, `maxResults`, and a `version` label; switch to Snowstorm and set its `branch` (required), `language`, `languageStrategy`, `defaultEcl` (Snowstorm only) | [SNOMED CT, Snowstorm & language](#snomed-ct-snowstorm-and-result-language) |
 | `enableSnomed`, `enableFhirDefaults`, `enablePackageDefaults` | Turn whole provider groups on or off (offline-only or server-only) | [Offline-only and server-only setups](#offline-only-and-server-only-setups) |
 | `disabledProviderIds` | Disable specific built-in providers by ID | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
-| `fhirProviderOverrides` | Override parameters, URLs, auth, headers, or timeouts for built-in FHIR providers | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
+| `fhirProviderOverrides` | Override parameters, URLs, auth, headers, timeouts, or the `codePattern` result filter for built-in FHIR providers | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
 | `additionalFhirProviders` | Register extra FHIR CodeSystems | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
 | `packageProviderOptions` | Override labels or metadata of bundled presets (`kdl`, `ihe-xds-*`, `hl7-*`) | [Bundled package presets & fallbacks](#bundled-package-presets-and-fallbacks) |
 | `additionalPackageProviders` | Register extra package providers or offline-with-FHIR fallback providers | [Bundled package presets & fallbacks](#bundled-package-presets-and-fallbacks) |
@@ -116,8 +116,18 @@ and each selected concept stores the release the server reports, for example
 example `'20260815'`) to pin one release, or set `snomedConfig.valueSetUri` yourself for a
 narrower implicit value set. An implicit value set such as
 `http://snomed.info/sct/11000274103?fhir_vs=isa/404684003` names the edition, and lookups use
-it. For any other value set, set `lookupParameters.version` yourself; otherwise lookups answer
-from the server's default edition.
+it (or `edition`, if you set both; the console warns once when the two differ). An implicit value
+set without a module id, such as `http://snomed.info/sct?fhir_vs=isa/404684003`, always expands
+the server's default edition, and the console asks for the module id. Any other value set names no
+edition, and the console warns once: which edition searches use, and which version is stored with
+each coding, then depends on the value set's definition (`compose.include.version`) or, if it pins
+none, on the server's default edition. Make sure the value set pins the edition your licence
+covers. Lookups are scoped to an edition only if you also set `edition` or
+`lookupParameters.version`; neither changes searches or the stored version.
+
+Searches with SNOMED CT over FHIR send `activeOnly=true`, so inactive concepts are not offered.
+`snomedConfig.expandParameters` is merged over that default; `{ activeOnly: 'false' }` includes
+inactive concepts again.
 
 ### Separate server for SNOMED CT
 
@@ -207,7 +217,10 @@ in its preflight response; some public servers allow only `Authorization`. See
 ### Snowstorm instead of FHIR for SNOMED CT
 
 There is no public Snowstorm default; supply `snomedConfig.baseUrl` (or
-`serverConfig.snowstormBaseUrl` / `serverConfig.snomedBaseUrl`):
+`serverConfig.snowstormBaseUrl` / `serverConfig.snomedBaseUrl`) and `snomedConfig.branch`, the
+branch of the edition your licence covers. There is no default branch: without one, SNOMED CT
+stays disabled and the console warns once, because Snowstorm's `MAIN` branch holds the
+International Edition. Set `branch: 'MAIN'` explicitly only if your licence covers it.
 
 ```js
 const TerminologyModule = createDefaultTerminologyModule({
@@ -322,6 +335,16 @@ const TerminologyModule = createDefaultTerminologyModule({
 });
 ```
 
+`codePattern` (a `RegExp` or a string) shows only search results whose code matches it. The
+built-in `loinc` provider uses `'^\\d{1,7}-\\d$'`, so the LOINC Parts, Answers, groups and answer
+lists that `http://loinc.org/vs` also contains are hidden. The filter runs on each page the
+server returns: a page may show fewer results, while `offset` and `total` stay the server's. The
+search result then reports in `filteredOut` how many items of the page were hidden; the properties
+panel leaves the server's total out of its summary and, if every item of the first page was
+hidden and the server reports more matches than that page held, asks for more search words
+instead of reporting no matches.
+`{ id: 'loinc', codePattern: null }` shows every code again. Lookups are not filtered.
+
 A pinned release must exist on the server. Once the server drops it, searches with that
 provider fail with HTTP 404. Do not pin with `system-version`: value sets that fix the code system
 version themselves, such as the BfArM value sets, ignore it, and the server silently answers
@@ -400,6 +423,10 @@ const TerminologyModule = createDefaultTerminologyModule({
   additionalPackageProviders: [ localWithFallback ]
 });
 ```
+
+Because a search may reach the FHIR server, such a provider reports `remoteSearch: true`, and the
+properties panel throttles its searches as it does for server providers, the local snapshot
+included; see [Search throttling](/configuration/terminology-server/#search-throttling).
 
 ## Dynamic provider loader
 

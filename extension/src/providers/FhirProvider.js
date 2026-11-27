@@ -64,6 +64,30 @@ function deriveVersionLabel(config) {
 }
 
 /**
+ * Compile the `codePattern` option. `undefined`, `null` and `''` disable the
+ * filter. A global or sticky RegExp would keep state between `test()` calls,
+ * so those flags are dropped.
+ *
+ * @param {RegExp | string | null | undefined} codePattern
+ * @returns {RegExp | null}
+ */
+function createCodePattern(codePattern) {
+  if (codePattern === undefined || codePattern === null || codePattern === '') {
+    return null;
+  }
+
+  if (codePattern instanceof RegExp) {
+    return new RegExp(codePattern.source, codePattern.flags.replace(/[gy]/g, ''));
+  }
+
+  if (typeof codePattern === 'string') {
+    return new RegExp(codePattern);
+  }
+
+  throw new TypeError('FhirProvider codePattern must be a RegExp, a regular expression string, null or an empty string.');
+}
+
+/**
  * Generic provider for any code system hosted on a FHIR Terminology Server.
  * Reusable for LOINC, ICD-10-GM, OPS, ATC, ICD-O-3, etc.
  * @category Providers
@@ -84,6 +108,13 @@ export class FhirProvider extends TerminologyProvider {
    *   `lookupParameters` version when omitted
    * @param {Record<string, string>} [config.expandParameters]
    * @param {Record<string, string>} [config.lookupParameters]
+   * @param {RegExp | string | null} [config.codePattern] - Show only search
+   *   results whose code matches this pattern, for example `'^\\d{1,7}-\\d$'`
+   *   for LOINC term codes. The filter runs on each page the server returns,
+   *   so a page may hold fewer than `maxResults` items while `offset` and
+   *   `total` stay the server's; `search` then reports in `filteredOut` how
+   *   many items of the page it hid. `null` or `''` disables it; `lookup` and
+   *   `validate` are not filtered.
    * @param {import('../core/types.js').ConnectionConfig['auth']} [config.auth]
    * @param {typeof fetch} [config.fetchFn]
    */
@@ -103,7 +134,9 @@ export class FhirProvider extends TerminologyProvider {
     this._version = deriveVersionLabel(config);
     /** @internal */
     this._maxResults = config.maxResults || 15;
-    
+    /** @internal */
+    this._codePattern = createCodePattern(config.codePattern);
+
     // Use valueSetUri for the adapter if provided, otherwise fallback to systemUri
     /** @internal */
     this._adapter = new FhirTerminologyAdapter({
@@ -153,7 +186,14 @@ export class FhirProvider extends TerminologyProvider {
       throw error;
     }
     
-    const concepts = result.items || [];
+    // `total` stays the server's count: filtering one page cannot tell how many
+    // matches the whole expansion has. `filteredOut` tells the caller how many
+    // items of this page the pattern hid, so an empty page is not mistaken for
+    // "no matches".
+    const items = result.items || [];
+    const concepts = this._codePattern
+      ? items.filter(concept => this._codePattern.test(concept.code))
+      : items;
 
     // Ensure the returned concepts use the correct CodeSystem URI (not the ValueSet URI)
     concepts.forEach(c => {
@@ -165,7 +205,8 @@ export class FhirProvider extends TerminologyProvider {
     
     return {
       concepts,
-      total: result.total
+      total: result.total,
+      ...(this._codePattern ? { filteredOut: items.length - concepts.length } : {})
     };
   }
 

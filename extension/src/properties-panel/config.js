@@ -5,8 +5,24 @@ export const DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG = Object.freeze({
   showBadges: true,
   targetTypes: Object.freeze([...annotationConfig.targetTypes]),
   includeTypes: Object.freeze([]),
-  excludeTypes: Object.freeze([])
+  excludeTypes: Object.freeze([]),
+  // Searches with a provider that queries a terminology server
+  // (`sourceType: 'api'` or `remoteSearch: true`) wait this long after the
+  // last keystroke and need a term of at least this many characters. Local
+  // providers search at once.
+  serverSearchDebounceMs: 300,
+  serverSearchMinLength: 3
 });
+
+function resolveInteger(config, name, minimum) {
+  const value = config?.[name] ?? DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG[name];
+
+  if (!Number.isSafeInteger(value) || value < minimum) {
+    throw new TypeError(`${name} must be an integer of at least ${minimum}.`);
+  }
+
+  return value;
+}
 
 export function resolveTerminologyPropertiesConfig(config = {}) {
   const targetTypes = config?.targetTypes
@@ -29,6 +45,8 @@ export function resolveTerminologyPropertiesConfig(config = {}) {
       ?? DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG.showBadges,
     targetTypes: [...targetTypes],
     includeTypes: [...includeTypes],
-    excludeTypes: [...excludeTypes]
+    excludeTypes: [...excludeTypes],
+    serverSearchDebounceMs: resolveInteger(config, 'serverSearchDebounceMs', 0),
+    serverSearchMinLength: resolveInteger(config, 'serverSearchMinLength', 1)
   };
 }

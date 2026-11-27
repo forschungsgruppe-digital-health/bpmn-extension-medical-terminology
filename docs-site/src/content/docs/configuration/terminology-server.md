@@ -40,13 +40,47 @@ URLs, override `valueSetUri` per provider.
 The default providers send no version parameter. The server answers from its current release, and
 the extension stores the release the server reports with each coding: the `used-codesystem`
 parameter of the expansion for a search, the `version` output for a lookup. Parameters you add
-through `expandParameters` or `lookupParameters` are appended to the query.
+through `expandParameters` or `lookupParameters` are appended to the query. The SNOMED CT
+provider also sends `activeOnly=true`, so searches return active concepts only; see
+[Add SNOMED CT](#add-snomed-ct).
 
 Requests carry only `Accept: application/fhir+json`, plus the headers the browser adds itself. They
 are CORS simple requests: the browser sends no preflight, and the server only has to answer with an
 `Access-Control-Allow-Origin` header that allows your application's origin. As soon as you add
 `auth` or custom `headers`, the browser first sends a preflight `OPTIONS` request, and the server
 must allow each of those headers explicitly.
+
+## Search throttling
+
+The properties panel limits how often it queries a server. For a provider whose searches may reach
+a terminology server, it sends a search only:
+
+- **from three characters on.** A shorter term sends nothing; the panel asks for more characters,
+  for example "Enter at least 3 characters to search LOINC.";
+- **300 ms after the last keystroke.** While you type, the running request is cancelled and only
+  the last term is sent.
+
+Such providers report `sourceType: 'api'` (the FHIR providers, SNOMED CT over FHIR or Snowstorm,
+and code systems the dynamic loader adds) or `remoteSearch: true`. A `FallbackProvider`, such as an
+offline package with FHIR fallback (`fallbackFhirConfig`), reports `remoteSearch: true` when its
+primary or fallback provider queries a server. Its package searches are throttled too, because the
+panel cannot tell in advance whether the package will answer a term.
+
+Accepting a suggestion with the right arrow key searches its text at once, still subject to the
+minimum length. The bundled code systems and other local providers search at once, from one
+character. Both values are options of the properties-panel module:
+
+```js
+createTerminologyPropertiesPanelModule({
+  serverSearchDebounceMs: 300, // default; 0 searches on every keystroke
+  serverSearchMinLength: 3     // default; 1 searches from the first character
+});
+```
+
+A custom provider that queries a server should report `sourceType: 'api'`, or `remoteSearch: true`
+if it only falls back to one, so that the panel throttles it too; the panel cannot throttle a
+provider that reports neither. The throttling lowers the number of requests and of partial search terms that
+reach the server; it does not replace an arrangement with the operator about the volume you send.
 
 ## Worked example: HL7 Deutschland terminology server
 
@@ -58,13 +92,24 @@ Before you connect it, read its [terms of use](https://tx.fhir.de/de/terms). In 
 
 - Use for FHIR tooling, software development, validation and non-commercial research is permitted.
 - Bulk or high-volume automated querying needs a prior arrangement with the operator.
-- The server is not meant to be the primary terminology server of a production system.
 - The content keeps its publishers' licences, listed on the server's
   [licence page](https://tx.fhir.de/de/licenses). For SNOMED CT you need a valid Affiliate Licence.
 - The [privacy statement of HL7 Deutschland](https://hl7.de/datenschutz/) applies to your requests.
 
+In addition, its [start page](https://tx.fhir.de/de) (checked 27 November 2026) describes the
+server as used mainly for FHIR tooling and validation and not intended as the primary terminology
+server of a production system. The start page also states that the server serves validation only,
+that is, checking that terminologies are used correctly, and that the terminologies it obtains from
+the Zentraler Terminologieserver (ZTS) are kept internally and processed only for validation.
+Whether interactive searches of ICD-10-GM, OPS and ATC-GM through tx.fhir.de, as in this example,
+fit this role is for HL7 Deutschland to say; this project has no confirmation from them. Ask them
+before you rely on it.
+
 Use it to develop and evaluate an integration. In production, use a server your organisation
-operates or has contracted.
+operates or has contracted. The panel's [search throttling](#search-throttling) applies to this
+server as to any other: by default a search is sent from three characters on and 300 ms after the
+last keystroke. Ask HL7 Deutschland before you send higher volumes, for example from an
+application with many users or with shorter throttling settings.
 
 When this page was checked (26 November 2026), the server held, among others:
 
@@ -227,25 +272,46 @@ createDefaultTerminologyModule({
 - **With `valueSetUri` instead of `edition`:** an explicit `snomedConfig.valueSetUri` also enables
   SNOMED CT, and searches expand exactly that value set. Prefer `edition`. If the value set is an
   implicit SNOMED CT value set such as `http://snomed.info/sct/11000274103?fhir_vs`, lookups use
-  the edition named in it. For any other value set, lookups name no edition and the server answers
-  them from its default edition; set `lookupParameters.version` yourself. You are responsible for
-  choosing a value set your licence covers.
+  the edition named in it; if you set `edition` as well, lookups use `edition`, and the console
+  warns once when the two name different editions or releases. `http://snomed.info/sct?fhir_vs…`
+  without a module id always expands the server's default edition, and the console asks for the
+  module id. Any other value set names no edition, and the console warns once
+  (`SNOMED CT value set "…" names no edition`): which edition searches use, and which version is
+  stored with each coding, then depends on the value set's definition (`compose.include.version`)
+  or, if it pins none, on the server's default edition. Make sure the value set pins the edition
+  your licence covers. Lookups are scoped to an edition only if you also set `edition` or
+  `lookupParameters.version`; neither changes searches or the stored version. You are responsible
+  for choosing a value set your licence covers.
 - **Without `edition` or `valueSetUri`:** SNOMED CT stays disabled, and the console says
   `SNOMED CT is disabled: no edition is configured`. A server can therefore never silently answer
   from an edition you did not choose.
+- **Active concepts only:** searches send `activeOnly=true`, because servers otherwise also return
+  inactive concepts. To include them, set `snomedConfig.expandParameters: { activeOnly: 'false' }`.
+  Other `expandParameters` are added to the default.
 
 ### LOINC search tips
 
 The default LOINC value set `http://loinc.org/vs` is the implicit value set of all of LOINC. Besides
-LOINC terms, the observation codes, it contains LOINC Parts (codes starting with `LP`) and Answers
-(`LA`). A server may rank Parts first for one-word searches. On tx.fhir.de, for example, `glucose`
-returns Parts such as `LP32534-7` at the top.
+LOINC terms, the observation codes, it contains LOINC Parts (codes starting with `LP`), Answers
+(`LA`), groups (`LG`) and answer lists (`LL`). The default `loinc` provider therefore shows only
+LOINC term codes: its `codePattern` is `^\d{1,7}-\d$`.
+
+The filter runs on each page of 15 results the server returns; the panel requests only the first
+page. That page can therefore show fewer results. The server's total still counts the hidden Parts
+and Answers, so the panel then leaves it out of its summary ("Showing 4 results"). A server may
+rank Parts first for one-word searches; on tx.fhir.de, for example, `glucose` returns Parts such as
+`LP32534-7` at the top, and the first page may hold no term code at all. If the server reports
+more matches than that page held, the panel then says that the server found matches but the
+provider hides every code on the first page, and asks for more search words, instead of reporting
+no matches.
 
 - **Search with several words.** `glucose serum plasma` lists `2345-7` "Glucose [Masse/Volumen] in
   Serum oder Plasma" among the first results.
-- **Annotate observations with LOINC term codes**, not with `LP` or `LA` codes.
 - **Narrow the search.** Override `valueSetUri` of the `loinc` provider with a smaller value set
   that your server can expand.
+- **Show every code again.** `fhirProviderOverrides: [{ id: 'loinc', codePattern: null }]` turns
+  the filter off. `codePattern` (a `RegExp` or a string) works for any FHIR provider; it filters
+  search results only, not lookups.
 
 ## Self-hosted FHIR terminology server
 
@@ -300,6 +366,13 @@ createDefaultTerminologyModule({
 });
 ```
 
+`branch` is required and names the edition: there is no default branch. Without it, SNOMED CT stays
+disabled and the console says `SNOMED CT is disabled: no Snowstorm branch is configured`, because
+Snowstorm's `MAIN` branch holds the International Edition, which your licence may not cover. Set
+`branch: 'MAIN'` explicitly only if it does. A `SnomedCtProvider` or `SnowstormAdapter` you
+construct yourself without `branch` still queries `MAIN` for compatibility, and the console warns
+once.
+
 `baseUrl` may also be a same-origin route such as `/api/snowstorm/snomed-ct`. The endpoint must be
 redirect-free and, if it is on another origin, allow yours through CORS. Do not call the public
 `https://snowstorm.snomedtools.org/snowstorm/snomed-ct` endpoint from an application: it redirects
@@ -340,9 +413,11 @@ same-origin route there is no preflight.
 By default the
 [public demo](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/demo/)
 contacts no terminology server and searches only the bundled code systems. A build can offer
-each visitor an optional live search:
+each visitor an optional live search. The demo opens in German when the browser prefers German
+over English, otherwise in English, with a DE | EN switch in the banner and in each dialog; the
+labels below are the English ones, with the German label in brackets.
 
-- **Off by default, with separate consent.** *Live search…* in the banner opens its own consent
+- **Off by default, with separate consent.** *Live search…* (*Live-Suche…*) in the banner opens its own consent
   dialog, which states what is sent, to whom, and why. Accepting the licence notice does not
   switch it on.
 - **LOINC, ICD-10-GM, OPS and ATC on tx.fhir.de only.** After consent the demo adds these four
@@ -352,11 +427,14 @@ each visitor an optional live search:
 - **For this browser tab.** The consent is kept in the tab's session storage until the live
   search is turned off or the tab is closed; a reopened or duplicated tab may restore it, and the
   banner then shows that the live search is on. While the live search is on, *Live search
-  details* in the banner reopens the consent information, and *Turn off live search* withdraws
-  the consent and removes the four providers.
+  details* (*Details zur Live-Suche*) in the banner reopens the consent information, and *Turn
+  off live search* (*Live-Suche ausschalten*) withdraws the consent and removes the four
+  providers.
 - **Throttled.** A search reaches the server only from three characters on and about 300 ms
   after you stop typing; while you type, only the last search is sent. Repeated searches are
-  answered from a cache.
+  answered from a cache. The demo delays requests in its own fetch wrapper, which checks the
+  consent right before it sends, and therefore passes `serverSearchDebounceMs: 0` to the
+  properties panel; the panel's three-character minimum still applies.
 - **SNOMED CT unlock (off in public builds).** `VITE_OPT_IN_SNOMED_EDITION` (the module id of
   the edition) and optionally `VITE_OPT_IN_SNOMED_EDITION_VERSION` (a release, `YYYYMMDD`) take
   effect only together with `VITE_OPT_IN_FHIR_BASE_URL`. Only `11000274103` (German National
@@ -366,7 +444,7 @@ each visitor an optional live search:
   after the visitor ticks three self-declaration statements, none of them pre-ticked: an own
   Affiliate Licence for the edition (or use as an end user under one), use in Germany only, and
   evaluation only without patient data. The declaration is not verified, is kept in session storage bound to the host and the
-  edition, and ends with *Lock SNOMED CT* or *Turn off live search*. SNOMED CT is not offered in
+  edition, and ends with *Lock SNOMED CT* (*SNOMED CT sperren*) or *Turn off live search*. SNOMED CT is not offered in
   the public demo: the Pages workflows set no `VITE_OPT_IN_SNOMED_EDITION`. Do not set it in a
   public build of your own unless the body that administers SNOMED CT licences in your country
   (in Germany BfArM) has agreed to this approach; see
@@ -374,9 +452,9 @@ each visitor an optional live search:
 
 The Pages workflow passes the repository variable `DEMO_OPT_IN_FHIR_BASE_URL` to the build as
 `VITE_OPT_IN_FHIR_BASE_URL`; while that variable is unset or empty, the public demo offers no
-live search. The `docs-preview` workflow builds its review artifact with
-`VITE_OPT_IN_FHIR_BASE_URL=https://tx.fhir.de/fhir` directly. Neither sets any of the variables
-below. To try the demo locally against a server you may use, clone the repository and create
+live search. The `docs-preview` workflow builds its review artifact with the same repository
+variable, so the artifact offers no live search either while it is unset or empty. Neither sets
+any of the variables below; `npm run check:demo-gates` fails if a workflow does. To try the demo locally against a server you may use, clone the repository and create
 `demo/.env.local`:
 
 ```bash
@@ -399,6 +477,7 @@ VITE_FHIR_BASE_URL=https://tx.fhir.de/fhir
 
 # Or SNOMED CT over Snowstorm, also only with a licence (takes precedence over the two lines above)
 # VITE_SNOWSTORM_BASE_URL=https://snowstorm.example.org/snowstorm/snomed-ct
+# Required with Snowstorm: without a branch SNOMED CT stays disabled (MAIN is the International Edition)
 # VITE_SNOWSTORM_BRANCH=MAIN/SNOMEDCT-DE
 # VITE_SNOWSTORM_LANGUAGE=de
 # VITE_SNOWSTORM_LANGUAGE_STRATEGY=header
@@ -408,17 +487,18 @@ VITE_FHIR_BASE_URL=https://tx.fhir.de/fhir
 
 The demo page then states which server it contacts.
 
-- **Local servers take precedence.** With `VITE_FHIR_BASE_URL` or `VITE_SNOWSTORM_BASE_URL`
-  set, the demo contacts that server from the start and offers no
-  live-search opt-in; `VITE_OPT_IN_FHIR_BASE_URL` is then ignored. To reproduce the public
+- **Local servers take precedence.** With `VITE_FHIR_BASE_URL` set, or `VITE_SNOWSTORM_BASE_URL`
+  together with `VITE_SNOWSTORM_BRANCH`, the demo contacts that server from the start and offers
+  no live-search opt-in; `VITE_OPT_IN_FHIR_BASE_URL` is then ignored. To reproduce the public
   demo's opt-in locally, set only `VITE_OPT_IN_FHIR_BASE_URL`; to try the SNOMED CT unlock as
   well, add `VITE_OPT_IN_SNOMED_EDITION=11000274103` (the only edition accepted), again only
   with a licence for that edition.
 - **Restart after editing.** Restart `npm run dev` after you change `demo/.env.local`.
-- **Delayed and cached as well.** The demo also throttles a server set in `demo/.env.local`:
-  each request waits about 300 ms and is dropped if you keep typing, and repeated searches are
-  answered from a cache. Unlike the public live search, there is no minimum length, so short
-  codes such as `A1` are sent. This is demo behaviour; the package itself does not throttle.
+- **Throttled and cached.** A search reaches a server set in `demo/.env.local` only from three
+  characters on (the panel's minimum, see [Search throttling](#search-throttling)) and about
+  300 ms after you stop typing: the demo delays each request in its own fetch wrapper, drops it
+  if you keep typing, and answers repeated searches from a cache. It passes
+  `serverSearchDebounceMs: 0` to the panel, so the two delays do not add up.
 - **No credentials.** Vite compiles `VITE_*` values into the page, where anyone who opens it can
   read them.
 - **Production build.** To test it, run `npm run build --workspace=demo` and then
@@ -443,11 +523,14 @@ for the host application.
 | "… is currently unavailable (HTTP 500)" or another server status | The server has an outage or is overloaded | Try again later; check the server's status. |
 | Every new coding of a provider shows "Version unavailable" | The provider is configured with a release other than the one the server answers from, for example a `system-version` pin the server ignores, or a `version` override | Remove that setting, or pin with `valueSetVersion` to a release the server holds. |
 | SNOMED CT missing; console: `SNOMED CT is disabled: no edition is configured` | Neither `snomedConfig.edition` nor `snomedConfig.valueSetUri` is set | Set the edition your licence covers. |
+| SNOMED CT missing; console: `SNOMED CT is disabled: no Snowstorm branch is configured` | `transport: 'snowstorm'` without `snomedConfig.branch` | Set the branch of the edition your licence covers, for example `MAIN/SNOMEDCT-DE`. |
+| Console: `SNOMED CT value set "…" names no edition` | `snomedConfig.valueSetUri` is not an implicit value set of one edition, so its definition or the server's default decides the edition of searches and stored versions | Make sure the value set pins (`compose.include.version`) the edition your licence covers, or use `snomedConfig.edition` instead of `valueSetUri`. To scope lookups as well, set `edition` or `lookupParameters.version`. |
+| "Enter at least 3 characters to search …" and no request in the network tab | The [search throttling](#search-throttling) sends a server search only from three characters on | Type more characters, or lower `serverSearchMinLength`. |
 | LOINC, ICD-10-GM, OPS, ATC or SNOMED CT missing; console: `… disabled: no terminology server is configured` | `serverConfig.fhirBaseUrl` is not set | Set it to a server you may use. |
 | "… did not respond in time" | The server is slow or overloaded (default timeout 15 s) | Try again; raise `requestTimeoutMs` for that provider. |
 | "… returned invalid terminology data" | A proxy or `fetchFn` returned HTML or another non-FHIR body | Check the proxy, the route and `fetchFn`. |
 | No results | The term, the language, or the value set or edition does not contain the concept | Run the same `$expand` with `curl` (below) and check `expansion.total`. |
-| LOINC returns `LP…` or `LA…` codes first | The implicit LOINC value set contains Parts and Answers | Search with several words; see [LOINC search tips](#loinc-search-tips). |
+| LOINC shows few results for a one-word search, or "… hides every code on the first page of results" | The default `loinc` provider hides the Parts, Answers, groups and answer lists of the first page the server returned | Search with several words; see [LOINC search tips](#loinc-search-tips). |
 
 Check whether the server allows your origin:
 
@@ -466,8 +549,17 @@ curl -s -H 'Accept: application/fhir+json' \
 
 ## Notices for the content shown on this page
 
-- **OPS:** © BfArM. Die Erstellung erfolgt unter Verwendung der maschinenlesbaren Fassung des
-  Bundesinstituts für Arzneimittel und Medizinprodukte (BfArM). The example cites OPS 2026.
+- **OPS** (source statement from the annex to BfArM's download conditions as of 1 August 2025,
+  verbatim):
+
+  > Herausgegeben vom Bundesinstitut für Arzneimittel und Medizinprodukte (BfArM) im Auftrag
+  > des Bundesministeriums für Gesundheit (BMG)
+  >
+  > Die Erstellung bzw. der Druck erfolgt unter Verwendung der maschinenlesbaren Fassung des
+  > Bundesinstituts für Arzneimittel und Medizinprodukte (BfArM).
+
+  The example cites OPS 2026.
+
 - **LOINC®:** This material contains content from LOINC (<http://loinc.org>). LOINC is
   copyright © Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and
   Codes (LOINC) Committee and is available at no cost under the license at

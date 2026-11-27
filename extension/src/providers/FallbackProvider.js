@@ -5,6 +5,10 @@ function getResultItems(result) {
   return Array.isArray(items) ? items : [];
 }
 
+function hasRemoteSearch(provider) {
+  return provider?.sourceType === 'api' || provider?.remoteSearch === true;
+}
+
 /**
  * @category Providers
  */
@@ -54,6 +58,16 @@ export class FallbackProvider extends TerminologyProvider {
   get systemUri() { return this._systemUri; }
   /** Version advertised by the primary provider, falling back to the secondary provider. */
   get version() { return this._primaryProvider.version || this._fallbackProvider.version; }
+  /**
+   * Whether a search may reach a terminology server: `true` when the primary
+   * or the fallback provider reports `sourceType: 'api'` or `remoteSearch`.
+   * The properties panel then throttles searches with this provider as with
+   * a server provider, although `sourceType` stays unset.
+   * @type {boolean}
+   */
+  get remoteSearch() {
+    return hasRemoteSearch(this._primaryProvider) || hasRemoteSearch(this._fallbackProvider);
+  }
   /** Union of the operations supported by the primary and fallback providers. */
   get capabilities() {
     return {
@@ -80,7 +94,9 @@ export class FallbackProvider extends TerminologyProvider {
     const fallbackResult = await this._fallbackProvider.search(term, options);
     const fallbackItems = getResultItems(fallbackResult);
 
-    if (fallbackItems.length > 0 || primaryResult === null) {
+    // A fallback page whose items were all hidden (`filteredOut`) still says
+    // more than an empty primary result.
+    if (fallbackItems.length > 0 || primaryResult === null || fallbackResult?.filteredOut > 0) {
       return fallbackResult;
     }
 

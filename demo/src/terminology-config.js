@@ -34,7 +34,9 @@ function createSnowstormConfig(env, baseUrl) {
   return {
     transport: 'snowstorm',
     baseUrl,
-    branch: getOptionalEnvValue(env, 'VITE_SNOWSTORM_BRANCH') || 'MAIN',
+    // No fallback: without a branch the package keeps Snowstorm disabled and
+    // warns, because MAIN holds the International Edition.
+    branch: getOptionalEnvValue(env, 'VITE_SNOWSTORM_BRANCH'),
     language: getOptionalEnvValue(env, 'VITE_SNOWSTORM_LANGUAGE') || 'de',
     languageStrategy: getLanguageStrategy(env),
     defaultEcl: getOptionalEnvValue(env, 'VITE_SNOWSTORM_DEFAULT_ECL'),
@@ -49,12 +51,17 @@ function createSnowstormConfig(env, baseUrl) {
 function readServerEnv(env) {
   const fhirBaseUrl = getOptionalEnvValue(env, 'VITE_FHIR_BASE_URL');
   const snowstormBaseUrl = getOptionalEnvValue(env, 'VITE_SNOWSTORM_BASE_URL');
+  const snowstormBranch = getOptionalEnvValue(env, 'VITE_SNOWSTORM_BRANCH');
   const snomedEdition = getOptionalEnvValue(env, 'VITE_SNOMED_EDITION');
   const snomedEditionVersion = getOptionalEnvValue(env, 'VITE_SNOMED_EDITION_VERSION');
   let snomedTransport = null;
 
   if (snowstormBaseUrl) {
-    snomedTransport = 'snowstorm';
+    // The package keeps Snowstorm disabled without a branch (MAIN holds the
+    // International Edition), so the demo then contacts no Snowstorm server
+    // and must not name one. A Snowstorm URL still takes precedence over
+    // SNOMED CT over FHIR.
+    snomedTransport = snowstormBranch ? 'snowstorm' : null;
   } else if (fhirBaseUrl && snomedEdition) {
     snomedTransport = 'fhir';
   }
@@ -100,6 +107,12 @@ export function createDemoTerminologyConfig(env = import.meta.env) {
       edition: snomedEdition,
       ...(snomedEditionVersion ? { editionVersion: snomedEditionVersion } : {})
     };
+  } else if (snowstormBaseUrl) {
+    console.warn(
+      '[demo] SNOMED CT is disabled: VITE_SNOWSTORM_BASE_URL is set without VITE_SNOWSTORM_BRANCH. ' +
+      'Set VITE_SNOWSTORM_BRANCH to the branch of the edition covered by your licence, for example ' +
+      'MAIN/SNOMEDCT-DE (German National Edition); MAIN holds the International Edition.'
+    );
   }
 
   // Without a licensed server, keep the server-backed providers off
@@ -175,8 +188,9 @@ export function describeDemoTerminologyServer(env = import.meta.env) {
  *
  * `VITE_OPT_IN_FHIR_BASE_URL` names a FHIR terminology server that the demo
  * contacts only after the visitor's separate consent (see `live-search.js`).
- * A server configured with `VITE_FHIR_BASE_URL` or `VITE_SNOWSTORM_BASE_URL`
- * (local previews) takes precedence: then no opt-in is offered.
+ * A server configured with `VITE_FHIR_BASE_URL`, or `VITE_SNOWSTORM_BASE_URL`
+ * together with `VITE_SNOWSTORM_BRANCH` (local previews), takes precedence:
+ * then no opt-in is offered.
  * `VITE_SNOMED_EDITION` takes effect only together with `VITE_FHIR_BASE_URL`,
  * so on its own it does not suppress the opt-in. The live-search consent does
  * not cover SNOMED CT: it can only be unlocked separately, with a licence

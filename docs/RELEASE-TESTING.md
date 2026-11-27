@@ -55,7 +55,7 @@ const terminologyModule = createDefaultTerminologyModule({
 
 - [ ] **Defaults:** `{}` verwenden. Nur die gebündelten Terminologien (HL7, IHE XDS, KDL) erscheinen; es gehen keine Requests an Terminologieserver; die Konsole meldet je einmal, dass SNOMED CT und die FHIR-Anbieter deaktiviert sind (zwei Meldungen).
 
-Für die folgenden Tests jeweils `serverConfig: { fhirBaseUrl: 'https://EUER-FHIR-SERVER/fhir' }` und `snomedConfig: { edition: '11000274103' }` ergänzen; nur Server verwenden, die ihr nutzen dürft. Konkreter Entwicklungs-Endpunkt: `https://tx.fhir.de/fhir` von HL7 Deutschland, nur für Entwicklung und nicht-kommerzielle Forschung. Die [Nutzungsbedingungen](https://tx.fhir.de/de/terms) beachten: automatisierte Massenabfragen nur nach vorheriger Absprache, nicht als primärer Terminologieserver eines Produktivsystems. `snomedConfig` nur mit gültiger SNOMED-CT-Affiliate-Lizenz setzen. Ohne Lizenz SNOMED CT weglassen. Anleitung: [Connecting a terminology server](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/terminology-server/).
+Für die folgenden Tests jeweils `serverConfig: { fhirBaseUrl: 'https://EUER-FHIR-SERVER/fhir' }` und `snomedConfig: { edition: '11000274103' }` ergänzen; nur Server verwenden, die ihr nutzen dürft. Konkreter Entwicklungs-Endpunkt: `https://tx.fhir.de/fhir` von HL7 Deutschland, nur für Entwicklung und nicht-kommerzielle Forschung. Die [Nutzungsbedingungen](https://tx.fhir.de/de/terms) beachten: erlaubt sind Entwicklung, Validierung und nicht-kommerzielle Forschung; automatisierte Massenabfragen nur nach vorheriger Absprache. Laut [Startseite](https://tx.fhir.de/de) ist der Server nicht als primärer Terminologieserver eines Produktivsystems gedacht und dient nur der Validierung. Den Endpunkt `tx.fhir.de` so nur für lokale Tests in der eigenen Host-Anwendung verwenden: Builds, die andere aufrufen oder herunterladen können (öffentliche Demo, PR-Vorschau-Artefakte), fallen unter die [Freigabe-Gates](#76-freigabe-gates). `snomedConfig` nur mit gültiger SNOMED-CT-Affiliate-Lizenz setzen. Ohne Lizenz SNOMED CT weglassen. Anleitung: [Connecting a terminology server](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/terminology-server/).
 
 - [ ] **Gruppen deaktivieren:** Folgende Optionen einzeln testen. Nur die jeweilige Gruppe verschwindet:
 
@@ -83,6 +83,14 @@ Die drei Zeilen sind separate Optionsobjekte, kein gemeinsamer JavaScript-Block.
 ```
 
 - [ ] **Server ohne SNOMED-Edition:** LOINC, ICD-10-GM, OPS und ATC sind verfügbar, SNOMED CT nicht; die Konsole nennt `snomedConfig.edition`.
+
+- [ ] **Nur aktive SNOMED-Konzepte:** Bei SNOMED CT suchen. Der `$expand`-Request enthält `activeOnly=true`. Mit `snomedConfig: { edition: '11000274103', expandParameters: { activeOnly: 'false' } }` enthält der Request `activeOnly=false`, und inaktive Konzepte erscheinen wieder; mit `activeOnly: null` fehlt der Parameter ganz.
+
+- [ ] **Value Set ohne Edition:** `snomedConfig: { valueSetUri: 'https://EUER-FHIR-SERVER/ValueSet/eigenes' }` setzen. SNOMED CT bleibt verfügbar; die Konsole warnt einmal, dass das Value Set keine Edition nennt, und nennt `compose.include.version`.
+
+- [ ] **Suchdrosselung:** Bei LOINC zwei Zeichen tippen: Im Netzwerk-Tab erscheint kein Request; das Panel zeigt „Enter at least 3 characters to search LOINC.“. Danach zügig weitertippen: genau ein `$expand`-Request, etwa 300 ms nach dem letzten Tastendruck. Bei einem gebündelten Anbieter (z. B. KDL) erscheinen Treffer schon ab dem ersten Zeichen. Mit `createTerminologyPropertiesPanelModule({ serverSearchDebounceMs: 0, serverSearchMinLength: 1 })` sucht auch LOINC ab dem ersten Zeichen bei jedem Tastendruck.
+
+- [ ] **LOINC nur Term-Codes:** Bei LOINC (tx.fhir.de) nach `glucose` suchen. Das Panel zeigt „The server found matches, but LOINC hides every code on the first page of results. Add more words to narrow the search.“ statt „No matching terminology concepts found.“. Bei `sodium` erscheinen nur Codes der Form `2951-2`, keine `LP…`/`LA…`-Codes, und die Ergebnisanzeige nennt keine Gesamtzahl des Servers. Mit `fhirProviderOverrides: [{ id: 'loinc', codePattern: null }]` erscheinen wieder alle Codes.
 
 - [ ] **Server-Release ohne Pin:** Ohne `fhirProviderOverrides` bei OPS nach `Lobektomie` suchen und einen Treffer übernehmen. Im Netzwerk-Tab enthält der `$expand`-Request keinen Versionsparameter. Die Antwort meldet den Release in `used-codesystem` (tx.fhir.de: `http://fhir.de/CodeSystem/bfarm/ops|2026`). Im gespeicherten XML steht genau dieser Release in `mt:coding/@version` (`2026`). Es erscheint keine Warnung „Version unavailable“.
 
@@ -115,7 +123,7 @@ Die drei Zeilen sind separate Optionsobjekte, kein gemeinsamer JavaScript-Block.
   snomedConfig: {
     transport: 'snowstorm',
     baseUrl: 'https://EUER-SNOWSTORM-SERVER',
-    branch: 'MAIN',
+    branch: 'MAIN/SNOMEDCT-DE',
     language: 'de',
     languageStrategy: 'header'
   }
@@ -123,6 +131,8 @@ Die drei Zeilen sind separate Optionsobjekte, kein gemeinsamer JavaScript-Block.
 ```
 
 Server-Platzhalter durch eigene erreichbare Endpunkte ersetzen.
+
+- [ ] **Snowstorm ohne Branch:** `branch` aus dem Beispiel entfernen und neu laden. SNOMED CT fehlt in der Anbieterauswahl; die Konsole meldet `SNOMED CT is disabled: no Snowstorm branch is configured`. Es gehen keine Requests an Snowstorm.
 
 - [ ] **Sprache:** `language: 'en'` und `languageStrategy: 'param'` im Snowstorm-Beispiel testen; Request-Parameter prüfen. Übersetzung hängt vom Server ab.
 - [ ] **Zusätzliche Anbieter und Labels:** Beispiele unter [Default service configuration](../README.md#default-service-configuration) und [external overrides](../README.md#out-of-the-box-defaults-and-external-overrides) testen; Anbieter und Labels stimmen.
@@ -200,33 +210,49 @@ VITE_OPT_IN_FHIR_BASE_URL=https://tx.fhir.de/fhir npm run build --workspace=demo
 npm run preview --workspace=demo         # http://localhost:4173
 ```
 
+Diesen Testbuild nur lokal verwenden, nicht veröffentlichen und nicht
+weitergeben. Die PR-Vorschau (`docs-preview.yml`) baut die Demo wie `pages.yml`
+mit der Repository-Variable `DEMO_OPT_IN_FHIR_BASE_URL`; solange sie leer ist,
+bietet auch das Vorschau-Artefakt keine Live-Suche (siehe 7.6).
+
 Im Netzwerk-Tab nach `tx.fhir.de` filtern; im Tab „Application“ (Chrome) bzw.
 „Web-Speicher“ (Firefox) den Session Storage beobachten.
+
+Die Demo erscheint deutsch, wenn der Browser Deutsch vor Englisch bevorzugt,
+sonst englisch. Die Schritte nennen die englische Beschriftung und in Klammern
+die deutsche. Die Abschnitte 7.1 bis 7.3 einmal in jeder Sprache durchlaufen.
+
+### 7.0 Sprache
+
+- [ ] Mit deutscher Browsersprache öffnet die Demo deutsch (`<html lang="de">`), sonst englisch. Die Wahl wird nicht gespeichert: Nach dem Neuladen gilt wieder die Browsersprache.
+- [ ] Der Umschalter DE | EN im Banner und in jedem Dialog wechselt alle Texte in Kopfzeile, Banner, Fußzeile und Dialogen; der aktive Knopf hat `aria-pressed="true"`. Properties Panel und Diagramme bleiben englisch (`<main lang="en">`).
+- [ ] Im Lizenzhinweis den Link zur Live-Suche öffnen, im Einwilligungsdialog die Sprache wechseln und den Dialog mit „Not now“ („Jetzt nicht“) schließen: Der Fokus liegt auf demselben Link in der neuen Sprache, nicht auf der Seite.
+- [ ] Die Pflichthinweise erscheinen in beiden Sprachen unverändert: SNOMED CT und LOINC englisch, BfArM und WIdO deutsch.
 
 ### 7.1 Einwilligung
 
 - [ ] Vor der Einwilligung gehen keine Requests an tx.fhir.de; LOINC, ICD-10-GM, OPS, ATC und SNOMED CT fehlen in der Anbieterauswahl.
-- [ ] „Accept“ im Lizenzhinweis schaltet die Live-Suche nicht ein.
-- [ ] „Live search…“ öffnet den Einwilligungsdialog. „Not now“, Escape oder ein Klick auf den Hintergrund schließen nur diesen Dialog; ein offener Lizenzhinweis darunter bleibt offen. Es gehen keine Requests.
+- [ ] „Accept“ („Akzeptieren“) im Lizenzhinweis schaltet die Live-Suche nicht ein.
+- [ ] „Live search…“ („Live-Suche…“) öffnet den Einwilligungsdialog. „Not now“ („Jetzt nicht“), Escape oder ein Klick auf den Hintergrund schließen nur diesen Dialog; ein offener Lizenzhinweis darunter bleibt offen. Es gehen keine Requests.
 - [ ] Der Dialog nennt HL7 Deutschland e.V. als Empfänger mit Datenschutzerklärung, Nutzungsbedingungen und Lizenzseite.
-- [ ] „Switch on live search“: LOINC, ICD-10-GM, OPS und ATC erscheinen, SNOMED CT nicht. Das Banner meldet, dass die Live-Suche an ist, und nennt tx.fhir.de. Der Session Storage enthält `fdh-demo-live-search-consent-v1` mit `granted: true`, `host: "tx.fhir.de"` und Zeitpunkt.
+- [ ] „Switch on live search“ („Live-Suche einschalten“): LOINC, ICD-10-GM, OPS und ATC erscheinen, SNOMED CT nicht. Das Banner meldet, dass die Live-Suche an ist, und nennt tx.fhir.de. Der Session Storage enthält `fdh-demo-live-search-consent-v1` mit `granted: true`, `host: "tx.fhir.de"` und Zeitpunkt.
 - [ ] Neu laden im selben Tab: Die Live-Suche ist weiter an. In einem neu geöffneten Tab (nicht „Tab duplizieren“, das den Session Storage kopiert) ist sie aus.
 
 ### 7.2 Drosselung
 
-- [ ] Bei LOINC `Lo` eingeben: kein Request an tx.fhir.de.
+- [ ] Bei LOINC `Lo` eingeben: kein Request an tx.fhir.de; das Panel zeigt „Enter at least 3 characters to search LOINC.“.
 - [ ] Bei OPS zügig `Lobektomie` tippen: genau ein `$expand`-Request mit `filter=Lobektomie`, etwa 300 ms nach dem letzten Tastendruck.
 - [ ] Dieselbe Suche wiederholen: kein weiterer Request (Cache).
 
 ### 7.3 Details und Widerruf
 
-- [ ] Solange die Live-Suche an ist, öffnet „Live search details“ im Banner die Einwilligungsinformation erneut.
-- [ ] „Turn off live search“: LOINC, ICD-10-GM, OPS und ATC verschwinden aus der Auswahl, `fdh-demo-live-search-consent-v1` ist gelöscht, das Banner zeigt wieder den Standardtext. Danach gehen keine Requests mehr an tx.fhir.de.
+- [ ] Solange die Live-Suche an ist, öffnet „Live search details“ („Details zur Live-Suche“) im Banner die Einwilligungsinformation erneut.
+- [ ] „Turn off live search“ („Live-Suche ausschalten“): LOINC, ICD-10-GM, OPS und ATC verschwinden aus der Auswahl, `fdh-demo-live-search-consent-v1` ist gelöscht, das Banner zeigt wieder den Standardtext. Danach gehen keine Requests mehr an tx.fhir.de.
 
 ### 7.4 Fail-closed
 
-- [ ] Ohne `VITE_OPT_IN_FHIR_BASE_URL` bauen (entspricht einer leeren Repository-Variable `DEMO_OPT_IN_FHIR_BASE_URL`): keine Live-Suche, kein „Live search…“, keine Requests an Terminologieserver.
-- [ ] Mit einem Host bauen, für den `demo/index.html` keinen Betreiber nennt (kein `[data-live-search-operator]`-Block), z. B. `VITE_OPT_IN_FHIR_BASE_URL=https://terminology.example.org/fhir`: keine Live-Suche, kein „Live search…“, keine Requests an diesen Host.
+- [ ] Ohne `VITE_OPT_IN_FHIR_BASE_URL` bauen (entspricht einer leeren Repository-Variable `DEMO_OPT_IN_FHIR_BASE_URL`): keine Live-Suche, kein „Live search…“ („Live-Suche…“), keine Requests an Terminologieserver.
+- [ ] Mit einem Host bauen, für den `demo/index.html` keinen Betreiber nennt (kein `[data-live-search-operator]`-Block), z. B. `VITE_OPT_IN_FHIR_BASE_URL=https://terminology.example.org/fhir`: keine Live-Suche, kein „Live search…“ („Live-Suche…“), keine Requests an diesen Host.
 
 ### 7.5 SNOMED-CT-Freischaltung (nur lokaler Testbuild)
 
@@ -240,17 +266,49 @@ npm run preview --workspace=demo
 
 - [ ] Nur `11000274103` (German National Edition) wird akzeptiert: Ein Build mit einer anderen Modul-ID, z. B. `VITE_OPT_IN_SNOMED_EDITION=900000000000207008`, bietet kein „SNOMED CT…“ an und meldet in der Browser-Konsole eine Warnung.
 - [ ] Solange die Live-Suche aus ist, fehlt „SNOMED CT…“ im Banner.
-- [ ] Nach dem Einschalten der Live-Suche erscheint „SNOMED CT…“. Der Dialog zeigt drei Aussagen, keine davon angehakt; „Unlock SNOMED CT“ bleibt deaktiviert, bis alle drei angehakt sind.
-- [ ] „Cancel“ oder Escape: SNOMED CT bleibt gesperrt. Beim erneuten Öffnen sind die Aussagen wieder nicht angehakt.
-- [ ] „Unlock SNOMED CT“: SNOMED CT erscheint in der Auswahl; Suchen gehen an tx.fhir.de mit `http://snomed.info/sct/11000274103?fhir_vs`. Der Session Storage enthält `fdh-demo-snomed-self-declaration-v1` mit Host und Edition. Nach dem Neuladen im selben Tab bleibt SNOMED CT freigeschaltet.
-- [ ] „Lock SNOMED CT“: SNOMED CT verschwindet, der Eintrag ist gelöscht, die Live-Suche bleibt an.
-- [ ] Erneut freischalten, dann „Turn off live search“: SNOMED CT und die vier FHIR-Anbieter verschwinden, beide Einträge im Session Storage sind gelöscht.
+- [ ] Nach dem Einschalten der Live-Suche erscheint „SNOMED CT…“. Der Dialog zeigt drei Aussagen, keine davon angehakt; „Unlock SNOMED CT“ („SNOMED CT freischalten“) bleibt deaktiviert, bis alle drei angehakt sind.
+- [ ] „Cancel“ („Abbrechen“) oder Escape: SNOMED CT bleibt gesperrt. Beim erneuten Öffnen sind die Aussagen wieder nicht angehakt.
+- [ ] „Unlock SNOMED CT“ („SNOMED CT freischalten“): SNOMED CT erscheint in der Auswahl; Suchen gehen an tx.fhir.de mit `http://snomed.info/sct/11000274103?fhir_vs`. Der Session Storage enthält `fdh-demo-snomed-self-declaration-v1` mit Host und Edition. Nach dem Neuladen im selben Tab bleibt SNOMED CT freigeschaltet.
+- [ ] „Lock SNOMED CT“ („SNOMED CT sperren“): SNOMED CT verschwindet, der Eintrag ist gelöscht, die Live-Suche bleibt an.
+- [ ] Erneut freischalten, dann „Turn off live search“ („Live-Suche ausschalten“): SNOMED CT und die vier FHIR-Anbieter verschwinden, beide Einträge im Session Storage sind gelöscht.
 
 ### 7.6 Freigabe-Gates
 
+Die Gates gelten für die öffentliche Demo (`pages.yml`) und für die
+PR-Vorschau-Artefakte (`docs-preview.yml`): Beide lesen die URL der Live-Suche
+aus derselben Repository-Variable `DEMO_OPT_IN_FHIR_BASE_URL`. Die
+Vorschau-Artefakte werden nicht deployt, sind im öffentlichen Repository aber
+für angemeldete GitHub-Nutzer herunterladbar.
+
+`npm run check:demo-gates` sichert das technisch ab. Die Prüfung ist Teil von
+`check:conformance` und läuft damit in `verify`, in der PR-Validierung
+(`validate.yml`) und vor dem Bau der öffentlichen Demo (`pages.yml`).
+`docs-preview.yml` führt sie zusätzlich als eigenen Schritt vor dem Bau aus, damit
+ein Pull Request, der die Gates in den geprüften Dateien verletzt, kein
+Vorschau-Artefakt erhält. Das gilt nur, solange der Pull Request diesen Schritt
+nicht selbst entfernt: `docs-preview.yml` läuft in der Fassung des Pull Requests.
+Ändert ein Pull Request auch `docs-preview.yml`, fängt ihn nur die fehlschlagende
+PR-Validierung (`validate.yml`) und das Review ab; das Vorschau-Artefakt kann dann
+trotzdem entstehen.
+
+Die Prüfung schlägt fehl, wenn ein Workflow unter `.github/workflows/`, eine
+lokale Action unter `.github/actions/`, ein npm-Skript einer versionierten
+`package.json` oder eine versionierte Env-Datei (`.env*`, `demo/.env*`)
+`VITE_OPT_IN_FHIR_BASE_URL` auf etwas anderes als
+`${{ vars.DEMO_OPT_IN_FHIR_BASE_URL }}` setzt oder
+`VITE_OPT_IN_SNOMED_EDITION`, `VITE_OPT_IN_SNOMED_EDITION_VERSION`,
+`VITE_FHIR_BASE_URL`, `VITE_SNOMED_*` oder `VITE_SNOWSTORM_*` überhaupt setzt.
+Sie erkennt die üblichen Zuweisungen (YAML-Schlüssel, `NAME=…`, `export`,
+`+=`, `${NAME:=…}`, Schreiben nach `$GITHUB_ENV`, `core.exportVariable`), aber
+keine Werte, die `demo/vite.config.js` oder der Demo-Code selbst festlegen.
+Verglichen wird der ganze Wert: Text, der an den Ausdruck angehängt ist, eine
+YAML-Folgezeile oder ein mehrzeiliger Wert (auch `NAME<<EOF` für `$GITHUB_ENV`)
+lässt die Prüfung fehlschlagen. Kommentare und der Text von `name:`- und
+`description:`-Werten zählen nicht.
+
 Vor dem Setzen der Repository-Variable `DEMO_OPT_IN_FHIR_BASE_URL`:
 
-- [ ] Die schriftliche Bestätigung von HL7 Deutschland e.V. liegt vor, dass `tx.fhir.de` für die Live-Suche der öffentlichen Demo so genutzt werden darf.
+- [ ] Die schriftliche Bestätigung von HL7 Deutschland e.V. liegt vor, dass `tx.fhir.de` für die Live-Suche der öffentlichen Demo und der PR-Vorschau-Artefakte so genutzt werden darf.
 - [ ] Die oder der Datenschutzbeauftragte der TU Dresden hat den Einwilligungsdialog (`#live-search-overlay` in `demo/index.html`) und die Hinweise in Banner und Lizenzdialog geprüft.
 - [ ] Datum und Ablageort beider Nachweise sind festgehalten. Fehlt einer, bleibt `DEMO_OPT_IN_FHIR_BASE_URL` leer. Nach wesentlichen Änderungen am Einwilligungsdialog erneut prüfen lassen.
 
@@ -258,7 +316,7 @@ Bevor `VITE_OPT_IN_SNOMED_EDITION` jemals in einem öffentlichen Build gesetzt w
 
 - [ ] Die schriftliche Bestätigung des BfArM liegt vor, dass die Freischaltung per Selbstauskunft in der öffentlichen Demo zulässig ist.
 - [ ] Die Nutzung in der öffentlichen Demo ist in der MLDS-Nutzungserklärung angegeben.
-- [ ] Datum und Ablageort beider Nachweise sind festgehalten. Bis dahin setzen weder `pages.yml` noch `docs-preview.yml` `VITE_OPT_IN_SNOMED_EDITION`.
+- [ ] Datum und Ablageort beider Nachweise sind festgehalten. Bis dahin setzen weder `pages.yml` noch `docs-preview.yml` `VITE_OPT_IN_SNOMED_EDITION`; `npm run check:demo-gates` lässt das nicht zu. Die Sperre aufzuheben erfordert eine Änderung an `tools/check-demo-gates.mjs` per Pull Request, erst nachdem beide Nachweise festgehalten sind. Die Prüfung erfasst nur die oben genannten Dateien: Änderungen an `demo/vite.config.js` oder am Demo-Code, die diese Variablen setzen oder Werte fest einbauen, brauchen im Review dieselbe Freigabe.
 
 ## 8. Ergebnis und Freigabe
 

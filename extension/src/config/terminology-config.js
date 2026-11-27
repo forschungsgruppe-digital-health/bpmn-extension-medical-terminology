@@ -25,15 +25,25 @@ const DEFAULT_SERVER_CONFIG = Object.freeze({
   fhirBaseUrl: undefined
 });
 
+// No Snowstorm branch is preconfigured: `MAIN` holds the International
+// Edition, which the integrator may not be licensed for. Like the FHIR
+// transport without `edition`, the Snowstorm transport without `branch` stays
+// disabled.
 const DEFAULT_SNOMED_CONFIG = Object.freeze({
   id: 'snomed-ct',
   displayName: 'SNOMED CT',
   systemUri: 'http://snomed.info/sct',
   transport: 'fhir',
-  branch: 'MAIN',
   // Applies to the Snowstorm transport only. The FHIR transport ignores it and
   // uses the package language setting (displayLanguage=de).
   languageStrategy: 'header'
+});
+
+// `$expand` parameters of the FHIR-backed SNOMED CT provider. Without
+// `activeOnly`, servers also return inactive concepts. `snomedConfig.expandParameters`
+// is merged over these; `{ activeOnly: 'false' }` includes inactive concepts again.
+const DEFAULT_SNOMED_FHIR_EXPAND_PARAMETERS = Object.freeze({
+  activeOnly: 'true'
 });
 
 const SNOMED_SYSTEM_URI = 'http://snomed.info/sct';
@@ -44,6 +54,9 @@ const SNOMED_RELEASE_VERSION_PATTERN = /^\d{8}$/;
 // Group 1 is the edition URI.
 const SNOMED_IMPLICIT_VALUE_SET_PATTERN =
   /^(http:\/\/snomed\.info\/sct\/\d{6,18}(?:\/version\/\d{8})?)\?fhir_vs(?:=|$)/;
+// Implicit SNOMED CT value set without a module id, http://snomed.info/sct?fhir_vs[=...]:
+// it always expands the server's default edition.
+const SNOMED_EDITIONLESS_IMPLICIT_VALUE_SET_PATTERN = /^http:\/\/snomed\.info\/sct\?fhir_vs(?:=|$)/;
 
 const warnedMessages = new Set();
 
@@ -68,7 +81,12 @@ const DEFAULT_FHIR_PROVIDER_CONFIGS = Object.freeze([
     id: 'loinc',
     displayName: 'LOINC',
     systemUri: 'http://loinc.org',
-    valueSetUri: 'http://loinc.org/vs'
+    valueSetUri: 'http://loinc.org/vs',
+    // http://loinc.org/vs also expands LOINC Parts (LP…), Answers (LA…),
+    // groups (LG…) and answer lists (LL…). Show only LOINC term codes such as
+    // 2345-7. `fhirProviderOverrides: [{ id: 'loinc', codePattern: null }]`
+    // shows every code again.
+    codePattern: '^\\d{1,7}-\\d$'
   },
   {
     id: 'icd-10-gm',
@@ -157,12 +175,92 @@ function hasSnomedEditionVersion(editionVersion) {
   return editionVersion !== undefined && editionVersion !== null && editionVersion !== '';
 }
 
+/**
+ * Warn once about a SNOMED CT value set that names no edition. Such a value
+ * set can be legitimate, so it stays enabled; but neither the package nor the
+ * configuration then decides which edition searches use and which version is
+ * stored with each coding: the value set's definition does, or, without a
+ * pinned version, the server's default. `edition` and
+ * `lookupParameters.version` scope only `$lookup`; with either, the message
+ * leaves out its `$lookup` advice.
+ *
+ * @param {{ valueSetUri: string, edition?: string, lookupParameters?: Record<string, string> }} resolvedConfig
+ */
+function warnAboutSnomedValueSetWithoutEdition(resolvedConfig) {
+  const lookupScoped = Boolean(resolvedConfig.edition || resolvedConfig.lookupParameters?.version);
+  const lookupAdvice = lookupScoped
+    ? ''
+    : ' $lookup is not scoped to an edition either: set snomedConfig.edition to the module id ' +
+      'of that edition, for example "11000274103" (German National Edition), or ' +
+      'snomedConfig.lookupParameters.version.';
+
+  if (SNOMED_EDITIONLESS_IMPLICIT_VALUE_SET_PATTERN.test(resolvedConfig.valueSetUri)) {
+    // An implicit value set cannot pin an edition through compose.include.version;
+    // only the module id in its URI can.
+    warnOnce(
+      `[terminology] SNOMED CT value set "${resolvedConfig.valueSetUri}" names no edition: ` +
+      "an implicit value set without a module id always expands the server's default edition. " +
+      'Put the module id of the edition covered by your licence into it, for example "' +
+      resolvedConfig.valueSetUri.replace(/^http:\/\/snomed\.info\/sct\?/, `${SNOMED_SYSTEM_URI}/11000274103?`) +
+      '" (German National Edition).' +
+      lookupAdvice
+    );
+    return;
+  }
+
+  warnOnce(
+    `[terminology] SNOMED CT value set "${resolvedConfig.valueSetUri}" names no edition. ` +
+    'Which edition searches use, and which version is stored with each coding, is decided by ' +
+    "this value set's definition (compose.include.version) or, if it pins none, by the server's " +
+    'default edition. Make sure the value set pins the edition covered by your licence.' +
+    lookupAdvice
+  );
+}
+
+/**
+ * Warn once when `edition` (with `editionVersion`) and an implicit edition
+ * value set name different editions or releases: searches then expand the
+ * value set's edition, while `$lookup` uses `edition`.
+ *
+ * @param {string} editionUri - Edition URI built from `edition` and `editionVersion`.
+ * @param {{ valueSetUri: string, editionVersion?: string }} resolvedConfig
+ */
+function warnAboutSnomedEditionMismatch(editionUri, resolvedConfig) {
+  const valueSetEditionUri = SNOMED_IMPLICIT_VALUE_SET_PATTERN.exec(resolvedConfig.valueSetUri)?.[1];
+
+  if (!valueSetEditionUri || valueSetEditionUri === editionUri) {
+    return;
+  }
+
+  const editionSource = hasSnomedEditionVersion(resolvedConfig.editionVersion)
+    ? 'snomedConfig.edition and editionVersion name'
+    : 'snomedConfig.edition names';
+
+  warnOnce(
+    `[terminology] SNOMED CT value set "${resolvedConfig.valueSetUri}" names ${valueSetEditionUri}, ` +
+    `but ${editionSource} ${editionUri}. Searches expand the value set's edition, while $lookup ` +
+    'uses snomedConfig.edition. Make both name the same edition and release, the one covered by ' +
+    'your licence.'
+  );
+}
+
 function resolveSnomedFhirEdition(resolvedConfig) {
+  if (
+    resolvedConfig.valueSetUri
+    && !SNOMED_IMPLICIT_VALUE_SET_PATTERN.test(resolvedConfig.valueSetUri)
+  ) {
+    warnAboutSnomedValueSetWithoutEdition(resolvedConfig);
+  }
+
   if (resolvedConfig.edition) {
     const editionUri = createSnomedEditionUri(
       resolvedConfig.edition,
       resolvedConfig.editionVersion
     );
+
+    if (resolvedConfig.valueSetUri) {
+      warnAboutSnomedEditionMismatch(editionUri, resolvedConfig);
+    }
 
     return {
       valueSetUri: resolvedConfig.valueSetUri || `${editionUri}?fhir_vs`,
@@ -187,6 +285,8 @@ function resolveSnomedFhirEdition(resolvedConfig) {
     const editionUri = SNOMED_IMPLICIT_VALUE_SET_PATTERN.exec(resolvedConfig.valueSetUri)?.[1];
 
     if (!editionUri) {
+      // A custom value set stays enabled (the warning above has been given);
+      // `$lookup` is scoped only by an explicit `lookupParameters.version`.
       return {
         valueSetUri: resolvedConfig.valueSetUri,
         version: resolvedConfig.version,
@@ -245,6 +345,10 @@ function createDefaultSnomedProvider(snomedConfig, serverConfig, fetchFn) {
     return new FhirProvider({
       ...resolvedConfig,
       ...edition,
+      expandParameters: {
+        ...DEFAULT_SNOMED_FHIR_EXPAND_PARAMETERS,
+        ...(resolvedConfig.expandParameters || {})
+      },
       baseUrl,
       fetchFn: requestFetchFn
     });
@@ -262,8 +366,23 @@ function createDefaultSnomedProvider(snomedConfig, serverConfig, fetchFn) {
       );
     }
 
+    const branch = typeof resolvedConfig.branch === 'string'
+      ? resolvedConfig.branch.trim()
+      : '';
+
+    if (!branch) {
+      warnOnce(
+        '[terminology] SNOMED CT is disabled: no Snowstorm branch is configured. ' +
+        'Set snomedConfig.branch to the branch of the edition covered by your licence, ' +
+        'for example "MAIN/SNOMEDCT-DE" (German National Edition). Without it Snowstorm ' +
+        'would be queried on MAIN, the International Edition.'
+      );
+      return null;
+    }
+
     return new SnomedCtProvider({
       ...resolvedConfig,
+      branch,
       baseUrl,
       fetchFn: requestFetchFn
     });

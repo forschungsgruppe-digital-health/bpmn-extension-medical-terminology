@@ -86,6 +86,15 @@ in undo and redo.
 ## Search behaviour
 
 - Search starts after a terminology source and a query have been entered.
+- With a provider that queries a terminology server (`sourceType: 'api'`, or
+  `remoteSearch: true` such as an offline package with FHIR fallback), a search is sent only from
+  three characters on and 300 ms after the last keystroke; a shorter term shows a hint instead.
+  Bundled and other local providers search at once from one character. See
+  [Search throttling](/configuration/terminology-server/#search-throttling).
+- When a provider's `codePattern` hides codes (the default LOINC provider shows only LOINC term
+  codes), the summary leaves out the server's total. If every code on the first page was hidden
+  and the server reports more matches than that page held, the panel asks for more search words
+  instead of reporting no matches.
 - Results show the provider label, display text, and code.
 - `Enter`, `Tab`, or a click accepts the active result.
 - The panel requests at most 15 results and has no paging control.
@@ -98,7 +107,8 @@ The result's `system`, `version`, `code`, and `display` values are copied into a
 ## Options
 
 Use `createTerminologyPropertiesPanelModule()` to hide the terminology entry, start with `MT`
-badges turned off, or adjust which BPMN element types show the annotation editor:
+badges turned off, adjust which BPMN element types show the annotation editor, or change how
+server searches are throttled:
 
 ```js
 import {
@@ -111,7 +121,9 @@ const TerminologyPanelModule = createTerminologyPropertiesPanelModule({
   // Optional: replace the built-in default list completely:
   // targetTypes: ['bpmn:Task', 'bpmn:SequenceFlow'],
   includeTypes: ['bpmn:Participant'],
-  excludeTypes: ['bpmn:UserTask']
+  excludeTypes: ['bpmn:UserTask'],
+  serverSearchDebounceMs: 300,
+  serverSearchMinLength: 3
 });
 ```
 
@@ -123,6 +135,12 @@ const TerminologyPanelModule = createTerminologyPropertiesPanelModule({
 - `targetTypes` replaces the built-in list of supported BPMN types.
 - `includeTypes` adds BPMN types on top of the defaults (or `targetTypes`).
 - `excludeTypes` removes BPMN types after applying defaults, `targetTypes`, and `includeTypes`.
+- `serverSearchDebounceMs` (`300` by default, an integer `>= 0`) is the delay after the last
+  keystroke before a search reaches a provider that queries a terminology server; `0` searches
+  on every keystroke.
+- `serverSearchMinLength` (`3` by default, an integer `>= 1`) is the shortest term sent to such a
+  provider. Both apply to providers with `sourceType: 'api'` or `remoteSearch: true`; bundled
+  and other local providers search at once from one character.
 
 The default values are exported as
 [`DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG`](/api/variables/default_terminology_properties_config/)

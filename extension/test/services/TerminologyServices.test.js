@@ -56,6 +56,10 @@ describe('TerminologyServices', () => {
     });
 
     expect(provider.id).toBe('hl7-v3-actcode');
+    // Searches may reach the FHIR server, so the properties panel throttles
+    // them; the provider itself is not an 'api' provider.
+    expect(provider.remoteSearch).toBe(true);
+    expect(provider.sourceType).toBeUndefined();
     await expect(provider.lookup('AA')).resolves.toMatchObject({
       code: 'AA',
       system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode'
@@ -339,6 +343,7 @@ describe('TerminologyServices', () => {
       },
       snomedConfig: {
         transport: 'snowstorm',
+        branch: 'MAIN/SNOMEDCT-DE',
         fetchFn
       }
     });
@@ -352,7 +357,7 @@ describe('TerminologyServices', () => {
       total: 0
     });
     expect(fetchFn.mock.calls[0][0]).toContain(
-      'https://snowstorm.example.com/snowstorm/snomed-ct/MAIN/concepts'
+      'https://snowstorm.example.com/snowstorm/snomed-ct/MAIN/SNOMEDCT-DE/concepts'
     );
   });
 

@@ -282,6 +282,97 @@ describe('FhirProvider', () => {
       expect(calledUrl.searchParams.get('url')).toBe('http://loinc.org/vs');
     });
 
+    describe('codePattern', () => {
+      // Synthetic LOINC-shaped codes: a term code, a Part, an Answer, a group
+      // and an answer list.
+      const LOINC_SHAPED_EXPANSION = {
+        expansion: {
+          total: 120,
+          contains: [
+            { code: 'LP00001-1', display: 'Synthetic part' },
+            { code: '12345-6', display: 'Synthetic term' },
+            { code: 'LA00001-1', display: 'Synthetic answer' },
+            { code: 'LG00001-1', display: 'Synthetic group' },
+            { code: 'LL00001-1', display: 'Synthetic answer list' },
+            { code: '7-8', display: 'Synthetic short term' }
+          ]
+        }
+      };
+
+      it('shows only codes that match a string pattern and keeps the server total', async () => {
+        const provider = createProvider({
+          systemUri: 'http://loinc.org',
+          valueSetUri: 'http://loinc.org/vs',
+          codePattern: '^\\d{1,7}-\\d$',
+          fetchFn: createMockFetch(LOINC_SHAPED_EXPANSION)
+        });
+
+        const result = await provider.search('synthetic', { offset: 0 });
+
+        expect(result.concepts.map(concept => concept.code)).toEqual(['12345-6', '7-8']);
+        expect(result.total).toBe(120);
+        expect(result.filteredOut).toBe(4);
+      });
+
+      it('reports a page whose items the pattern hid entirely', async () => {
+        const provider = createProvider({
+          codePattern: '^\\d{1,7}-\\d$',
+          fetchFn: createMockFetch({
+            expansion: {
+              total: 1831,
+              contains: [
+                { code: 'LP00001-1', display: 'Synthetic part' },
+                { code: 'LP00002-9', display: 'Synthetic part' }
+              ]
+            }
+          })
+        });
+
+        const result = await provider.search('synthetic');
+
+        expect(result).toEqual({ concepts: [], total: 1831, filteredOut: 2 });
+      });
+
+      it('accepts a RegExp and ignores a global flag between searches', async () => {
+        const provider = createProvider({
+          codePattern: /^\d{1,7}-\d$/g,
+          fetchFn: createMockFetch(LOINC_SHAPED_EXPANSION)
+        });
+
+        const first = await provider.search('synthetic');
+        const second = await provider.search('synthetic');
+
+        expect(first.concepts.map(concept => concept.code)).toEqual(['12345-6', '7-8']);
+        expect(second.concepts.map(concept => concept.code)).toEqual(['12345-6', '7-8']);
+      });
+
+      it.each([undefined, null, ''])('shows every code when codePattern is %j', async codePattern => {
+        const provider = createProvider({
+          codePattern,
+          fetchFn: createMockFetch(LOINC_SHAPED_EXPANSION)
+        });
+
+        const result = await provider.search('synthetic');
+
+        expect(result.concepts).toHaveLength(6);
+        expect(result).not.toHaveProperty('filteredOut');
+      });
+
+      it('does not filter lookups', async () => {
+        const provider = createProvider({
+          codePattern: '^\\d{1,7}-\\d$',
+          fetchFn: createMockFetch({ parameter: [{ name: 'display', valueString: 'Synthetic part' }] })
+        });
+
+        await expect(provider.lookup('LP00001-1')).resolves.toMatchObject({ code: 'LP00001-1' });
+      });
+
+      it('rejects a codePattern that is neither a RegExp nor a string', () => {
+        expect(() => createProvider({ codePattern: 42 })).toThrow(TypeError);
+        expect(() => createProvider({ codePattern: '(' })).toThrow(SyntaxError);
+      });
+    });
+
     it('should preserve data errors from the FHIR adapter', async () => {
       const provider = createProvider({
         fetchFn: createMockFetch({ expansion: { contains: 'invalid' } })

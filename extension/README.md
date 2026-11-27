@@ -57,6 +57,16 @@ worked example against a FHIR terminology server, SNOMED CT, authentication and
 troubleshooting, see
 [Connecting a terminology server](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/configuration/terminology-server/).
 
+To keep the load on a server low, the properties panel sends a search to a
+terminology server only from three characters on and 300 ms after the last
+keystroke (`serverSearchMinLength`, `serverSearchDebounceMs` of
+`createTerminologyPropertiesPanelModule`); bundled code systems search at once.
+SNOMED CT over FHIR searches active concepts only (`activeOnly=true`, overridable
+through `snomedConfig.expandParameters`), and the Snowstorm transport needs an
+explicit `snomedConfig.branch`. The default LOINC provider shows only LOINC term
+codes (`codePattern`); set `fhirProviderOverrides: [{ id: 'loinc', codePattern: null }]`
+to show Parts and Answers again.
+
 The MIT License covers only this package's code. You need your own licences for
 the terminologies you use (SNOMED CT: Affiliate Licence, in Germany via
 BfArM/MLDS; LOINC: <https://loinc.org/license>; ICD-10-GM and OPS: the BfArM
@@ -107,11 +117,57 @@ or application that uses it. See <https://bpmn.io/license/>.
 
 ### Terminology content
 
-The package ships no SNOMED CT, LOINC, ICD-10-GM, OPS or ATC content — no display
-names, descriptions, hierarchies or excerpts. When a modeller selects a concept, the
-extension stores its code system URI, version, code and display text in the BPMN file.
+The package ships no SNOMED CT, LOINC, ICD-10-GM, OPS or ATC code system — no display
+names, descriptions or hierarchies from them, apart from the identifiers and the five
+LOINC display names below. Its bundled HL7 Terminology uses a few of
+their identifiers in HL7's own concepts: 13 HL7 code systems use the SNOMED CT concept
+900000000000013009 (Synonym) 308 times as `designation.use`, and `v3-ActCode` contains
+five LOINC codes with the display names given in HL7's code system. When a modeller
+selects a concept, the extension stores its code system URI, version, code and display
+text in the BPMN file. Files your application saves contain no terminology notices unless
+your application adds them.
 Using those terminologies in an application requires the licences of their respective
 publishers: an Affiliate Licence for SNOMED CT (in Germany via BfArM/MLDS), the LOINC
 Copyright Notice and License for LOINC, the BfArM terms of use for ICD-10-GM and OPS,
-and the WIdO and BfArM terms for ATC-GM. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+and the WIdO and BfArM terms for ATC-GM.
+
+**SNOMED CT®** (the notice that clause 8.3.1 of the SNOMED CT Affiliate License
+prescribes):
+
+> This software includes SNOMED Clinical Terms® (SNOMED CT®) which is used by
+> permission of the International Health Terminology Standards Development Organisation
+> (IHTSDO). All rights reserved. SNOMED CT®, was originally created by The College of
+> American Pathologists. "SNOMED" and "SNOMED CT" are registered trademarks of the
+> IHTSDO.
+
+The IHTSDO trades as SNOMED International. As BfArM permits, "This material" may read
+"This software", "This application" or "This document", and the German version may be
+used instead. Any use of SNOMED CT requires an Affiliate Licence (in Germany via
+BfArM/MLDS).
+
+**LOINC®:**
+
+> This material contains content from LOINC (<http://loinc.org>). LOINC is copyright ©
+> Regenstrief Institute, Inc. and the Logical Observation Identifiers Names and Codes
+> (LOINC) Committee and is available at no cost under the license at
+> <http://loinc.org/license>. LOINC® is a registered United States trademark of
+> Regenstrief Institute, Inc.
+
+**ICD-10-GM and OPS:** published by BfArM on behalf of the German Federal Ministry of
+Health (BMG); ICD-10-GM builds on the WHO's ICD-10 and the Australian ICD-10-AM. Show
+the source statements that the annex to BfArM's download conditions prescribes; they
+are quoted in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+**ATC-GM:** WIdO is the author of the ATC-GM, and BfArM publishes it officially. Show
+the mandatory WIdO/BfArM statement quoted in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+**KDL:** the bundled presets import the KDL code system (`dvmd.kdl.r4`), which DVMD e.V.
+makes available under GPL-3.0-or-later (the package manifest declares none). The GPL
+covers only the KDL content; this package's own code is MIT-licensed. A bundler copies
+the KDL into your application together with the bundled presets. If you ship a bundle
+that contains it, include the GPL text, the DVMD copyright and no-warranty notice, and a
+pointer to the source. The notice to include is in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
+See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
 and [Licensing](https://forschungsgruppe-digital-health.github.io/bpmn-extension-medical-terminology/licensing/).

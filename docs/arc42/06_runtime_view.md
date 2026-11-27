@@ -126,8 +126,8 @@ The public demo build names an opt-in server in `VITE_OPT_IN_FHIR_BASE_URL`;
 the Pages workflow takes it from the repository variable
 `DEMO_OPT_IN_FHIR_BASE_URL`. `describeDemoOptInServer`
 (`demo/src/terminology-config.js`) returns `null` when that value is empty or a
-local server is configured (`VITE_FHIR_BASE_URL` or `VITE_SNOWSTORM_BASE_URL`),
-and then nothing is offered. After bootstrap, `demo/src/app.js` calls
+local server is configured (`VITE_FHIR_BASE_URL`, or `VITE_SNOWSTORM_BASE_URL`
+with `VITE_SNOWSTORM_BRANCH`), and then nothing is offered. After bootstrap, `demo/src/app.js` calls
 `setupOptIn` (`demo/src/opt-in.js`), which creates one throttled fetch for the
 FHIR providers and a separate one for SNOMED CT and then calls
 `setupLiveSearch` (`demo/src/live-search.js`). It offers the live search only
@@ -174,7 +174,12 @@ sequenceDiagram
    bound to the host), and the server notice switches to its opt-in variant.
    Stored consent for the same host re-enables the search on reload without
    storing it again; consent stored for another host is ignored.
-3. Searches go through `createThrottledFetch`. A `ValueSet/$expand` filter
+3. The annotation entry sends nothing for a term shorter than
+   `serverSearchMinLength` (three characters) with a provider that reports
+   `sourceType: 'api'` or `remoteSearch: true`. The package panel would also
+   wait `serverSearchDebounceMs` (300 ms) after the last keystroke; the demo
+   sets it to `0` because its fetch wrapper delays instead. Searches go
+   through `createThrottledFetch`. A `ValueSet/$expand` filter
    shorter than three characters is answered locally with an empty
    expansion, and a cached URL is answered from the cache. Every other request
    waits about 300 ms; the properties panel aborts the previous search on each
@@ -182,10 +187,12 @@ sequenceDiagram
    again that the live search (or, for SNOMED CT, the unlock) is still on and
    otherwise sends nothing. Successful, non-redirected responses are cached by
    URL.
-4. `disable()` (*Turn off live search*) unregisters the providers it added,
+4. `disable()` (*Turn off live search*, German *Live-Suche ausschalten*) unregisters the providers it added,
    clears the stored consent, restores the default notice and notifies the
-   subscribers. While the live search is on, *Live search details* reopens the
-   consent information.
+   subscribers. While the live search is on, *Live search details* (*Details
+   zur Live-Suche*) reopens the consent information. The dialogs and the banner
+   are German or English after `navigator.languages`, with a DE | EN switch
+   (`demo/src/i18n.js`); the labels here are the English ones.
 5. If the build also sets `VITE_OPT_IN_SNOMED_EDITION` (optionally
    `VITE_OPT_IN_SNOMED_EDITION_VERSION`), `describeDemoOptInSnomed` returns
    the edition, but only for `11000274103` (German National Edition), the
@@ -203,7 +210,15 @@ sequenceDiagram
 
 A local preview uses the same `createThrottledFetch` for a server from
 `demo/.env.local`, with the delay and the cache but without a minimum term
-length.
+length of its own; the panel's three-character minimum still applies.
+
+Outside the demo, the properties panel of the package throttles server
+searches itself: for a provider with `sourceType: 'api'` or
+`remoteSearch: true` it sends a search only from `serverSearchMinLength`
+characters on (default 3) and `serverSearchDebounceMs` after the last
+keystroke (default 300 ms), aborts the running request on each keystroke and
+drops results of an older term. Bundled and other local providers search at
+once.
 
 ## Error and edge behavior
 
