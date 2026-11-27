@@ -2,7 +2,7 @@
 
 import { h } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/preact';
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/preact';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BpmnModdle } from 'bpmn-moddle';
 import { createAnnotationCommandStack } from '../helpers/annotation-command-stack.js';
@@ -143,8 +143,8 @@ vi.mock('@bpmn-io/properties-panel', async (importOriginal) => {
 const PROVIDERS = [
   { id: 'snomed-ct', displayName: 'SNOMED CT', systemUri: 'http://snomed.info/sct' },
   { id: 'loinc', displayName: 'LOINC', systemUri: 'http://loinc.org' },
-  { id: 'ops', displayName: 'OPS', systemUri: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2021' },
-  { id: 'atc', displayName: 'ATC', systemUri: 'http://www.whocc.no/atc', version: '2025.0.0' },
+  { id: 'ops', displayName: 'OPS', systemUri: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2026' },
+  { id: 'atc', displayName: 'ATC', systemUri: 'http://fhir.de/CodeSystem/bfarm/atc', version: '2026' },
   { id: 'kdl', displayName: 'KDL', systemUri: 'http://dvmd.de/fhir/CodeSystem/kdl', version: '2024' },
   { id: 'ihe-xds-type', displayName: 'IHE XDS typeCode', systemUri: 'http://ihe-d.de/CodeSystems/IHEXDStypeCode', version: '2020-02-07T07:55:58' },
   { id: 'ihe-xds-class', displayName: 'IHE XDS classCode', systemUri: 'http://ihe-d.de/CodeSystems/IHEXDSclassCode', version: '2021-06-25T13:44:47' }
@@ -164,10 +164,10 @@ const SEARCH_RESULTS = {
     { code: '18776-5', display: 'Plan of care note', system: 'http://loinc.org' }
   ],
   ops: [
-    { code: '5-324', display: 'Simple lobectomy and bilobectomy of the lung', system: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2021' }
+    { code: '5-324', display: 'Simple lobectomy and bilobectomy of the lung', system: 'http://fhir.de/CodeSystem/bfarm/ops', version: '2026' }
   ],
   atc: [
-    { code: 'L01XA01', display: 'Cisplatin', system: 'http://www.whocc.no/atc', version: '2025.0.0' }
+    { code: 'L01XA01', display: 'Cisplatin', system: 'http://fhir.de/CodeSystem/bfarm/atc', version: '2026' }
   ],
   kdl: [
     { code: 'AD010101', display: 'Medical discharge report', system: 'http://dvmd.de/fhir/CodeSystem/kdl', version: '2024' }
@@ -602,7 +602,7 @@ describe('terminology properties panel UI', () => {
     setServices(context, {
       terminologyRegistry: {
         listProviders: () => [
-          { id: 'atc', displayName: 'ATC', sourceType: 'api', sourceName: 'ATC', sourceLabel: 'r4.ontoserver.csiro.au', systemUri: 'http://www.whocc.no/atc' },
+          { id: 'atc', displayName: 'ATC', sourceType: 'api', sourceName: 'ATC', sourceLabel: 'fhir.example.test', systemUri: 'http://fhir.de/CodeSystem/bfarm/atc' },
           { id: 'ihe-xds-class', displayName: 'IHE XDS Document Class', sourceType: 'package', sourceName: 'IHE XDS Document Class', sourceLabel: 'de.ihe-d.terminology@3.0.1', systemUri: 'http://ihe-d.de/CodeSystems/IHEXDSclassCode' }
         ],
         search: vi.fn(),
@@ -619,7 +619,7 @@ describe('terminology properties panel UI', () => {
       .toEqual(['Terminology servers (API)', 'Installed terminology packages']);
     expect(Array.from(terminologySelect.options).map(option => option.textContent)).toEqual([
       '– select –',
-      'ATC (http://www.whocc.no/atc, r4.ontoserver.csiro.au)',
+      'ATC (http://fhir.de/CodeSystem/bfarm/atc, fhir.example.test)',
       'IHE XDS Document Class (de.ihe-d.terminology@3.0.1)'
     ]);
   });
@@ -830,6 +830,53 @@ describe('terminology properties panel UI', () => {
     expect(screen.getByText('LOINC is currently unavailable (HTTP 503). Please try again later.')).toBeTruthy();
     expect(screen.queryByText('Please provide free text or at least one coding before saving.')).toBeNull();
     expect(screen.queryByText('Please select a coding from the search results or provide free text before saving.')).toBeNull();
+  });
+
+  it.each([400, 404])('explains HTTP %i as a configuration problem instead of an outage', async status => {
+    const context = await createTestContext({
+      id: `Task_SearchConfigError${status}`,
+      type: 'bpmn:Task',
+      name: 'Search Configuration Error Task'
+    });
+    const requestError = new TerminologyRequestError(
+      `Terminology server terminology.example.test returned HTTP ${status}.`,
+      { kind: 'server', host: 'terminology.example.test', status }
+    );
+    const fire = vi.spyOn(context.eventBus, 'fire');
+
+    setServices(context, {
+      terminologyRegistry: {
+        listProviders: () => [PROVIDERS[1]],
+        search: vi.fn(async () => {
+          throw requestError;
+        }),
+        on: vi.fn(),
+        off: vi.fn()
+      }
+    });
+
+    const view = render(h(AnnotationListEntry, { element: context.element }));
+    fireEvent.click(screen.getByText('+ Add annotation'));
+    fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+      target: { value: 'loinc' }
+    });
+    fireEvent.input(getControlByLabel(view.container, 'Search'), {
+      target: { value: 'glucose serum plasma' }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(
+        `LOINC could not answer this request (HTTP ${status}). ` +
+        'The configured value set or version may not exist on this server.'
+      )).toBeTruthy();
+    });
+    expect(screen.queryByText(/is currently unavailable/)).toBeNull();
+    expect(fire).toHaveBeenCalledWith('medicalTerminology.error', {
+      element: context.element,
+      error: requestError,
+      operation: 'search',
+      providerId: 'loinc'
+    });
   });
 
   it('exposes the structured provider error to the host while keeping the UI fallback', async () => {
@@ -1660,7 +1707,7 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('id="Task_Chemo"');
     expect(xml).toContain('<mt:annotation id="mt-ann-1" text="Cisplatin-based doublet chemotherapy for inoperable lung cancer Stage III-IV">');
     expect(xml).toContain('<mt:coding system="http://snomed.info/sct" code="367336001" display="Chemotherapy (procedure)"');
-    expect(xml).toContain('<mt:coding system="http://www.whocc.no/atc" version="2025.0.0" code="L01XA01" display="Cisplatin"');
+    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/atc" version="2026" code="L01XA01" display="Cisplatin"');
   });
 
   it('recreates the discharge letter data object annotations via the UI', async () => {
@@ -1898,9 +1945,372 @@ describe('terminology properties panel UI', () => {
     expect(xml).toContain('id="Gateway_Split"');
     expect(xml).toContain('Treatment decision based on TNM stage: Stage I-II (operable) vs. Stage III-IV (inoperable)');
     expect(xml).toContain('id="Task_Surgery"');
-    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2021" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
+    expect(xml).toContain('<mt:coding system="http://fhir.de/CodeSystem/bfarm/ops" version="2026" code="5-324" display="Simple lobectomy and bilobectomy of the lung"');
     expect(xml).toContain('id="Task_Followup"');
     expect(xml).toContain('<mt:coding system="http://loinc.org" code="18776-5" display="Plan of care note"');
+  });
+
+  describe('server search throttling', () => {
+    const SERVER_PROVIDERS = [
+      { ...PROVIDERS[1], sourceType: 'api', sourceName: 'LOINC', sourceLabel: 'fhir.example.test' },
+      { ...PROVIDERS[2], sourceType: 'api', sourceName: 'OPS', sourceLabel: 'fhir.example.test' }
+    ];
+    const PACKAGE_PROVIDER = {
+      ...PROVIDERS[4],
+      sourceType: 'package',
+      sourceName: 'KDL',
+      sourceLabel: 'dvmd.kdl.r4@2026.0.0'
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    });
+
+    afterEach(() => {
+      cleanup();
+      vi.useRealTimers();
+    });
+
+    async function openSearch({ providers = SERVER_PROVIDERS, providerId = 'loinc', search, config } = {}) {
+      const context = await createTestContext({
+        id: 'Task_Throttled',
+        type: 'bpmn:Task',
+        name: 'Throttled Search Task'
+      });
+      const registrySearch = search || vi.fn(async (term, id) => ({
+        items: (SEARCH_RESULTS[id] || []).filter(concept =>
+          concept.display.toLowerCase().includes(term.toLowerCase())
+        )
+      }));
+
+      setServices(context, {
+        terminologyRegistry: {
+          listProviders: () => providers,
+          search: registrySearch,
+          on: vi.fn(),
+          off: vi.fn()
+        },
+        ...(config ? { terminologyPropertiesConfig: config } : {})
+      });
+
+      const view = render(h(AnnotationListEntry, { element: context.element }));
+      fireEvent.click(screen.getByText('+ Add annotation'));
+      fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+        target: { value: providerId }
+      });
+
+      const input = getControlByLabel(view.container, 'Search');
+      fireEvent.focus(input);
+
+      return {
+        context,
+        view,
+        input,
+        search: registrySearch,
+        type: value => fireEvent.input(input, { target: { value } })
+      };
+    }
+
+    async function advance(ms) {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(ms);
+      });
+    }
+
+    // Settles pending promises without moving the fake clock.
+    async function flush() {
+      await act(async () => {});
+    }
+
+    it('sends only the last term, 300 ms after the last keystroke', async () => {
+      const { view, search, type } = await openSearch();
+
+      for (const value of ['s', 'st', 'sta', 'stag', 'stage']) {
+        type(value);
+        await advance(100);
+      }
+
+      expect(search).not.toHaveBeenCalled();
+      expect(view.container.textContent).toContain('Search (searching...)');
+
+      await advance(199);
+      expect(search).not.toHaveBeenCalled();
+
+      await advance(1);
+      expect(search).toHaveBeenCalledTimes(1);
+      expect(search).toHaveBeenCalledWith('stage', 'loinc', expect.objectContaining({
+        limit: 15,
+        offset: 0,
+        signal: expect.any(AbortSignal)
+      }));
+      expect(view.container.querySelector('.search-suggestion__label')?.textContent)
+        .toBe('Stage group.clinical Cancer');
+    });
+
+    it('asks for three characters before a server is queried', async () => {
+      const { view, search, type } = await openSearch();
+
+      type('st');
+      await advance(1000);
+
+      expect(search).not.toHaveBeenCalled();
+      expect(screen.getByText('Enter at least 3 characters to search LOINC.')).toBeTruthy();
+      expect(screen.queryByText('No matching terminology concepts found.')).toBeNull();
+      expect(view.container.textContent).not.toContain('(searching...)');
+
+      type('sta');
+      expect(screen.queryByText('Enter at least 3 characters to search LOINC.')).toBeNull();
+      await advance(300);
+
+      expect(search).toHaveBeenCalledTimes(1);
+      expect(search).toHaveBeenCalledWith('sta', 'loinc', expect.anything());
+    });
+
+    it('counts the trimmed term towards the minimum length', async () => {
+      const { search, type } = await openSearch();
+
+      type('  st  ');
+      await advance(1000);
+
+      expect(search).not.toHaveBeenCalled();
+      expect(screen.getByText('Enter at least 3 characters to search LOINC.')).toBeTruthy();
+    });
+
+    it('searches bundled package and other local providers at once from one character', async () => {
+      for (const provider of [PACKAGE_PROVIDER, { ...PROVIDERS[4] }]) {
+        const { search, type } = await openSearch({ providers: [provider], providerId: 'kdl' });
+
+        type('M');
+        await flush();
+
+        expect(search).toHaveBeenCalledTimes(1);
+        expect(search).toHaveBeenCalledWith('M', 'kdl', expect.anything());
+        expect(screen.queryByText(/Enter at least/)).toBeNull();
+        cleanup();
+      }
+    });
+
+    it('aborts the running search on the next keystroke and ignores its late result', async () => {
+      const pending = [];
+      const errorListener = vi.fn();
+      const search = vi.fn((term, id, options) => new Promise(resolve => {
+        pending.push({ term, options, resolve });
+      }));
+      const { context, view, type } = await openSearch({ search });
+      context.eventBus.on('medicalTerminology.error', errorListener);
+
+      type('stage');
+      await advance(300);
+      expect(pending).toHaveLength(1);
+
+      type('stage group');
+      expect(pending[0].options.signal.aborted).toBe(true);
+
+      await advance(300);
+      expect(pending).toHaveLength(2);
+      expect(pending[1].term).toBe('stage group');
+
+      await act(async () => {
+        pending[0].resolve({ items: [{ ...SEARCH_RESULTS.loinc[1] }] });
+      });
+      expect(view.container.querySelector('.search-suggestion')).toBeNull();
+
+      await act(async () => {
+        pending[1].resolve({ items: [{ ...SEARCH_RESULTS.loinc[0] }] });
+      });
+      expect(Array.from(view.container.querySelectorAll('.search-suggestion__label'))
+        .map(node => node.textContent)).toEqual(['Stage group.clinical Cancer']);
+      expect(errorListener).not.toHaveBeenCalled();
+    });
+
+    it('drops the previous results while the next search waits, so Enter adds none of them', async () => {
+      const { view, input, type } = await openSearch();
+
+      type('stage');
+      await advance(300);
+      expect(view.container.querySelectorAll('.search-suggestion')).toHaveLength(1);
+
+      type('stage x');
+      expect(view.container.querySelectorAll('.search-suggestion')).toHaveLength(0);
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      expect(view.container.querySelectorAll('.selected-coding')).toHaveLength(0);
+    });
+
+    it('searches an accepted suggestion at once', async () => {
+      const { search, input, type } = await openSearch();
+
+      type('stage');
+      await advance(300);
+      expect(search).toHaveBeenCalledTimes(1);
+
+      fireEvent.keyDown(input, { key: 'ArrowRight' });
+      await flush();
+
+      expect(search).toHaveBeenCalledTimes(2);
+      expect(search).toHaveBeenLastCalledWith('Stage group.clinical Cancer', 'loinc', expect.anything());
+    });
+
+    it('cancels a scheduled search when the terminology changes or the panel closes', async () => {
+      const { view, search, type } = await openSearch();
+
+      type('stage');
+      fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+        target: { value: 'ops' }
+      });
+      await advance(1000);
+      expect(search).not.toHaveBeenCalled();
+
+      type('lobectomy');
+      view.unmount();
+      await advance(1000);
+      expect(search).not.toHaveBeenCalled();
+    });
+
+    it('takes the delay and the minimum length from the panel configuration', async () => {
+      const { search, type } = await openSearch({
+        config: { serverSearchDebounceMs: 0, serverSearchMinLength: 1 }
+      });
+
+      type('s');
+      await flush();
+
+      expect(search).toHaveBeenCalledTimes(1);
+      expect(search).toHaveBeenCalledWith('s', 'loinc', expect.anything());
+    });
+
+    it('waits for a configured longer delay and minimum length', async () => {
+      const { search, type } = await openSearch({
+        config: { serverSearchDebounceMs: 800, serverSearchMinLength: 5 }
+      });
+
+      type('stag');
+      await advance(1000);
+      expect(search).not.toHaveBeenCalled();
+      expect(screen.getByText('Enter at least 5 characters to search LOINC.')).toBeTruthy();
+
+      type('stage');
+      await advance(799);
+      expect(search).not.toHaveBeenCalled();
+      await advance(1);
+      expect(search).toHaveBeenCalledTimes(1);
+    });
+
+    it('throttles a provider that falls back to a server (remoteSearch) and keeps its label', async () => {
+      // An offline package with FHIR fallback reports no sourceType, only
+      // remoteSearch.
+      const fallbackProvider = { ...PROVIDERS[4], remoteSearch: true };
+      const { view, search, type } = await openSearch({ providers: [fallbackProvider], providerId: 'kdl' });
+
+      expect(Array.from(getControlByLabel(view.container, 'Terminology').options)
+        .map(option => option.textContent)).toContain('KDL');
+
+      type('M');
+      await advance(1000);
+      expect(search).not.toHaveBeenCalled();
+      expect(screen.getByText('Enter at least 3 characters to search KDL.')).toBeTruthy();
+
+      type('Med');
+      await advance(299);
+      expect(search).not.toHaveBeenCalled();
+      await advance(1);
+      expect(search).toHaveBeenCalledTimes(1);
+      expect(search).toHaveBeenCalledWith('Med', 'kdl', expect.anything());
+    });
+  });
+
+  describe('results hidden by the provider (filteredOut)', () => {
+    async function searchWith(result) {
+      const context = await createTestContext({
+        id: 'Task_Filtered',
+        type: 'bpmn:Task',
+        name: 'Filtered Search Task'
+      });
+      const search = vi.fn(async () => result);
+
+      setServices(context, {
+        terminologyRegistry: {
+          listProviders: () => [PROVIDERS[1]],
+          search,
+          on: vi.fn(),
+          off: vi.fn()
+        }
+      });
+
+      const view = render(h(AnnotationListEntry, { element: context.element }));
+      fireEvent.click(screen.getByText('+ Add annotation'));
+      fireEvent.change(getControlByLabel(view.container, 'Terminology'), {
+        target: { value: 'loinc' }
+      });
+      const input = getControlByLabel(view.container, 'Search');
+      fireEvent.focus(input);
+      fireEvent.input(input, { target: { value: 'synthetic' } });
+
+      await waitFor(() => expect(search).toHaveBeenCalledTimes(1));
+
+      return view;
+    }
+
+    it('explains a first page whose codes the provider hid instead of reporting no matches', async () => {
+      // The server found 1831 matches, but the whole first page held codes
+      // that the provider's codePattern hides (for example LOINC Parts).
+      await searchWith({ concepts: [], total: 1831, filteredOut: 15 });
+
+      await waitFor(() => expect(screen.getByText(
+        'The server found matches, but LOINC hides every code on the first page of results. ' +
+        'Add more words to narrow the search.'
+      )).toBeTruthy());
+      expect(screen.queryByText('No matching terminology concepts found.')).toBeNull();
+      expect(screen.queryByText(/Showing .* results/)).toBeNull();
+    });
+
+    it('leaves the server total out of the summary when the provider hid part of the page', async () => {
+      await searchWith({
+        concepts: [{ ...SEARCH_RESULTS.loinc[0] }, { ...SEARCH_RESULTS.loinc[1] }],
+        total: 294,
+        filteredOut: 13
+      });
+
+      await waitFor(() => expect(screen.getByText('Showing 2 results')).toBeTruthy());
+      expect(screen.queryByText(/of 294/)).toBeNull();
+      expect(screen.queryByText(/hides every code/)).toBeNull();
+    });
+
+    it('still reports no matches when nothing was hidden', async () => {
+      await searchWith({ concepts: [], total: 0, filteredOut: 0 });
+
+      await waitFor(() => expect(screen.getByText('No matching terminology concepts found.')).toBeTruthy());
+      expect(screen.queryByText(/hides every code/)).toBeNull();
+    });
+
+    it('leaves the server total out whenever the provider filters, even if this page lost nothing', async () => {
+      // The first page held only term codes, but the server's total still
+      // counts the Parts and Answers on pages that were never requested.
+      await searchWith({
+        concepts: [{ ...SEARCH_RESULTS.loinc[0] }, { ...SEARCH_RESULTS.loinc[1] }],
+        total: 1831,
+        filteredOut: 0
+      });
+
+      await waitFor(() => expect(screen.getByText('Showing 2 results')).toBeTruthy());
+      expect(screen.queryByText(/of 1831/)).toBeNull();
+    });
+
+    it('reports no matches when the page held the whole expansion and the provider hid all of it', async () => {
+      // Only Parts and Answers match, and all three fit on the first page:
+      // more search words cannot surface a term code.
+      await searchWith({ concepts: [], total: 3, filteredOut: 3 });
+
+      await waitFor(() => expect(screen.getByText('No matching terminology concepts found.')).toBeTruthy());
+      expect(screen.queryByText(/hides every code/)).toBeNull();
+    });
+
+    it('asks for more words when the provider hid the page and reports no total', async () => {
+      await searchWith({ concepts: [], filteredOut: 15 });
+
+      await waitFor(() => expect(screen.getByText(/hides every code on the first page/)).toBeTruthy());
+      expect(screen.queryByText('No matching terminology concepts found.')).toBeNull();
+    });
   });
 });
 

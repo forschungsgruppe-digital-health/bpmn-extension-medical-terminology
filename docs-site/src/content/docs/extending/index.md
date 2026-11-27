@@ -27,7 +27,14 @@ A provider represents a searchable terminology source. It supplies:
 - a unique `id`, a `displayName`, and a canonical `systemUri`;
 - `capabilities` describing the supported operations;
 - `search(term, options)` and `lookup(code)`;
-- optionally custom `validate(code)` and `getHierarchy(code)` implementations.
+- optionally custom `validate(code)` and `getHierarchy(code)` implementations;
+- `sourceType: 'api'` if it queries a terminology server or another remote API, or
+  `remoteSearch: true` if it only falls back to one. The properties panel throttles only
+  providers that report one of them (by default from three characters on and 300 ms after the
+  last keystroke; see [Search throttling](/configuration/terminology-server/#search-throttling));
+  without either,
+  every keystroke reaches the server. Local providers, such as `HouseCatalogueProvider` below,
+  report neither and search at once.
 
 Returned concepts use this shape:
 

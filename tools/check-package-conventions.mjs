@@ -11,6 +11,8 @@
  *     - "type": "module"            (the repo ships raw ESM, no build step)
  *     - a license is declared
  *     - has an entry point          (main and/or exports)
+ *     - LICENSE (identical to the repository LICENSE) and
+ *       THIRD_PARTY_NOTICES.md exist and are listed in "files"
  *
  *   WARN (exit 0):
  *     - no `exports` map            (recommended over bare `main`)
@@ -80,6 +82,18 @@ for (const file of files) {
     );
 
   if (!pkg.license) err(label, 'missing "license"');
+
+  // The licence text and the third-party notices must ship inside the tarball.
+  const packageDir = dirname(file);
+  const packageLicense = join(packageDir, 'LICENSE');
+  if (!existsSync(packageLicense)) err(label, 'missing LICENSE next to package.json');
+  else if (readFileSync(packageLicense, 'utf8') !== readFileSync(join(repoRoot, 'LICENSE'), 'utf8'))
+    err(label, 'LICENSE differs from the repository LICENSE — copy it again');
+  for (const required of ['LICENSE', 'THIRD_PARTY_NOTICES.md']) {
+    if (!Array.isArray(pkg.files) || !pkg.files.includes(required))
+      err(label, `"files" does not include ${required}`);
+    else if (!existsSync(join(packageDir, required))) err(label, `${required} is listed in "files" but missing`);
+  }
 
   if (!pkg.main && !pkg.exports) err(label, 'no entry point (neither "main" nor "exports")');
   else if (!pkg.exports) warn(label, 'no "exports" map — recommended over bare "main"');

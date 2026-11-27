@@ -1,5 +1,91 @@
 import { TerminologyProvider } from '../core/TerminologyProvider.js';
-import { FhirTerminologyAdapter } from '../adapters/FhirTerminologyAdapter.js';
+import {
+  FhirTerminologyAdapter,
+  resolveFhirBaseUrl
+} from '../adapters/FhirTerminologyAdapter.js';
+
+// `http://snomed.info/sct/<module id>` names a SNOMED CT edition, not a
+// release. Servers report the release they used as `…/version/YYYYMMDD`, so an
+// edition URI can never match a stored coding version.
+const SNOMED_EDITION_URI_PATTERN = /^http:\/\/snomed\.info\/sct\/\d+$/;
+
+/**
+ * Host shown as the provider source: the host the adapter sends requests to.
+ * A relative base URL such as `/api/terminology` (a same-origin route) is
+ * resolved the same way as by the adapter; when there is no page to resolve
+ * it against, or the URL has no host, the configured URL itself is the label.
+ *
+ * @param {string} baseUrl
+ * @returns {string}
+ */
+function getSourceLabel(baseUrl) {
+  const rawBaseUrl = String(baseUrl ?? '').trim();
+  const resolvedBaseUrl = rawBaseUrl ? resolveFhirBaseUrl(rawBaseUrl) : null;
+
+  try {
+    return (resolvedBaseUrl && new URL(resolvedBaseUrl).host) || rawBaseUrl;
+  } catch {
+    return rawBaseUrl;
+  }
+}
+
+/**
+ * Release part of a `system|version` canonical, as used by the FHIR
+ * `system-version` and `force-system-version` expansion parameters.
+ *
+ * @param {Record<string, string> | undefined} expandParameters
+ * @returns {string | undefined}
+ */
+function getExpandSystemVersion(expandParameters) {
+  for (const name of ['system-version', 'force-system-version']) {
+    const value = expandParameters?.[name];
+
+    if (typeof value === 'string' && value.includes('|')) {
+      return value.slice(value.indexOf('|') + 1) || undefined;
+    }
+  }
+
+  return undefined;
+}
+
+function deriveVersionLabel(config) {
+  if (config.version) {
+    return config.version;
+  }
+
+  const derivedVersion = config.lookupParameters?.version
+    || config.expandParameters?.valueSetVersion
+    || config.expandParameters?.version
+    || getExpandSystemVersion(config.expandParameters);
+
+  return typeof derivedVersion === 'string' && SNOMED_EDITION_URI_PATTERN.test(derivedVersion)
+    ? undefined
+    : derivedVersion;
+}
+
+/**
+ * Compile the `codePattern` option. `undefined`, `null` and `''` disable the
+ * filter. A global or sticky RegExp would keep state between `test()` calls,
+ * so those flags are dropped.
+ *
+ * @param {RegExp | string | null | undefined} codePattern
+ * @returns {RegExp | null}
+ */
+function createCodePattern(codePattern) {
+  if (codePattern === undefined || codePattern === null || codePattern === '') {
+    return null;
+  }
+
+  if (codePattern instanceof RegExp) {
+    return new RegExp(codePattern.source, codePattern.flags.replace(/[gy]/g, ''));
+  }
+
+  if (typeof codePattern === 'string') {
+    return new RegExp(codePattern);
+  }
+
+  throw new TypeError('FhirProvider codePattern must be a RegExp, a regular expression string, null or an empty string.');
+}
 
 /**
  * Generic provider for any code system hosted on a FHIR Terminology Server.
@@ -14,11 +100,21 @@ export class FhirProvider extends TerminologyProvider {
    * @param {string} config.displayName
    * @param {string} config.systemUri
    * @param {string} [config.valueSetUri] - Override URI for $expand (useful for HL7 ValueSets)
-   * @param {string} config.baseUrl - FHIR server base URL
+   * @param {string} config.baseUrl - FHIR server base URL; a relative URL such as
+   *   `/api/terminology` is resolved against the current page
    * @param {number} [config.maxResults=15]
-   * @param {string} [config.language]
+   * @param {string} [config.version] - Release label used to flag stored codings
+   *   of another release; derived from a pinned `expandParameters` or
+   *   `lookupParameters` version when omitted
    * @param {Record<string, string>} [config.expandParameters]
    * @param {Record<string, string>} [config.lookupParameters]
+   * @param {RegExp | string | null} [config.codePattern] - Show only search
+   *   results whose code matches this pattern, for example `'^\\d{1,7}-\\d$'`
+   *   for LOINC term codes. The filter runs on each page the server returns,
+   *   so a page may hold fewer than `maxResults` items while `offset` and
+   *   `total` stay the server's; `search` then reports in `filteredOut` how
+   *   many items of the page it hid. `null` or `''` disables it; `lookup` and
+   *   `validate` are not filtered.
    * @param {import('../core/types.js').ConnectionConfig['auth']} [config.auth]
    * @param {typeof fetch} [config.fetchFn]
    */
@@ -33,18 +129,14 @@ export class FhirProvider extends TerminologyProvider {
     /** @internal */
     this._sourceType = 'api';
     /** @internal */
-    this._sourceLabel = new URL(config.baseUrl).host;
+    this._sourceLabel = getSourceLabel(config.baseUrl);
     /** @internal */
-    this._version = config.version
-      || config.lookupParameters?.version
-      || config.expandParameters?.valueSetVersion
-      || config.expandParameters?.version
-      || (typeof config.expandParameters?.['system-version'] === 'string'
-        ? config.expandParameters['system-version'].split('|')[1]
-        : undefined);
+    this._version = deriveVersionLabel(config);
     /** @internal */
     this._maxResults = config.maxResults || 15;
-    
+    /** @internal */
+    this._codePattern = createCodePattern(config.codePattern);
+
     // Use valueSetUri for the adapter if provided, otherwise fallback to systemUri
     /** @internal */
     this._adapter = new FhirTerminologyAdapter({
@@ -86,11 +178,22 @@ export class FhirProvider extends TerminologyProvider {
         signal: options.signal
       });
     } catch (error) {
-      console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);
+      // A cancelled search (the caller aborted it, e.g. on the next
+      // keystroke) is not a failure worth a warning.
+      if (error?.kind !== 'aborted') {
+        console.warn(`[terminology] Search failed for provider "${this.id}" at ${this.sourceLabel}.`, error);
+      }
       throw error;
     }
     
-    const concepts = result.items || [];
+    // `total` stays the server's count: filtering one page cannot tell how many
+    // matches the whole expansion has. `filteredOut` tells the caller how many
+    // items of this page the pattern hid, so an empty page is not mistaken for
+    // "no matches".
+    const items = result.items || [];
+    const concepts = this._codePattern
+      ? items.filter(concept => this._codePattern.test(concept.code))
+      : items;
 
     // Ensure the returned concepts use the correct CodeSystem URI (not the ValueSet URI)
     concepts.forEach(c => {
@@ -102,7 +205,8 @@ export class FhirProvider extends TerminologyProvider {
     
     return {
       concepts,
-      total: result.total
+      total: result.total,
+      ...(this._codePattern ? { filteredOut: items.length - concepts.length } : {})
     };
   }
 

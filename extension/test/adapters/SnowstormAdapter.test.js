@@ -12,6 +12,45 @@ function createMockFetch(responseBody, ok = true) {
 describe('SnowstormAdapter', () => {
   const BASE_URL = 'https://snowstorm.example.com/snomed-ct';
 
+  describe('branch', () => {
+    it('queries MAIN without a branch, as before, but warns once', async () => {
+      vi.resetModules();
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const { SnowstormAdapter: FreshSnowstormAdapter } =
+          await import('../../src/adapters/SnowstormAdapter.js');
+        const mockFetch = createMockFetch({ items: [], total: 0 });
+        const adapter = new FreshSnowstormAdapter({ baseUrl: BASE_URL, fetchFn: mockFetch });
+        new FreshSnowstormAdapter({ baseUrl: BASE_URL, fetchFn: mockFetch });
+
+        await adapter.search({ term: 'heart', limit: 15, offset: 0 });
+
+        expect(new URL(mockFetch.mock.calls[0][0]).pathname).toBe('/snomed-ct/MAIN/concepts');
+        expect(warn).toHaveBeenCalledTimes(1);
+        expect(warn.mock.calls[0][0]).toContain('SnowstormAdapter has no branch configured');
+        expect(warn.mock.calls[0][0]).toContain('MAIN/SNOMEDCT-DE');
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('does not warn when a branch is configured', async () => {
+      vi.resetModules();
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const { SnowstormAdapter: FreshSnowstormAdapter } =
+          await import('../../src/adapters/SnowstormAdapter.js');
+        new FreshSnowstormAdapter({ baseUrl: BASE_URL, branch: 'MAIN/SNOMEDCT-DE' });
+
+        expect(warn).not.toHaveBeenCalled();
+      } finally {
+        warn.mockRestore();
+      }
+    });
+  });
+
   describe('search()', () => {
     it('should call correct URL with parameters', async () => {
       const mockFetch = createMockFetch({ items: [], total: 0 });

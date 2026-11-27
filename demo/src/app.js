@@ -11,9 +11,19 @@ import {
 } from '@forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
 import { DEMO_FEATURES } from './demo-config.js';
+import { setupLanguageSwitch } from './i18n.js';
 import { setupLicenseNotice } from './license-notice.js';
+import { applyServerNotice } from './server-notice.js';
+import { createThrottledFetch } from './live-search.js';
+import { setupOptIn } from './opt-in.js';
+import { addTerminologyNotices } from './terminology-notices.js';
 import {
-  createDemoTerminologyServices
+  createDemoOptInProviders,
+  createDemoOptInSnomedProvider,
+  createDemoTerminologyServices,
+  describeDemoOptInServer,
+  describeDemoOptInSnomed,
+  describeDemoTerminologyServer
 } from './terminology-config.js';
 
 import 'bpmn-js/dist/assets/diagram-js.css';
@@ -29,10 +39,18 @@ import plainBpmn from '../../examples/valid/lung-cancer-staging.bpmn?raw';
 let modeler;
 
 const SAMPLES = {
-  annotated: { label: 'Lung cancer — annotated (mt:)', xml: annotatedBpmn },
-  plain: { label: 'Lung cancer — plain BPMN (no extensions)', xml: plainBpmn },
-  demo: { label: 'Demo sample', url: './sample.bpmn' }
+  annotated: {
+    label: { de: 'Lungenkrebs — annotiert (mt:)', en: 'Lung cancer — annotated (mt:)' },
+    xml: annotatedBpmn
+  },
+  plain: {
+    label: { de: 'Lungenkrebs — reines BPMN (ohne Erweiterungen)', en: 'Lung cancer — plain BPMN (no extensions)' },
+    xml: plainBpmn
+  },
+  demo: { label: { de: 'Demo-Beispiel', en: 'Demo sample' }, url: './sample.bpmn' }
 };
+
+let uiLanguage = 'en';
 
 async function loadSample(key) {
   try {
@@ -52,15 +70,29 @@ function setupSampleSelect() {
     return;
   }
 
-  for (const [key, sample] of Object.entries(SAMPLES)) {
+  for (const key of Object.keys(SAMPLES)) {
     const option = document.createElement('option');
     option.value = key;
-    option.textContent = sample.label;
     sampleSelect.appendChild(option);
   }
 
+  updateSampleLabels();
   sampleSelect.value = 'annotated';
   sampleSelect.addEventListener('change', () => loadSample(sampleSelect.value));
+}
+
+function updateSampleLabels() {
+  for (const option of document.querySelectorAll('#sample-select option')) {
+    option.textContent = SAMPLES[option.value]?.label[uiLanguage] ?? option.value;
+  }
+}
+
+// The XML view and the download carry the notices of the code systems the
+// diagram uses: bpmn-moddle drops the sample diagrams' XML comments on import.
+async function exportXml() {
+  const { xml } = await modeler.saveXML({ format: true });
+
+  return addTerminologyNotices(xml, modeler.getDefinitions());
 }
 
 function setVisibility(selector, isVisible) {
@@ -74,8 +106,14 @@ function setVisibility(selector, isVisible) {
   return node;
 }
 
+// Read once at module load: bootstrap() and the notices below depend on them.
+const localServer = describeDemoTerminologyServer();
+const optInServer = describeDemoOptInServer();
+const optInSnomed = describeDemoOptInSnomed();
+
 async function bootstrap() {
   const additionalModules = [];
+  let terminologyServices = null;
   const moddleExtensions = {};
 
   if (DEMO_FEATURES.showPropertiesPanel) {
@@ -86,12 +124,22 @@ async function bootstrap() {
   }
 
   if (DEMO_FEATURES.showTerminology) {
-    const terminologyServices = await createDemoTerminologyServices();
+    // Requests to a server from demo/.env.local are delayed (a request is
+    // dropped while you keep typing) and cached per request URL. The panel
+    // sends nothing below three characters (serverSearchMinLength), so the
+    // fetch wrapper needs no minimum of its own here.
+    terminologyServices = await createDemoTerminologyServices(import.meta.env, {
+      fetchFn: localServer ? createThrottledFetch({ minTermLength: 0 }) : undefined
+    });
     const terminologyServicesModule = createTerminologyModule(terminologyServices);
 
     additionalModules.push(
       createTerminologyPropertiesPanelModule({
-        showAnnotations: DEMO_FEATURES.showTerminologyAnnotations
+        showAnnotations: DEMO_FEATURES.showTerminologyAnnotations,
+        // The demo's fetch wrapper (createThrottledFetch) already waits for a
+        // pause in typing and checks the live-search consent right before it
+        // sends; a second delay in the panel would only double the wait.
+        serverSearchDebounceMs: 0
       }),
       terminologyServicesModule
     );
@@ -126,7 +174,7 @@ async function bootstrap() {
 
   if (downloadButton) {
     downloadButton.addEventListener('click', async () => {
-      const { xml } = await modeler.saveXML({ format: true });
+      const xml = await exportXml();
       const blob = new Blob([xml], { type: 'application/xml' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -142,8 +190,7 @@ async function bootstrap() {
 
   if (xmlToggleButton) {
     xmlToggleButton.addEventListener('click', async () => {
-      const { xml } = await modeler.saveXML({ format: true });
-      xmlContent.textContent = xml;
+      xmlContent.textContent = await exportXml();
       xmlOverlay.classList.remove('xml-overlay--hidden');
     });
   }
@@ -157,8 +204,28 @@ async function bootstrap() {
 
   setupSampleSelect();
   await loadSample('annotated');
+
+  // Public demo: live search on the opt-in server only after separate consent,
+  // and SNOMED CT on top of it only after a licence self-declaration. Each
+  // request checks its consent again right before it is sent, so a search
+  // still waiting in the delay is dropped once that consent is withdrawn.
+  setupOptIn({
+    server: terminologyServices ? optInServer : null,
+    snomed: optInSnomed,
+    registry: terminologyServices?.terminologyRegistry ?? null,
+    createProviders: createDemoOptInProviders,
+    createSnomedProvider: createDemoOptInSnomedProvider
+  });
 }
 
+// German or English, from the browser's preferred languages; not stored.
+setupLanguageSwitch({
+  onChange: language => {
+    uiLanguage = language;
+    updateSampleLabels();
+  }
+});
+applyServerNotice(document, localServer);
 setupLicenseNotice();
 
 void bootstrap().catch(err => {

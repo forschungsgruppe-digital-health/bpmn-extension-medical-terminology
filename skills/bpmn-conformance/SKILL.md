@@ -13,7 +13,7 @@ them, read their reports, and explain failures** — never to hand-wave a pass.
 From the repo root:
 
 ```bash
-npm run check:conformance      # bpmnlint + moddle roundtrip + XSD core (the gate)
+npm run check:conformance      # bpmnlint + moddle roundtrip + XSD core (the gate), plus demo build gates
 ```
 
 Or individually:

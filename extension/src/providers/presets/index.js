@@ -5,7 +5,7 @@ import { createPackageKey } from '../../services/PackageMetadata.js';
 import iheXdsClassCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDSclassCode.json' with { type: 'json' };
 import iheXdsTypeCodeSystem from 'de.ihe-d.terminology/CodeSystem-IHEXDStypeCode.json' with { type: 'json' };
 import ihePackageMetadata from 'de.ihe-d.terminology/package.json' with { type: 'json' };
-import kdlCodeSystem from 'dvmd.kdl.r4/codesystem-kdl.xml.json' with { type: 'json' };
+import kdlCodeSystem from 'dvmd.kdl.r4/CodeSystem-kdl-2026-0-0.json' with { type: 'json' };
 import kdlPackageMetadata from 'dvmd.kdl.r4/package.json' with { type: 'json' };
 import hl7PackageMetadata from 'hl7.terminology.r4/package.json' with { type: 'json' };
 import hl7CodeSystems from './hl7-code-systems.json' with { type: 'json' };
@@ -108,6 +108,7 @@ const PACKAGE_PROVIDER_PRESETS = Object.freeze({
   kdl: Object.freeze({
     id: 'kdl',
     packageName: 'dvmd.kdl.r4',
+    normalizeDefaultTitle: true,
     resolveCodeSystems: config => config.codeSystems || [kdlCodeSystem]
   })
 });

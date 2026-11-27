@@ -53,4 +53,33 @@ describe('terminology properties configuration', () => {
   it.each(['bpmn:Task', [null], ['Task'], ['bpmn:']])('rejects invalid excludeTypes: %j', excludeTypes => {
     expect(() => resolveTerminologyPropertiesConfig({ excludeTypes })).toThrow(TypeError);
   });
+
+  it('throttles server searches by default: 300 ms and three characters', () => {
+    expect(DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG).toMatchObject({
+      serverSearchDebounceMs: 300,
+      serverSearchMinLength: 3
+    });
+    expect(resolveTerminologyPropertiesConfig()).toMatchObject({
+      serverSearchDebounceMs: 300,
+      serverSearchMinLength: 3
+    });
+  });
+
+  it('accepts other server search throttling values, including no delay', () => {
+    expect(resolveTerminologyPropertiesConfig({
+      serverSearchDebounceMs: 0,
+      serverSearchMinLength: 1
+    })).toMatchObject({
+      serverSearchDebounceMs: 0,
+      serverSearchMinLength: 1
+    });
+  });
+
+  it.each([-1, 1.5, '300', Number.NaN])('rejects an invalid serverSearchDebounceMs: %j', serverSearchDebounceMs => {
+    expect(() => resolveTerminologyPropertiesConfig({ serverSearchDebounceMs })).toThrow(TypeError);
+  });
+
+  it.each([0, -1, 2.5, '3'])('rejects an invalid serverSearchMinLength: %j', serverSearchMinLength => {
+    expect(() => resolveTerminologyPropertiesConfig({ serverSearchMinLength })).toThrow(TypeError);
+  });
 });

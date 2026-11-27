@@ -25,6 +25,23 @@ import {
 } from '../error-contract.js';
 import { usePropertiesPanelErrors } from '../usePropertiesPanelError.js';
 import { PropertiesPanelErrorEntry } from './PropertiesPanelErrorEntry.js';
+import { DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG } from '../config.js';
+
+/**
+ * Whether a search with this provider may be sent to a terminology server.
+ * The FHIR and Snowstorm providers, including FHIR providers the loader
+ * registers on demand, report `sourceType: 'api'`. A provider that only falls
+ * back to a server, such as an offline package with FHIR fallback
+ * (`FallbackProvider`), reports `remoteSearch: true`. Bundled packages report
+ * `sourceType: 'package'` and other local providers report neither; they
+ * search without delay.
+ *
+ * @param {{ sourceType?: string, remoteSearch?: boolean } | null | undefined} provider
+ * @returns {boolean}
+ */
+function isServerSearchProvider(provider) {
+  return provider?.sourceType === 'api' || provider?.remoteSearch === true;
+}
 
 export function AnnotationListEntry(props) {
   const {
@@ -38,6 +55,11 @@ export function AnnotationListEntry(props) {
   const elementRegistry = useService('elementRegistry', false);
   const terminologyRegistry = useService('terminologyRegistry', false);
   const terminologyProviderLoader = useService('terminologyProviderLoader', false);
+  const propertiesConfig = useService('terminologyPropertiesConfig', false);
+  const serverSearchDebounceMs = propertiesConfig?.serverSearchDebounceMs
+    ?? DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG.serverSearchDebounceMs;
+  const serverSearchMinLength = propertiesConfig?.serverSearchMinLength
+    ?? DEFAULT_TERMINOLOGY_PROPERTIES_CONFIG.serverSearchMinLength;
 
   const [editingAnnotation, setEditingAnnotation] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -49,11 +71,15 @@ export function AnnotationListEntry(props) {
   const [searchResults, setSearchResults] = useState([]);
   const [searchResultTotal, setSearchResultTotal] = useState(undefined);
   const [searchResultOffset, setSearchResultOffset] = useState(0);
+  // Items of the page the provider hid (`filteredOut`); `undefined` when the
+  // provider applied no filter, `0` when it filtered but hid nothing.
+  const [searchResultFilteredOut, setSearchResultFilteredOut] = useState(undefined);
   const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(-1);
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [formError, setFormError] = useState('');
   const searchRequestSequence = useRef(0);
   const searchAbortController = useRef(null);
+  const searchDebounceTimeout = useRef(null);
   const searchBlurTimeout = useRef(null);
   const searchSuggestionItemRefs = useRef([]);
   const searchInputRef = useRef(null);
@@ -140,6 +166,15 @@ export function AnnotationListEntry(props) {
       return translate(
         '{providerName} denied access. Check the server credentials and permissions.',
         { providerName }
+      );
+    }
+
+    // HTTP 400 and 404 point to the configuration (a value set or release the
+    // server does not hold), not to an outage, so retrying would not help.
+    if (error?.kind === 'server' && (error.status === 400 || error.status === 404)) {
+      return translate(
+        '{providerName} could not answer this request (HTTP {status}). The configured value set or version may not exist on this server.',
+        { providerName, status: error.status }
       );
     }
 
@@ -259,6 +294,7 @@ export function AnnotationListEntry(props) {
     setSearchResults([]);
     setSearchResultTotal(undefined);
     setSearchResultOffset(0);
+    setSearchResultFilteredOut(undefined);
     setActiveSearchResultIndex(-1);
 
     if (!normalizedTerm) {
@@ -303,6 +339,9 @@ export function AnnotationListEntry(props) {
       setSearchResults(concepts);
       setSearchResultTotal(result?.total);
       setSearchResultOffset(searchOptions.offset);
+      setSearchResultFilteredOut(
+        Number.isSafeInteger(result?.filteredOut) ? Math.max(result.filteredOut, 0) : undefined
+      );
       setActiveSearchResultIndex(concepts.length > 0 ? 0 : -1);
     } catch (error) {
       if (requestId !== searchRequestSequence.current) {
@@ -325,7 +364,77 @@ export function AnnotationListEntry(props) {
     }
   }
 
+  function cancelScheduledSearch() {
+    if (searchDebounceTimeout.current) {
+      clearTimeout(searchDebounceTimeout.current);
+      searchDebounceTimeout.current = null;
+    }
+  }
+
+  /**
+   * Drop the scheduled and the running search and their results, as
+   * `runSearch` does before it starts a request.
+   */
+  function discardSearch() {
+    cancelScheduledSearch();
+    searchAbortController.current?.abort();
+    searchAbortController.current = null;
+    searchRequestSequence.current += 1;
+    setSearchError('');
+    setFormError('');
+    setSearchResults([]);
+    setSearchResultTotal(undefined);
+    setSearchResultOffset(0);
+    setSearchResultFilteredOut(undefined);
+    setActiveSearchResultIndex(-1);
+  }
+
+  /**
+   * Start a search, throttled for providers that query a terminology server:
+   * a term shorter than `serverSearchMinLength` sends nothing, and a typed
+   * term is sent `serverSearchDebounceMs` after the last keystroke, so only
+   * the last one reaches the server. Local providers search at once.
+   *
+   * @param {string} term
+   * @param {string} providerId
+   * @param {{ immediate?: boolean }} [options] - `immediate` skips the delay
+   *   (not the minimum length) for a single deliberate action, such as
+   *   accepting a suggestion.
+   */
+  function requestSearch(term, providerId, options = {}) {
+    const provider = getSearchableProviders().find(candidate => candidate.id === providerId);
+    const normalizedTerm = term.trim();
+
+    if (!isServerSearchProvider(provider) || !normalizedTerm) {
+      cancelScheduledSearch();
+      void runSearch(term, providerId);
+      return;
+    }
+
+    if (normalizedTerm.length < serverSearchMinLength) {
+      discardSearch();
+      setSearchBusy(false);
+      return;
+    }
+
+    if (options.immediate || serverSearchDebounceMs <= 0) {
+      cancelScheduledSearch();
+      void runSearch(term, providerId);
+      return;
+    }
+
+    // Results of the previous term go at once, so Enter or Tab cannot add one
+    // of them while the next search waits.
+    discardSearch();
+    setSearchBusy(true);
+    searchDebounceTimeout.current = setTimeout(() => {
+      searchDebounceTimeout.current = null;
+      void runSearch(term, providerId);
+    }, serverSearchDebounceMs);
+  }
+
   function resetSearchState() {
+    cancelScheduledSearch();
     searchAbortController.current?.abort();
     searchAbortController.current = null;
     if (searchBlurTimeout.current) {
@@ -337,6 +446,7 @@ export function AnnotationListEntry(props) {
     setSearchResults([]);
     setSearchResultTotal(undefined);
     setSearchResultOffset(0);
+    setSearchResultFilteredOut(undefined);
     setActiveSearchResultIndex(-1);
     setSearchError('');
     setSearchBusy(false);
@@ -496,7 +606,7 @@ export function AnnotationListEntry(props) {
 
     setSearchFocused(true);
     setSearchTerm(value);
-    void runSearch(value, selectedProviderId);
+    requestSearch(value, selectedProviderId);
   }
 
   function handleSearchFocus() {
@@ -539,7 +649,7 @@ export function AnnotationListEntry(props) {
       }
     });
 
-    void runSearch(label, selectedProviderId);
+    requestSearch(label, selectedProviderId, { immediate: true });
   }
 
   function handleSearchKeyDown(e) {
@@ -643,6 +753,10 @@ export function AnnotationListEntry(props) {
     closeForm();
   }, [bo]);
 
+  // A search scheduled while typing must not reach the server after the panel
+  // is gone.
+  useEffect(() => cancelScheduledSearch, []);
+
   useEffect(() => {
     if (!eventBus) return;
     const handleChanged = ({ elements }) => {
@@ -692,15 +806,33 @@ export function AnnotationListEntry(props) {
   const activeSearchResult = searchResults[activeSearchResultIndex >= 0 ? activeSearchResultIndex : 0] || null;
   const searchCompletion = getAutocompleteSuffix(searchTerm, activeSearchResult);
   const showSearchSuggestions = searchFocused && searchResults.length > 0;
+  // When the provider filters its results (`filteredOut`, e.g. LOINC Parts
+  // under the default `codePattern`), the server's total counts hidden items
+  // too, including those on pages never requested, and would overstate the
+  // matches, so the summary leaves it out even if this page lost nothing.
   const searchResultSummary = getSearchResultSummary({
     displayedCount: searchResults.length,
-    total: searchResultTotal,
+    total: searchResultFilteredOut === undefined ? searchResultTotal : undefined,
     offset: searchResultOffset
   });
-  const showNoSearchResults = Boolean(searchTerm.trim()) &&
+  const selectedProvider = getSelectedProvider();
+  const normalizedSearchTerm = searchTerm.trim();
+  const searchTermTooShort = isServerSearchProvider(selectedProvider) &&
+    normalizedSearchTerm.length > 0 &&
+    normalizedSearchTerm.length < serverSearchMinLength;
+  const showNoSearchResults = Boolean(normalizedSearchTerm) &&
+    !searchTermTooShort &&
     !searchBusy &&
     !searchError &&
     searchResults.length === 0;
+  // The server found matches, but the provider hid all of them on this page,
+  // and more matches may follow than this page held. When the page already
+  // held the whole expansion, more words cannot surface a visible code.
+  const searchMayHaveMoreMatches = !Number.isSafeInteger(searchResultTotal) ||
+    searchResultTotal > searchResultOffset + (searchResultFilteredOut || 0) + searchResults.length;
+  const showAllSearchResultsHidden = showNoSearchResults &&
+    searchResultFilteredOut > 0 &&
+    searchMayHaveMoreMatches;
   const resolvedId = getResolvedId(formData);
   const idError = showForm ? validateId(resolvedId) : undefined;
   const localEntryError = searchError || formError || idError;
@@ -945,7 +1077,24 @@ export function AnnotationListEntry(props) {
               ${searchResultSummary && html`
                 <div class="form-hint">${searchResultSummary}</div>
               `}
-              ${showNoSearchResults && html`
+              ${searchTermTooShort && html`
+                <div class="form-hint">${translate(
+                  'Enter at least {minLength} characters to search {providerName}.',
+                  {
+                    minLength: serverSearchMinLength,
+                    providerName: selectedProvider.displayName || selectedProvider.id
+                  }
+                )}</div>
+              `}
+              ${showAllSearchResultsHidden && html`
+                <div class="form-hint">${translate(
+                  'The server found matches, but {providerName} hides every code on the first page of results. Add more words to narrow the search.',
+                  {
+                    providerName: selectedProvider?.displayName || selectedProvider?.id || selectedProviderId
+                  }
+                )}</div>
+              `}
+              ${showNoSearchResults && !showAllSearchResultsHidden && html`
                 <div class="form-hint">No matching terminology concepts found.</div>
               `}
               <div class="form-row">

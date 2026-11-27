@@ -28,6 +28,7 @@ on:
       - 'tools/check-api-docs.mjs'
       - 'tools/check-doc-types.mjs'
       - 'tools/check-site-links.mjs'
+      - 'tools/check-demo-gates.mjs'
       - 'typedoc.json'
       - 'tsconfig.docs.json'
       - '.github/workflows/docs-preview.yml'
@@ -51,6 +52,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      # Runs here as well as in validate.yml: this workflow uploads its artifact
+      # on its own, so a pull request that breaks the gates must not get one.
+      - name: Demo build gates
+        run: npm run check:demo-gates
 
       - name: Install package dependencies
         run: npm ci --legacy-peer-deps
@@ -78,6 +84,19 @@ jobs:
         env:
           BASE_PATH: /bpmn-extension-medical-terminology/demo/
           BUILD_SOURCEMAP: 'false'
+          # Optional live search, only after the visitor's consent in the demo.
+          # Same repository variable as the public build (pages.yml): this
+          # artifact is never deployed, but anyone signed in to GitHub can
+          # download it from this public repository. DEMO_OPT_IN_FHIR_BASE_URL
+          # is set only after the go-live checks in docs/RELEASE-TESTING.md
+          # (section 7.6, which covers these preview builds too). Unset or
+          # empty = the preview offers no live search.
+          # Never set VITE_FHIR_BASE_URL, VITE_SNOMED_* or VITE_SNOWSTORM_* here.
+          # VITE_OPT_IN_SNOMED_EDITION (SNOMED CT unlock by licence self-declaration)
+          # stays unset until BfArM has confirmed in writing that this is acceptable.
+          # The "Demo build gates" step above (npm run check:demo-gates) enforces
+          # these rules before this build.
+          VITE_OPT_IN_FHIR_BASE_URL: ${{ vars.DEMO_OPT_IN_FHIR_BASE_URL }}
         run: npm run build
 
       - name: Assemble the published tree

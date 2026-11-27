@@ -1,4 +1,4 @@
-export const LICENSE_NOTICE_ACK_KEY = 'fdh-demo-license-notice-ack-v1';
+export const LICENSE_NOTICE_ACK_KEY = 'fdh-demo-license-notice-ack-v4';
 export const REPO_MAINPAGE_URL =
   'https://github.com/forschungsgruppe-digital-health/bpmn-extension-medical-terminology';
 
@@ -45,6 +45,21 @@ export function setupLicenseNotice({
 
   let acknowledged = isLicenseNoticeAcknowledged(storage);
 
+  // The page labels the button in both languages (`[data-accept-label]`
+  // variants "accept" and "close"); without them, plain English text.
+  function setAcceptLabel(variant) {
+    const labels = [ ...acceptButton.querySelectorAll('[data-accept-label]') ];
+
+    if (!labels.length) {
+      acceptButton.textContent = variant === 'accept' ? 'Accept' : 'Close';
+      return;
+    }
+
+    for (const label of labels) {
+      label.hidden = label.getAttribute('data-accept-label') !== variant;
+    }
+  }
+
   function openDialog({ requireAck = false } = {}) {
     overlay.classList.remove('license-overlay--hidden');
     if (closeButton) {
@@ -53,7 +68,7 @@ export function setupLicenseNotice({
     if (rejectButton) {
       rejectButton.hidden = !requireAck;
     }
-    acceptButton.textContent = requireAck ? 'Accept' : 'Close';
+    setAcceptLabel(requireAck ? 'accept' : 'close');
     acceptButton.focus();
   }
 

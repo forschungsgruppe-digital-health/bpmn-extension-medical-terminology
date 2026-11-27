@@ -56,6 +56,10 @@ describe('TerminologyServices', () => {
     });
 
     expect(provider.id).toBe('hl7-v3-actcode');
+    // Searches may reach the FHIR server, so the properties panel throttles
+    // them; the provider itself is not an 'api' provider.
+    expect(provider.remoteSearch).toBe(true);
+    expect(provider.sourceType).toBeUndefined();
     await expect(provider.lookup('AA')).resolves.toMatchObject({
       code: 'AA',
       system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode'
@@ -160,8 +164,10 @@ describe('TerminologyServices', () => {
     });
   });
 
-  it('should create default services with built-in providers', () => {
+  it('should create default services with built-in providers once a server is configured', () => {
     const services = createDefaultTerminologyServices({
+      serverConfig: { fhirBaseUrl: 'https://fhir.example.test/fhir' },
+      snomedConfig: { edition: '11000274103' },
       enablePackageDefaults: false,
       loaderConfig: false
     });
@@ -215,12 +221,12 @@ describe('TerminologyServices', () => {
     expect(hl7Provider).toMatchObject({
       sourceType: 'package',
       sourceName: 'hl7.terminology.r4',
-      sourceLabel: 'hl7.terminology.r4@7.1.0'
+      sourceLabel: 'hl7.terminology.r4@7.5.0'
     });
     expect(kdlProvider).toMatchObject({
       sourceType: 'package',
-      sourceName: 'CodeSystem Klinische Dokumentenklassen-Liste (Version 2025)',
-      sourceLabel: 'dvmd.kdl.r4@2025.0.1'
+      sourceName: 'CodeSystem Klinische Dokumentenklassen-Liste 2026',
+      sourceLabel: 'dvmd.kdl.r4@2026.0.0'
     });
   });
 
@@ -260,13 +266,13 @@ describe('TerminologyServices', () => {
     });
 
     expect(providers.find(provider => provider.id === 'hl7-terminology-r4-package').displayName)
-      .toBe('hl7.terminology.r4 (7.1.0)');
+      .toBe('hl7.terminology.r4 (7.5.0)');
     expect(providers.find(provider => provider.id === 'ihe-xds-class').displayName)
       .toBe('de.ihe-d.terminology (3.0.1) — IHEXDSclassCode');
     expect(providers.find(provider => provider.id === 'ihe-xds-type').displayName)
       .toBe('de.ihe-d.terminology (3.0.1) — IHEXDStypeCode');
     expect(providers.find(provider => provider.id === 'kdl').displayName)
-      .toBe('dvmd.kdl.r4 (2025.0.1) — CodeSystem Klinische Dokumentenklassen-Liste (Version 2025)');
+      .toBe('dvmd.kdl.r4 (2026.0.0) — CodeSystem Klinische Dokumentenklassen-Liste 2026');
   });
 
   it('should allow overriding a bundled provider component label', () => {
@@ -283,7 +289,23 @@ describe('TerminologyServices', () => {
       .toBe('de.ihe-d.terminology (3.0.1) — XDS class');
   });
 
-  it('should use the Ontoserver FHIR transport for default SNOMED search', async () => {
+  it('should not contact any terminology server for SNOMED search by default', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    try {
+      const config = createDefaultTerminologyConfig({
+        enableFhirDefaults: false,
+        enablePackageDefaults: false,
+        loaderConfig: false
+      });
+
+      expect(config.providers.find(item => item.id === 'snomed-ct')).toBeUndefined();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('should use the configured FHIR server and edition for SNOMED search', async () => {
     const fetchFn = vi.fn(async () => ({
       ok: true,
       json: async () => ({ expansion: { contains: [], total: 0 } })
@@ -292,7 +314,8 @@ describe('TerminologyServices', () => {
       enableFhirDefaults: false,
       enablePackageDefaults: false,
       loaderConfig: false,
-      snomedConfig: { fetchFn }
+      serverConfig: { fhirBaseUrl: 'https://fhir.example.test/fhir' },
+      snomedConfig: { edition: '11000274103', fetchFn }
     });
     const provider = config.providers.find(item => item.id === 'snomed-ct');
 
@@ -301,9 +324,9 @@ describe('TerminologyServices', () => {
     await provider.search('pneumonia');
 
     const requestUrl = new URL(fetchFn.mock.calls[0][0]);
-    expect(requestUrl.origin).toBe('https://r4.ontoserver.csiro.au');
+    expect(requestUrl.origin).toBe('https://fhir.example.test');
     expect(requestUrl.pathname).toBe('/fhir/ValueSet/$expand');
-    expect(requestUrl.searchParams.get('url')).toBe('http://snomed.info/sct?fhir_vs');
+    expect(requestUrl.searchParams.get('url')).toBe('http://snomed.info/sct/11000274103?fhir_vs');
   });
 
   it('should allow switching the SNOMED transport to Snowstorm', async () => {
@@ -320,6 +343,7 @@ describe('TerminologyServices', () => {
       },
       snomedConfig: {
         transport: 'snowstorm',
+        branch: 'MAIN/SNOMEDCT-DE',
         fetchFn
       }
     });
@@ -333,7 +357,7 @@ describe('TerminologyServices', () => {
       total: 0
     });
     expect(fetchFn.mock.calls[0][0]).toContain(
-      'https://snowstorm.example.com/snowstorm/snomed-ct/MAIN/concepts'
+      'https://snowstorm.example.com/snowstorm/snomed-ct/MAIN/SNOMEDCT-DE/concepts'
     );
   });
 
@@ -343,6 +367,8 @@ describe('TerminologyServices', () => {
       json: async () => ({ expansion: { contains: [], total: 0 } })
     }));
     const config = createDefaultTerminologyConfig({
+      serverConfig: { fhirBaseUrl: 'https://fhir.example.test/fhir' },
+      snomedConfig: { edition: '11000274103' },
       enablePackageDefaults: false,
       loaderConfig: false,
       fetchFn
@@ -361,6 +387,8 @@ describe('TerminologyServices', () => {
 
   it('should allow disabling defaults by provider id', () => {
     const services = createDefaultTerminologyServices({
+      serverConfig: { fhirBaseUrl: 'https://fhir.example.test/fhir' },
+      snomedConfig: { edition: '11000274103' },
       enablePackageDefaults: false,
       loaderConfig: false,
       disabledProviderIds: ['atc', 'snomed-ct']
@@ -1134,16 +1162,16 @@ describe('TerminologyServices', () => {
       packageAutoDiscovery: {
         packages: {
           'hl7.terminology.r4@6.0.2': [legacyCodeSystem],
-          'hl7.terminology.r4@7.1.0': [currentCodeSystem]
+          'hl7.terminology.r4@7.5.0': [currentCodeSystem]
         },
         metadata: {
           'hl7.terminology.r4@6.0.2': {
             packageName: 'hl7.terminology.r4',
             version: '6.0.2'
           },
-          'hl7.terminology.r4@7.1.0': {
+          'hl7.terminology.r4@7.5.0': {
             packageName: 'hl7.terminology.r4',
-            version: '7.1.0'
+            version: '7.5.0'
           }
         }
       }
@@ -1151,7 +1179,7 @@ describe('TerminologyServices', () => {
 
     expect(providers.some(provider => provider.id === 'hl7-terminology-r4-package')).toBe(true);
     expect(providers.some(provider => provider.id === 'pkg-hl7-terminology-r4-6-0-2')).toBe(true);
-    expect(providers.some(provider => provider.id === 'pkg-hl7-terminology-r4-7-1-0')).toBe(false);
+    expect(providers.some(provider => provider.id === 'pkg-hl7-terminology-r4-7-5-0')).toBe(false);
   });
 
   it('should warn once when direct and transitive requirements were deduplicated', () => {

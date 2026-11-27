@@ -35,6 +35,10 @@ npm run dev
 `npm run verify` is the required local quality gate. BPMN-core XSD validation
 is informational because the standard schema does not validate foreign
 extension content; moddle roundtrip stability and BPMN linting are blocking.
+`npm run check:conformance` also runs `npm run check:demo-gates`, which fails
+when a GitHub workflow or a committed env file sets a demo terminology variable
+that shared demo builds may not set (release gate in
+`docs/RELEASE-TESTING.md`, section 7.6).
 When the `hl7.terminology.r4` dependency changes, regenerate the checked-in
 HL7 CodeSystem resource with `npm run generate:hl7`.
 

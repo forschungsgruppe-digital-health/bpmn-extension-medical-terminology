@@ -70,6 +70,10 @@ export default defineConfig({
       editLink: { baseUrl: `${REPO}/edit/main/docs-site/` },
       social: [{ icon: 'github', label: 'GitHub', href: REPO }],
       customCss: ['./src/styles/custom.css'],
+      // Adds the imprint link of TU Dresden below every page.
+      components: {
+        Footer: './src/components/Footer.astro'
+      },
 
       plugins: [
         starlightTypeDoc({
@@ -115,6 +119,7 @@ export default defineConfig({
         ] },
         { label: 'Configuration & integration', items: [
           { label: 'Default configuration', link: '/configuration/defaults/' },
+          { label: 'Connecting a terminology server', link: '/configuration/terminology-server/' },
           { label: 'Configuration options', link: '/configuration/' },
           { label: 'Properties panel', link: '/properties-panel/' },
           { label: 'Terminology packages', link: '/configuration/discovery/' },

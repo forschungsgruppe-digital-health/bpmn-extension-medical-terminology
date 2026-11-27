@@ -7,6 +7,7 @@ import {
   REPO_MAINPAGE_URL,
   setupLicenseNotice
 } from '../../../demo/src/license-notice.js';
+import { visibleText } from './visible-text.js';
 
 const DEMO_HTML_PATH = resolve(import.meta.dirname, '../../../demo/index.html');
 const DEMO_HTML = readFileSync(DEMO_HTML_PATH, 'utf8');
@@ -33,8 +34,10 @@ describe('demo license notice dialog', () => {
 
     expect(overlay.classList.contains('license-overlay--hidden')).toBe(false);
     expect(rejectButton.hidden).toBe(false);
-    expect(rejectButton.textContent.trim()).toBe('Reject');
-    expect(acceptButton.textContent.trim()).toBe('Accept');
+    expect(visibleText(rejectButton)).toBe('Reject');
+    expect(visibleText(acceptButton)).toBe('Accept');
+    expect(visibleText(rejectButton, 'de')).toBe('Ablehnen');
+    expect(visibleText(acceptButton, 'de')).toBe('Akzeptieren');
     expect(closeButton.hidden).toBe(true);
 
     overlay.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -84,9 +87,25 @@ describe('demo license notice dialog', () => {
     expect(overlay.classList.contains('license-overlay--hidden')).toBe(false);
     expect(rejectButton.hidden).toBe(true);
     expect(closeButton.hidden).toBe(false);
-    expect(acceptButton.textContent.trim()).toBe('Close');
+    expect(visibleText(acceptButton)).toBe('Close');
+    expect(visibleText(acceptButton, 'de')).toBe('Schließen');
 
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     expect(overlay.classList.contains('license-overlay--hidden')).toBe(true);
+  });
+
+  it('labels the button with plain English text on a page without bilingual labels', () => {
+    document.body.innerHTML = `
+      <div id="license-overlay"><button id="btn-license-accept" type="button">Accept</button></div>
+      <button id="btn-license-notice" type="button">Notice</button>`;
+
+    setupLicenseNotice({ doc: document, storage: window.sessionStorage, navigate: vi.fn() });
+
+    const acceptButton = document.getElementById('btn-license-accept');
+    expect(acceptButton.textContent).toBe('Accept');
+
+    acceptButton.click();
+    document.getElementById('btn-license-notice').click();
+    expect(acceptButton.textContent).toBe('Close');
   });
 });

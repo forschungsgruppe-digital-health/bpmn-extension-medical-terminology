@@ -1,7 +1,12 @@
 import { defineConfig, loadEnv } from 'vite';
+import { thirdPartyLicenses } from './build/third-party-licenses.js';
+
 export function createDemoViteConfig(env = {}) {
   return {
     base: env.BASE_PATH || '/',
+    plugins: [
+      thirdPartyLicenses()
+    ],
     resolve: {
       preserveSymlinks: true
     },

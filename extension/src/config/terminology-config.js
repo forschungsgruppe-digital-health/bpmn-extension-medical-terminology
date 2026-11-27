@@ -18,56 +18,94 @@ import {
 } from '../services/PackageDiscoveryDefaults.js';
 import { createTerminologyModule, createTerminologyServices } from '../services/TerminologyServices.js';
 
+// No terminology server is preconfigured. SNOMED CT, LOINC, ICD-10-GM, OPS and
+// ATC are licensed content; the integrator chooses a server they are licensed
+// to use and sets `serverConfig.fhirBaseUrl` explicitly.
 const DEFAULT_SERVER_CONFIG = Object.freeze({
-  fhirBaseUrl: 'https://r4.ontoserver.csiro.au/fhir'
+  fhirBaseUrl: undefined
 });
 
+// No Snowstorm branch is preconfigured: `MAIN` holds the International
+// Edition, which the integrator may not be licensed for. Like the FHIR
+// transport without `edition`, the Snowstorm transport without `branch` stays
+// disabled.
 const DEFAULT_SNOMED_CONFIG = Object.freeze({
   id: 'snomed-ct',
   displayName: 'SNOMED CT',
   systemUri: 'http://snomed.info/sct',
   transport: 'fhir',
-  valueSetUri: 'http://snomed.info/sct?fhir_vs',
-  branch: 'MAIN',
+  // Applies to the Snowstorm transport only. The FHIR transport ignores it and
+  // uses the package language setting (displayLanguage=de).
   languageStrategy: 'header'
 });
 
+// `$expand` parameters of the FHIR-backed SNOMED CT provider. Without
+// `activeOnly`, servers also return inactive concepts. `snomedConfig.expandParameters`
+// is merged over these; `{ activeOnly: 'false' }` includes inactive concepts again.
+const DEFAULT_SNOMED_FHIR_EXPAND_PARAMETERS = Object.freeze({
+  activeOnly: 'true'
+});
+
+const SNOMED_SYSTEM_URI = 'http://snomed.info/sct';
+const SNOMED_MODULE_ID_PATTERN = /^\d{6,18}$/;
+const SNOMED_RELEASE_VERSION_PATTERN = /^\d{8}$/;
+// Implicit SNOMED CT value set of one edition, optionally of one release:
+// http://snomed.info/sct/<moduleId>[/version/<YYYYMMDD>]?fhir_vs[=...].
+// Group 1 is the edition URI.
+const SNOMED_IMPLICIT_VALUE_SET_PATTERN =
+  /^(http:\/\/snomed\.info\/sct\/\d{6,18}(?:\/version\/\d{8})?)\?fhir_vs(?:=|$)/;
+// Implicit SNOMED CT value set without a module id, http://snomed.info/sct?fhir_vs[=...]:
+// it always expands the server's default edition.
+const SNOMED_EDITIONLESS_IMPLICIT_VALUE_SET_PATTERN = /^http:\/\/snomed\.info\/sct\?fhir_vs(?:=|$)/;
+
+const warnedMessages = new Set();
+
+function warnOnce(message) {
+  if (warnedMessages.has(message)) {
+    return;
+  }
+
+  warnedMessages.add(message);
+  console.warn(message);
+}
+
+// The default FHIR providers pin no release: no `expandParameters` and no
+// `lookupParameters`. The server answers from its current release, and each
+// stored coding carries the release the server reports (`used-codesystem` in
+// `$expand`, the `version` output of `$lookup`). A hard-coded year would break
+// as soon as a server drops that release. To pin one, override the provider:
+// `fhirProviderOverrides: [{ id: 'icd-10-gm', expandParameters: { valueSetVersion: '2026' } }]`
+// (a server that does not hold that release then answers HTTP 404).
 const DEFAULT_FHIR_PROVIDER_CONFIGS = Object.freeze([
   {
     id: 'loinc',
     displayName: 'LOINC',
     systemUri: 'http://loinc.org',
-    valueSetUri: 'http://loinc.org/vs'
+    valueSetUri: 'http://loinc.org/vs',
+    // http://loinc.org/vs also expands LOINC Parts (LP…), Answers (LA…),
+    // groups (LG…) and answer lists (LL…). Show only LOINC term codes such as
+    // 2345-7. `fhirProviderOverrides: [{ id: 'loinc', codePattern: null }]`
+    // shows every code again.
+    codePattern: '^\\d{1,7}-\\d$'
   },
   {
     id: 'icd-10-gm',
     displayName: 'ICD-10-GM',
     systemUri: 'http://fhir.de/CodeSystem/bfarm/icd-10-gm',
-    valueSetUri: 'http://fhir.de/ValueSet/bfarm/icd-10-gm',
-    expandParameters: {
-      valueSetVersion: '2020'
-    }
+    valueSetUri: 'http://fhir.de/ValueSet/bfarm/icd-10-gm'
   },
   {
     id: 'ops',
     displayName: 'OPS',
     systemUri: 'http://fhir.de/CodeSystem/bfarm/ops',
-    valueSetUri: 'http://fhir.de/ValueSet/bfarm/ops',
-    expandParameters: {
-      'system-version': 'http://fhir.de/CodeSystem/bfarm/ops|2021'
-    }
+    valueSetUri: 'http://fhir.de/ValueSet/bfarm/ops'
   },
   {
+    // ATC-GM, the German ATC classification published by BfArM.
     id: 'atc',
     displayName: 'ATC',
-    systemUri: 'http://www.whocc.no/atc',
-    valueSetUri: 'http://www.whocc.no/atc/vs',
-    expandParameters: {
-      valueSetVersion: '2025.0.0'
-    },
-    lookupParameters: {
-      version: '2025.0.0'
-    }
+    systemUri: 'http://fhir.de/CodeSystem/bfarm/atc',
+    valueSetUri: 'http://fhir.de/ValueSet/bfarm/atc'
   }
 ]);
 
@@ -98,6 +136,178 @@ function filterDisabled(providers, disabledProviderIds) {
   return providers.filter(provider => !disabledProviderIds.has(provider.id));
 }
 
+/**
+ * Build the FHIR edition URI for a SNOMED CT edition, for example
+ * `http://snomed.info/sct/11000274103` for the German National Edition or
+ * `http://snomed.info/sct/11000274103/version/20260815` for one release.
+ *
+ * @param {string} edition - Module id of the edition.
+ * @param {string} [editionVersion] - Release date as `YYYYMMDD`.
+ * @returns {string}
+ */
+export function createSnomedEditionUri(edition, editionVersion) {
+  const moduleId = String(edition ?? '').trim();
+
+  if (!SNOMED_MODULE_ID_PATTERN.test(moduleId)) {
+    throw new Error(
+      `SNOMED CT edition "${edition}" is not a module id. ` +
+      'Use for example "11000274103" (German National Edition) or ' +
+      '"900000000000207008" (International Edition).'
+    );
+  }
+
+  if (editionVersion === undefined || editionVersion === null || editionVersion === '') {
+    return `${SNOMED_SYSTEM_URI}/${moduleId}`;
+  }
+
+  const releaseVersion = String(editionVersion).trim();
+
+  if (!SNOMED_RELEASE_VERSION_PATTERN.test(releaseVersion)) {
+    throw new Error(
+      `SNOMED CT edition version "${editionVersion}" must be a release date in the form YYYYMMDD.`
+    );
+  }
+
+  return `${SNOMED_SYSTEM_URI}/${moduleId}/version/${releaseVersion}`;
+}
+
+function hasSnomedEditionVersion(editionVersion) {
+  return editionVersion !== undefined && editionVersion !== null && editionVersion !== '';
+}
+
+/**
+ * Warn once about a SNOMED CT value set that names no edition. Such a value
+ * set can be legitimate, so it stays enabled; but neither the package nor the
+ * configuration then decides which edition searches use and which version is
+ * stored with each coding: the value set's definition does, or, without a
+ * pinned version, the server's default. `edition` and
+ * `lookupParameters.version` scope only `$lookup`; with either, the message
+ * leaves out its `$lookup` advice.
+ *
+ * @param {{ valueSetUri: string, edition?: string, lookupParameters?: Record<string, string> }} resolvedConfig
+ */
+function warnAboutSnomedValueSetWithoutEdition(resolvedConfig) {
+  const lookupScoped = Boolean(resolvedConfig.edition || resolvedConfig.lookupParameters?.version);
+  const lookupAdvice = lookupScoped
+    ? ''
+    : ' $lookup is not scoped to an edition either: set snomedConfig.edition to the module id ' +
+      'of that edition, for example "11000274103" (German National Edition), or ' +
+      'snomedConfig.lookupParameters.version.';
+
+  if (SNOMED_EDITIONLESS_IMPLICIT_VALUE_SET_PATTERN.test(resolvedConfig.valueSetUri)) {
+    // An implicit value set cannot pin an edition through compose.include.version;
+    // only the module id in its URI can.
+    warnOnce(
+      `[terminology] SNOMED CT value set "${resolvedConfig.valueSetUri}" names no edition: ` +
+      "an implicit value set without a module id always expands the server's default edition. " +
+      'Put the module id of the edition covered by your licence into it, for example "' +
+      resolvedConfig.valueSetUri.replace(/^http:\/\/snomed\.info\/sct\?/, `${SNOMED_SYSTEM_URI}/11000274103?`) +
+      '" (German National Edition).' +
+      lookupAdvice
+    );
+    return;
+  }
+
+  warnOnce(
+    `[terminology] SNOMED CT value set "${resolvedConfig.valueSetUri}" names no edition. ` +
+    'Which edition searches use, and which version is stored with each coding, is decided by ' +
+    "this value set's definition (compose.include.version) or, if it pins none, by the server's " +
+    'default edition. Make sure the value set pins the edition covered by your licence.' +
+    lookupAdvice
+  );
+}
+
+/**
+ * Warn once when `edition` (with `editionVersion`) and an implicit edition
+ * value set name different editions or releases: searches then expand the
+ * value set's edition, while `$lookup` uses `edition`.
+ *
+ * @param {string} editionUri - Edition URI built from `edition` and `editionVersion`.
+ * @param {{ valueSetUri: string, editionVersion?: string }} resolvedConfig
+ */
+function warnAboutSnomedEditionMismatch(editionUri, resolvedConfig) {
+  const valueSetEditionUri = SNOMED_IMPLICIT_VALUE_SET_PATTERN.exec(resolvedConfig.valueSetUri)?.[1];
+
+  if (!valueSetEditionUri || valueSetEditionUri === editionUri) {
+    return;
+  }
+
+  const editionSource = hasSnomedEditionVersion(resolvedConfig.editionVersion)
+    ? 'snomedConfig.edition and editionVersion name'
+    : 'snomedConfig.edition names';
+
+  warnOnce(
+    `[terminology] SNOMED CT value set "${resolvedConfig.valueSetUri}" names ${valueSetEditionUri}, ` +
+    `but ${editionSource} ${editionUri}. Searches expand the value set's edition, while $lookup ` +
+    'uses snomedConfig.edition. Make both name the same edition and release, the one covered by ' +
+    'your licence.'
+  );
+}
+
+function resolveSnomedFhirEdition(resolvedConfig) {
+  if (
+    resolvedConfig.valueSetUri
+    && !SNOMED_IMPLICIT_VALUE_SET_PATTERN.test(resolvedConfig.valueSetUri)
+  ) {
+    warnAboutSnomedValueSetWithoutEdition(resolvedConfig);
+  }
+
+  if (resolvedConfig.edition) {
+    const editionUri = createSnomedEditionUri(
+      resolvedConfig.edition,
+      resolvedConfig.editionVersion
+    );
+
+    if (resolvedConfig.valueSetUri) {
+      warnAboutSnomedEditionMismatch(editionUri, resolvedConfig);
+    }
+
+    return {
+      valueSetUri: resolvedConfig.valueSetUri || `${editionUri}?fhir_vs`,
+      // Without `editionVersion` the server answers from its latest release of
+      // the edition and reports it per coding (`…/version/YYYYMMDD`). The bare
+      // edition URI never equals such a stored version, so it is no version
+      // label; only a pinned release is.
+      version: resolvedConfig.version
+        || (hasSnomedEditionVersion(resolvedConfig.editionVersion) ? editionUri : undefined),
+      lookupParameters: {
+        version: editionUri,
+        ...(resolvedConfig.lookupParameters || {})
+      }
+    };
+  }
+
+  if (resolvedConfig.valueSetUri) {
+    // An implicit value set such as http://snomed.info/sct/11000274103?fhir_vs=isa/404684003
+    // names the edition, and maybe the release; scope `$lookup` to it as well,
+    // so lookups cannot answer from the server's default edition. Only a
+    // release URI (`…/version/YYYYMMDD`) is a version label.
+    const editionUri = SNOMED_IMPLICIT_VALUE_SET_PATTERN.exec(resolvedConfig.valueSetUri)?.[1];
+
+    if (!editionUri) {
+      // A custom value set stays enabled (the warning above has been given);
+      // `$lookup` is scoped only by an explicit `lookupParameters.version`.
+      return {
+        valueSetUri: resolvedConfig.valueSetUri,
+        version: resolvedConfig.version,
+        lookupParameters: resolvedConfig.lookupParameters
+      };
+    }
+
+    return {
+      valueSetUri: resolvedConfig.valueSetUri,
+      version: resolvedConfig.version
+        || (editionUri.includes('/version/') ? editionUri : undefined),
+      lookupParameters: {
+        version: editionUri,
+        ...(resolvedConfig.lookupParameters || {})
+      }
+    };
+  }
+
+  return null;
+}
+
 function createDefaultSnomedProvider(snomedConfig, serverConfig, fetchFn) {
   const resolvedConfig = {
     ...DEFAULT_SNOMED_CONFIG,
@@ -107,11 +317,39 @@ function createDefaultSnomedProvider(snomedConfig, serverConfig, fetchFn) {
   const requestFetchFn = resolvedConfig.fetchFn || fetchFn;
 
   if (transport === 'fhir') {
+    const baseUrl = resolvedConfig.baseUrl
+      || serverConfig.snomedBaseUrl
+      || serverConfig.fhirBaseUrl;
+
+    if (!baseUrl) {
+      warnOnce(
+        '[terminology] SNOMED CT is disabled: no terminology server is configured. ' +
+        'Set serverConfig.fhirBaseUrl (or snomedConfig.baseUrl) to a server you are ' +
+        'licensed to use, and snomedConfig.edition to the SNOMED CT edition covered by your licence.'
+      );
+      return null;
+    }
+
+    const edition = resolveSnomedFhirEdition(resolvedConfig);
+
+    if (!edition) {
+      warnOnce(
+        '[terminology] SNOMED CT is disabled: no edition is configured. ' +
+        'Set snomedConfig.edition to the module id of the edition covered by your licence, ' +
+        'for example "11000274103" (German National Edition). Without it the server would ' +
+        'answer from whatever edition it defaults to.'
+      );
+      return null;
+    }
+
     return new FhirProvider({
       ...resolvedConfig,
-      baseUrl: resolvedConfig.baseUrl
-        || serverConfig.snomedBaseUrl
-        || serverConfig.fhirBaseUrl,
+      ...edition,
+      expandParameters: {
+        ...DEFAULT_SNOMED_FHIR_EXPAND_PARAMETERS,
+        ...(resolvedConfig.expandParameters || {})
+      },
+      baseUrl,
       fetchFn: requestFetchFn
     });
   }
@@ -128,8 +366,23 @@ function createDefaultSnomedProvider(snomedConfig, serverConfig, fetchFn) {
       );
     }
 
+    const branch = typeof resolvedConfig.branch === 'string'
+      ? resolvedConfig.branch.trim()
+      : '';
+
+    if (!branch) {
+      warnOnce(
+        '[terminology] SNOMED CT is disabled: no Snowstorm branch is configured. ' +
+        'Set snomedConfig.branch to the branch of the edition covered by your licence, ' +
+        'for example "MAIN/SNOMEDCT-DE" (German National Edition). Without it Snowstorm ' +
+        'would be queried on MAIN, the International Edition.'
+      );
+      return null;
+    }
+
     return new SnomedCtProvider({
       ...resolvedConfig,
+      branch,
       baseUrl,
       fetchFn: requestFetchFn
     });
@@ -156,18 +409,31 @@ export function createDefaultFhirProviderConfigs(config = {}) {
     disabledProviderIds = []
   } = config;
 
-  const mergedDefaults = mergeById(DEFAULT_FHIR_PROVIDER_CONFIGS, fhirProviderOverrides).map(provider => ({
-    ...provider,
-    baseUrl: provider.baseUrl || fhirBaseUrl,
-    ...(fetchFn ? { fetchFn: provider.fetchFn || fetchFn } : {})
-  }));
+  const disabledProviderIdSet = toDisabledSet(disabledProviderIds);
+  const mergedDefaults = filterDisabled(
+    mergeById(DEFAULT_FHIR_PROVIDER_CONFIGS, fhirProviderOverrides).map(provider => ({
+      ...provider,
+      baseUrl: provider.baseUrl || fhirBaseUrl,
+      ...(fetchFn ? { fetchFn: provider.fetchFn || fetchFn } : {})
+    })),
+    disabledProviderIdSet
+  );
+  const serverlessDefaults = mergedDefaults.filter(provider => !provider.baseUrl);
+
+  if (serverlessDefaults.length > 0) {
+    warnOnce(
+      `[terminology] ${serverlessDefaults.map(provider => provider.displayName).join(', ')} ` +
+      `${serverlessDefaults.length === 1 ? 'is' : 'are'} disabled: no terminology server is configured. ` +
+      'Set serverConfig.fhirBaseUrl to a FHIR terminology server you are licensed to use.'
+    );
+  }
 
   const providers = [
-    ...mergedDefaults,
+    ...mergedDefaults.filter(provider => provider.baseUrl),
     ...additionalFhirProviders
   ];
 
-  return filterDisabled(providers, toDisabledSet(disabledProviderIds));
+  return filterDisabled(providers, disabledProviderIdSet);
 }
 
 function validatePackageProviderOptions(packageProviderOptions) {
@@ -366,11 +632,9 @@ export function createDefaultTerminologyConfig(config = {}) {
   const resolvedServerConfig = createDefaultServerConfig(serverConfig);
   const disabledProviderIdSet = toDisabledSet(disabledProviderIds);
 
-  const defaultProviders = [
-    ...(enableSnomed
-      ? [ createDefaultSnomedProvider(snomedConfig, resolvedServerConfig, fetchFn) ]
-      : []),
-  ];
+  const defaultProviders = enableSnomed && !disabledProviderIdSet.has(DEFAULT_SNOMED_CONFIG.id)
+    ? [ createDefaultSnomedProvider(snomedConfig, resolvedServerConfig, fetchFn) ].filter(Boolean)
+    : [];
 
   const defaultPackageProviders = createDefaultPackageProviders({
     ...config,
@@ -393,6 +657,7 @@ export function createDefaultTerminologyConfig(config = {}) {
       ]
       : filterDisabled(fhirProviders, disabledProviderIdSet),
     loaderConfig: loaderConfig === false
+      || (!resolvedServerConfig.fhirBaseUrl && !loaderConfig?.fhirBaseUrl)
       ? false
       : {
         fhirBaseUrl: resolvedServerConfig.fhirBaseUrl,

@@ -96,6 +96,41 @@ describe('FallbackProvider', () => {
     warn.mockRestore();
   });
 
+  it('reports remoteSearch when the primary or the fallback provider queries a server', () => {
+    const local = () => createProvider();
+    const server = () => createProvider({ sourceType: 'api' });
+    const nestedRemote = () => createProvider({ remoteSearch: true });
+
+    const create = (primaryProvider, fallbackProvider) => new FallbackProvider({
+      id: 'dual-track',
+      primaryProvider,
+      fallbackProvider
+    });
+
+    expect(create(local(), server()).remoteSearch).toBe(true);
+    expect(create(server(), local()).remoteSearch).toBe(true);
+    expect(create(local(), nestedRemote()).remoteSearch).toBe(true);
+    expect(create(local(), createProvider({ sourceType: 'package' })).remoteSearch).toBe(false);
+    // The flag does not turn the provider into an 'api' provider.
+    expect(create(local(), server()).sourceType).toBeUndefined();
+  });
+
+  it('returns the fallback page when its provider hid every item of it', async () => {
+    const primary = createProvider();
+    const fallbackResult = { concepts: [], total: 1831, filteredOut: 15 };
+    const fallback = createProvider({
+      search: vi.fn(async () => fallbackResult)
+    });
+
+    const provider = new FallbackProvider({
+      id: 'dual-track',
+      primaryProvider: primary,
+      fallbackProvider: fallback
+    });
+
+    await expect(provider.search('synthetic')).resolves.toBe(fallbackResult);
+  });
+
   it('should reject mismatched system URIs', () => {
     const primary = createProvider({ systemUri: 'http://example.com/a' });
     const fallback = createProvider({ systemUri: 'http://example.com/b' });

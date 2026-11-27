@@ -12,10 +12,55 @@ describe('SnomedCtProvider', () => {
   function createProvider(overrides = {}) {
     return new SnomedCtProvider({
       baseUrl: 'https://snowstorm.example.com',
+      // Explicit, so the default-branch warning stays out of these tests.
+      branch: 'MAIN',
       fetchFn: overrides.fetchFn ?? createMockFetch({ items: [], total: 0 }),
       ...overrides
     });
   }
+
+  describe('branch', () => {
+    it('queries MAIN without a branch, as before, but warns once', async () => {
+      vi.resetModules();
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const { SnomedCtProvider: FreshSnomedCtProvider } =
+          await import('../../src/providers/SnomedCtProvider.js');
+        const fetchFn = createMockFetch({ items: [], total: 0 });
+        const provider = new FreshSnomedCtProvider({ baseUrl: 'https://snowstorm.example.com', fetchFn });
+        new FreshSnomedCtProvider({ baseUrl: 'https://snowstorm.example.com', branch: '  ', fetchFn });
+
+        await provider.search('heart');
+
+        expect(new URL(fetchFn.mock.calls[0][0]).pathname).toBe('/MAIN/concepts');
+        const branchWarnings = warn.mock.calls
+          .map(([message]) => message)
+          .filter(message => message.includes('no branch configured'));
+        expect(branchWarnings).toHaveLength(1);
+        expect(branchWarnings[0]).toContain('SnomedCtProvider');
+        expect(branchWarnings[0]).toContain('International Edition');
+        expect(branchWarnings[0]).toContain('MAIN/SNOMEDCT-DE');
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('does not warn when a branch is configured', async () => {
+      vi.resetModules();
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const { SnomedCtProvider: FreshSnomedCtProvider } =
+          await import('../../src/providers/SnomedCtProvider.js');
+        new FreshSnomedCtProvider({ baseUrl: 'https://snowstorm.example.com', branch: 'MAIN/SNOMEDCT-DE' });
+
+        expect(warn).not.toHaveBeenCalled();
+      } finally {
+        warn.mockRestore();
+      }
+    });
+  });
 
   it('should have correct identity', () => {
     const provider = createProvider();
@@ -182,6 +227,54 @@ describe('SnomedCtProvider', () => {
 
       await expect(provider.search('test'))
         .rejects.toMatchObject({ kind: 'redirect', status: 302 });
+    });
+
+    it('does not warn about a search the caller aborted', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const controller = new AbortController();
+        const fetchFn = vi.fn(async (url, init) => {
+          controller.abort();
+          throw init.signal.reason ?? new DOMException('The operation was aborted.', 'AbortError');
+        });
+        const provider = createProvider({ fetchFn });
+
+        await expect(provider.search('test', { signal: controller.signal }))
+          .rejects.toMatchObject({ kind: 'aborted' });
+        expect(fetchFn).toHaveBeenCalledTimes(1);
+        expect(warn).not.toHaveBeenCalled();
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('still warns about other search errors', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      try {
+        const cases = [
+          [ vi.fn(async () => { throw new TypeError('Failed to fetch'); }), { kind: 'network' } ],
+          [ vi.fn(async () => ({ ok: false, status: 503 })), { kind: 'server', status: 503 } ],
+          [ createMockFetch({ items: [{ pt: { term: 'Missing concept id' } }] }), { kind: 'data' } ]
+        ];
+
+        for (const [ fetchFn, expected ] of cases) {
+          warn.mockClear();
+
+          const provider = createProvider({ fetchFn });
+          const failure = provider.search('test');
+
+          await expect(failure).rejects.toMatchObject(expected);
+          expect(warn).toHaveBeenCalledTimes(1);
+          expect(warn).toHaveBeenCalledWith(
+            '[terminology] Search failed for provider "snomed-ct" at snowstorm.example.com.',
+            await failure.catch(error => error)
+          );
+        }
+      } finally {
+        warn.mockRestore();
+      }
     });
   });
 

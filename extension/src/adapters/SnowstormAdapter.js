@@ -34,6 +34,40 @@ export function resolveSnowstormBaseUrl(baseUrl) {
   return new URL(rawBaseUrl, origin).toString().replace(/\/$/, '');
 }
 
+const warnedDefaultBranchOwners = new Set();
+
+/**
+ * Resolve the Snowstorm branch of a direct `SnowstormAdapter` or
+ * `SnomedCtProvider` construction. Without a branch both still query `MAIN`
+ * for compatibility, but `MAIN` holds the International Edition, which the
+ * integrator may not be licensed for, so the console warns once per class.
+ * `createDefaultTerminologyConfig` never gets here without a branch: it keeps
+ * SNOMED CT disabled instead.
+ *
+ * @param {unknown} branch
+ * @param {string} owner - Class name used in the warning.
+ * @returns {string}
+ */
+export function resolveSnowstormBranch(branch, owner) {
+  const configuredBranch = typeof branch === 'string' ? branch.trim() : '';
+
+  if (configuredBranch) {
+    return configuredBranch;
+  }
+
+  if (!warnedDefaultBranchOwners.has(owner)) {
+    warnedDefaultBranchOwners.add(owner);
+    console.warn(
+      `[terminology] ${owner} has no branch configured and queries MAIN, the SNOMED CT ` +
+      'International Edition. Set branch to the branch of the edition covered by your licence, ' +
+      'for example "MAIN/SNOMEDCT-DE" (German National Edition), or "MAIN" only if your licence ' +
+      'covers the International Edition.'
+    );
+  }
+
+  return 'MAIN';
+}
+
 /**
  * @category Extensibility
  */
@@ -42,7 +76,9 @@ export class SnowstormAdapter {
   /**
    * @param {Object} config
    * @param {string} config.baseUrl - e.g. 'http://localhost:8080/snowstorm/snomed-ct'
-   * @param {string} [config.branch='MAIN']
+   * @param {string} [config.branch] - Branch of the SNOMED CT edition your
+   *   licence covers, for example `'MAIN/SNOMEDCT-DE'`. Without it the adapter
+   *   queries `MAIN` (the International Edition) and the console warns once.
    * @param {import('../core/types.js').ConnectionConfig['auth']} [config.auth]
    * @param {typeof fetch} [config.fetchFn]
    * @param {Record<string, string>} [config.headers]
@@ -52,7 +88,7 @@ export class SnowstormAdapter {
     /** @internal */
     this._baseUrl = resolveSnowstormBaseUrl(config.baseUrl);
     /** @internal */
-    this._branch = config.branch || 'MAIN';
+    this._branch = resolveSnowstormBranch(config.branch, 'SnowstormAdapter');
     /** @internal */
     this._auth = config.auth;
     /** @internal */

@@ -13,7 +13,9 @@ Check these common cases first:
 
 - no terminology sources in the panel: register both the properties-panel module and a
   terminology module;
-- request blocked by CORS or redirected: route it through a backend you operate;
+- request blocked by CORS or redirected: use a redirect-free server whose CORS policy allows
+  your origin, or route the requests through a backend you operate; see
+  [Troubleshooting](/configuration/terminology-server/#troubleshooting);
 - plain Node import fails: consume the raw-ESM package through a bundler;
 - annotation edits participate in bpmn-js undo/redo; see
   [properties-panel behavior](/properties-panel/#add-an-annotation);
@@ -62,7 +64,8 @@ external medical terminologies (SNOMED CT®, LOINC®, ICD-10-GM, OPS, ATC, or bu
 packages). Integrating applications must also preserve the `bpmn.io` watermark.
 
 See [Licensing & terminology rights](/licensing/) for the full breakdown of publisher
-licences, demo-server boundaries, and `bpmn.io` terms.
+licences, what the public demo does, and `bpmn.io` terms. The npm package ships the MIT
+`LICENSE` and a `THIRD_PARTY_NOTICES.md` with the terms of every bundled source.
 
 ## Project and funding
 

@@ -157,6 +157,19 @@ describe('TerminologyRegistry', () => {
       expect(list[0]).toMatchObject({ id: 'alpha', displayName: 'Alpha', systemUri: 'http://alpha' });
       expect(list[1]).toMatchObject({ id: 'beta', displayName: 'Beta', systemUri: 'http://beta' });
     });
+
+    it('passes on the source type and the remoteSearch flag', () => {
+      registry.register({ ...createMockProvider({ id: 'server' }), sourceType: 'api' });
+      registry.register({ ...createMockProvider({ id: 'fallback' }), remoteSearch: true });
+      registry.register(createMockProvider({ id: 'local' }));
+
+      const list = registry.listProviders();
+
+      expect(list[0]).toMatchObject({ id: 'server', sourceType: 'api' });
+      expect(list[1]).toMatchObject({ id: 'fallback', remoteSearch: true });
+      expect(list[1].sourceType).toBeUndefined();
+      expect(list[2].remoteSearch).toBeUndefined();
+    });
   });
 
   // ─── search ───────────────────────────────────────────────

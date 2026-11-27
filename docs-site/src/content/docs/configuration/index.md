@@ -3,15 +3,18 @@ title: Configuration options
 description: Configure terminology servers, authentication, offline mode, provider overrides, fallbacks, dynamic loading, and programmatic use.
 ---
 
-Review [Default configuration](/configuration/defaults/) first to see which endpoints,
-provider IDs, pinned versions, and offline packages are active out of the box.
+Review [Default configuration](/configuration/defaults/) first to see which provider IDs,
+code systems, value sets, and offline packages are active out of the box. No terminology server
+is preconfigured: without `serverConfig.fhirBaseUrl` the extension contacts no server and offers
+only the bundled code systems. The built-in FHIR providers pin no release: they use the
+server's current release and store the version the server reports with each coding.
 
 Configuration is split across three layers:
 
 | Layer | Configured via | Page |
 | --- | --- | --- |
 | **Terminology services & providers** (servers, auth, offline mode, overrides, fallbacks) | `createDefaultTerminologyModule(options)` | **This page** |
-| **Properties panel & UI** (supported BPMN element types, initial `MT` badge visibility, hiding the panel, error events) | `createTerminologyPropertiesPanelModule(options)` | [Properties panel](/properties-panel/#options) |
+| **Properties panel & UI** (supported BPMN element types, initial `MT` badge visibility, hiding the panel, error events, [search throttling](/configuration/terminology-server/#search-throttling)) | `createTerminologyPropertiesPanelModule(options)` | [Properties panel](/properties-panel/#options) |
 | **Build-time & runtime FHIR packages** (Vite plugin, CLI, custom CodeSystem bundles) | `terminologyVitePlugin()` / `fdh-terminology-discover` / `packageDiscovery` | [Terminology packages](/configuration/discovery/) |
 
 :::caution
@@ -26,10 +29,10 @@ through GitHub Packages, while release candidates are staged on npm. See
 | --- | --- | --- |
 | `serverConfig` | Override `fhirBaseUrl`, `snomedBaseUrl`, or `snowstormBaseUrl` | [Terminology servers](#terminology-servers) |
 | `fetchFn` | Route requests through your backend, attach cookies/tokens, or use mTLS | [Terminology servers](#terminology-servers) |
-| `snomedConfig` | Switch SNOMED CT to Snowstorm, set `branch`, `language`, `defaultEcl`, `auth`, `headers`, `requestTimeoutMs`, `maxResults`, `version` | [SNOMED CT, Snowstorm & language](#snomed-ct-snowstorm-and-result-language) |
+| `snomedConfig` | Set the SNOMED CT `edition` (or an explicit `valueSetUri`; one is required for FHIR) and `editionVersion`; add `expandParameters` (default `activeOnly: 'true'`); set `auth`, `headers`, `requestTimeoutMs`, `maxResults`, and a `version` label; switch to Snowstorm and set its `branch` (required), `language`, `languageStrategy`, `defaultEcl` (Snowstorm only) | [SNOMED CT, Snowstorm & language](#snomed-ct-snowstorm-and-result-language) |
 | `enableSnomed`, `enableFhirDefaults`, `enablePackageDefaults` | Turn whole provider groups on or off (offline-only or server-only) | [Offline-only and server-only setups](#offline-only-and-server-only-setups) |
 | `disabledProviderIds` | Disable specific built-in providers by ID | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
-| `fhirProviderOverrides` | Override parameters, URLs, auth, headers, or timeouts for built-in FHIR providers | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
+| `fhirProviderOverrides` | Override parameters, URLs, auth, headers, timeouts, or the `codePattern` result filter for built-in FHIR providers | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
 | `additionalFhirProviders` | Register extra FHIR CodeSystems | [Enable, disable, or override providers](#enable-disable-or-override-providers) |
 | `packageProviderOptions` | Override labels or metadata of bundled presets (`kdl`, `ihe-xds-*`, `hl7-*`) | [Bundled package presets & fallbacks](#bundled-package-presets-and-fallbacks) |
 | `additionalPackageProviders` | Register extra package providers or offline-with-FHIR fallback providers | [Bundled package presets & fallbacks](#bundled-package-presets-and-fallbacks) |
@@ -38,8 +41,9 @@ through GitHub Packages, while release candidates are staged on npm. See
 
 ## Default setup
 
-`createDefaultTerminologyModule()` registers the built-in network and package-backed
-providers as a bpmn-js module:
+`createDefaultTerminologyModule()` registers the bundled package-backed providers as a bpmn-js
+module. The network providers (SNOMED CT, LOINC, ICD-10-GM, OPS, ATC) stay disabled until you
+configure a terminology server, and the browser console says so once:
 
 ```js
 import BpmnModeler from 'bpmn-js/lib/Modeler';
@@ -73,6 +77,11 @@ providers, `MT` badges, and generated-comment support. Register both.
 
 ## Terminology servers
 
+:::tip
+For a step-by-step setup with a worked example, the demo and troubleshooting, see
+[Connecting a terminology server](/configuration/terminology-server/).
+:::
+
 ### Use your own FHIR terminology server
 
 ```js
@@ -83,13 +92,42 @@ import {
 const TerminologyModule = createDefaultTerminologyModule({
   serverConfig: {
     fhirBaseUrl: 'https://terminology.example.org/fhir'
+  },
+  snomedConfig: {
+    // Module id of the SNOMED CT edition your licence covers.
+    edition: '11000274103' // German National Edition
   }
 });
 ```
 
-`serverConfig.fhirBaseUrl` redirects the built-in FHIR providers, the default FHIR-backed
-SNOMED provider, and the dynamic loader. A production host is responsible for authentication,
-licensing, availability, and CORS. The package does not ship a proxy.
+`serverConfig.fhirBaseUrl` enables the built-in FHIR providers, the FHIR-backed SNOMED
+provider, and the dynamic loader. Use only a server you are licensed to use; the host is
+responsible for authentication, licensing, availability, and CORS. The package does not ship
+a proxy.
+
+SNOMED CT over FHIR also needs `snomedConfig.edition`, the module id of the edition, for
+example `11000274103` (German National Edition) or `900000000000207008` (International
+Edition). Without it, or an explicit `snomedConfig.valueSetUri`, the SNOMED provider stays
+disabled, so the server cannot silently answer from an edition you did not choose. The edition
+determines the value set (`http://snomed.info/sct/11000274103?fhir_vs`) and the `$lookup`
+version. Without `editionVersion`, the server answers from its latest release of that edition,
+and each selected concept stores the release the server reports, for example
+`http://snomed.info/sct/11000274103/version/20260815`. Add `editionVersion: 'YYYYMMDD'` (for
+example `'20260815'`) to pin one release, or set `snomedConfig.valueSetUri` yourself for a
+narrower implicit value set. An implicit value set such as
+`http://snomed.info/sct/11000274103?fhir_vs=isa/404684003` names the edition, and lookups use
+it (or `edition`, if you set both; the console warns once when the two differ). An implicit value
+set without a module id, such as `http://snomed.info/sct?fhir_vs=isa/404684003`, always expands
+the server's default edition, and the console asks for the module id. Any other value set names no
+edition, and the console warns once: which edition searches use, and which version is stored with
+each coding, then depends on the value set's definition (`compose.include.version`) or, if it pins
+none, on the server's default edition. Make sure the value set pins the edition your licence
+covers. Lookups are scoped to an edition only if you also set `edition` or
+`lookupParameters.version`; neither changes searches or the stored version.
+
+Searches with SNOMED CT over FHIR send `activeOnly=true`, so inactive concepts are not offered.
+`snomedConfig.expandParameters` is merged over that default; `{ activeOnly: 'false' }` includes
+inactive concepts again.
 
 ### Separate server for SNOMED CT
 
@@ -101,26 +139,35 @@ const TerminologyModule = createDefaultTerminologyModule({
   serverConfig: {
     fhirBaseUrl: 'https://fhir.example.org/fhir',
     snomedBaseUrl: 'https://snomed.example.org/fhir'
-  }
+  },
+  snomedConfig: { edition: '11000274103' }
 });
 ```
 
 ### Route requests through your backend (`fetchFn`)
 
-Use `fetchFn` when requests must go through a same-origin backend proxy, include session
-cookies, or attach refreshed credentials:
+A backend you operate can serve the terminology server on your application's own origin, for
+example to keep credentials server-side or to reach a server that does not allow your origin
+through CORS. A relative `fhirBaseUrl` is resolved against the current page, as `fetch`
+resolves it. Same-origin requests need no CORS configuration and send the session cookies by
+default. Add a `fetchFn` when every request needs more, such as cookies for a backend on
+another origin:
 
 ```js
 const TerminologyModule = createDefaultTerminologyModule({
   serverConfig: {
+    // Resolved against the current page, e.g. https://app.example.org/api/terminology
     fhirBaseUrl: '/api/terminology'
   },
   fetchFn: (url, init) => fetch(url, {
     ...init,
+    // Needed only for cookies on another origin; same-origin requests send them anyway.
     credentials: 'include'
   })
 });
 ```
+
+The package does not ship such a route; you operate it.
 
 For servers requiring client certificates, see
 [mTLS-secured terminology servers](/configuration/mtls/).
@@ -138,7 +185,9 @@ providers (`fhirProviderOverrides` / `additionalFhirProviders`) support per-prov
 
 ```js
 const TerminologyModule = createDefaultTerminologyModule({
+  serverConfig: { fhirBaseUrl: 'https://terminology.example.org/fhir' },
   snomedConfig: {
+    edition: '11000274103',
     auth: { type: 'Bearer', token: sessionToken },
     headers: { 'X-Client-App': 'clinical-modeler' },
     requestTimeoutMs: 10000,
@@ -158,12 +207,20 @@ const TerminologyModule = createDefaultTerminologyModule({
 Snowstorm transport additionally supports `ApiKey` authentication (see below). Use `fetchFn`
 when authentication must apply across all FHIR providers or when tokens need to be refreshed.
 
+An `Authorization` header or any custom header, such as `X-Client-App` above, makes the browser
+send a CORS preflight before each cross-origin request. The server must allow every such header
+in its preflight response; some public servers allow only `Authorization`. See
+[Authentication](/configuration/terminology-server/#authentication).
+
 ## SNOMED CT, Snowstorm, and result language
 
 ### Snowstorm instead of FHIR for SNOMED CT
 
 There is no public Snowstorm default; supply `snomedConfig.baseUrl` (or
-`serverConfig.snowstormBaseUrl` / `serverConfig.snomedBaseUrl`):
+`serverConfig.snowstormBaseUrl` / `serverConfig.snomedBaseUrl`) and `snomedConfig.branch`, the
+branch of the edition your licence covers. There is no default branch: without one, SNOMED CT
+stays disabled and the console warns once, because Snowstorm's `MAIN` branch holds the
+International Edition. Set `branch: 'MAIN'` explicitly only if your licence covers it.
 
 ```js
 const TerminologyModule = createDefaultTerminologyModule({
@@ -174,7 +231,6 @@ const TerminologyModule = createDefaultTerminologyModule({
     language: 'de',
     languageStrategy: 'header',
     defaultEcl: '< 404684003',
-    version: '2025-05-15',
     maxResults: 15,
     auth: {
       type: 'ApiKey',
@@ -185,23 +241,33 @@ const TerminologyModule = createDefaultTerminologyModule({
 });
 ```
 
+Leave `snomedConfig.version` unset for Snowstorm. It is only a version label for the outdated
+check: the panel marks codings stored with any other version as "Version unavailable".
+Snowstorm stores each concept's own module and effective time
+(`http://snomed.info/sct/<moduleId>/version/<effectiveTime>`), so a fixed label would flag
+nearly every coding.
+
 ### Result language
 
-For Snowstorm, `languageStrategy: 'header'` sends `Accept-Language`, while `'param'` sends
-the server-specific `language` query parameter.
+`snomedConfig.language` and `snomedConfig.languageStrategy` apply only to
+`transport: 'snowstorm'`: `languageStrategy: 'header'` sends `Accept-Language`, while `'param'`
+sends the server-specific `language` query parameter.
 
-Built-in `FhirProvider` instances currently use the package default (`de` via the
-`displayLanguage` query parameter). If an application needs a different FHIR language policy,
-configure `FhirTerminologyAdapter` directly, provide a host-owned `fetchFn`, or use a
-[custom provider](/extending/). The server ultimately decides whether a translated display is
-available.
+Built-in `FhirProvider` instances, including the SNOMED CT provider with `transport: 'fhir'`,
+use the package default and ignore `snomedConfig.language` and `languageStrategy`: they send
+`displayLanguage=de` with every search (`$expand`) and lookup (`$lookup`). If an application
+needs a different FHIR language policy, configure `FhirTerminologyAdapter` directly, provide a
+host-owned `fetchFn`, or use a [custom provider](/extending/). The server ultimately decides
+whether a translated display is available.
 
 ## Offline-only and server-only setups
 
 ### Offline-only (bundled packages only)
 
-The bundled HL7 terminology, IHE XDS, and KDL providers need no network access. Disable all
-remote providers and the dynamic loader:
+The bundled HL7 terminology, IHE XDS, and KDL providers need no network access. Without a
+configured server this is already the default. Setting the flags explicitly keeps the setup
+offline even if a server is configured elsewhere, and silences the console notice about
+disabled network providers:
 
 ```js
 const TerminologyModule = createDefaultTerminologyModule({
@@ -243,23 +309,23 @@ const TerminologyModule = createDefaultTerminologyModule({
 
 ### Override built-in FHIR providers
 
-Override pinned versions (`valueSetVersion` or `system-version`), lookup parameters, display
-names, or even the server URL per provider:
+The built-in FHIR providers send no version parameter, so the server answers from its current
+release. Override expand and lookup parameters, display names, the value set, or even the
+server URL per provider. To pin a release, use `valueSetVersion`:
 
 ```js
 const TerminologyModule = createDefaultTerminologyModule({
+  serverConfig: { fhirBaseUrl: 'https://terminology.example.org/fhir' },
   fhirProviderOverrides: [
     {
       id: 'icd-10-gm',
-      expandParameters: { valueSetVersion: '2025' },
-      lookupParameters: { version: '2025' }
+      expandParameters: { valueSetVersion: '2026' },
+      lookupParameters: { version: '2026' }
     },
     {
       id: 'ops',
-      displayName: 'OPS 2025',
-      expandParameters: {
-        'system-version': 'http://fhir.de/CodeSystem/bfarm/ops|2025'
-      }
+      displayName: 'OPS 2026',
+      expandParameters: { valueSetVersion: '2026' }
     },
     {
       id: 'loinc',
@@ -268,6 +334,30 @@ const TerminologyModule = createDefaultTerminologyModule({
   ]
 });
 ```
+
+`codePattern` (a `RegExp` or a string) shows only search results whose code matches it. The
+built-in `loinc` provider uses `'^\\d{1,7}-\\d$'`, so the LOINC Parts, Answers, groups and answer
+lists that `http://loinc.org/vs` also contains are hidden. The filter runs on each page the
+server returns: a page may show fewer results, while `offset` and `total` stay the server's. The
+search result then reports in `filteredOut` how many items of the page were hidden; the properties
+panel leaves the server's total out of its summary and, if every item of the first page was
+hidden and the server reports more matches than that page held, asks for more search words
+instead of reporting no matches.
+`{ id: 'loinc', codePattern: null }` shows every code again. Lookups are not filtered.
+
+A pinned release must exist on the server. Once the server drops it, searches with that
+provider fail with HTTP 404. Do not pin with `system-version`: value sets that fix the code system
+version themselves, such as the BfArM value sets, ignore it, and the server silently answers
+from its current release. See [Pin a release](/configuration/terminology-server/#pin-a-release).
+
+:::caution[Changed: ATC is now ATC-GM]
+The built-in `atc` provider uses the German ATC-GM published by BfArM
+(`http://fhir.de/CodeSystem/bfarm/atc`, value set `http://fhir.de/ValueSet/bfarm/atc`), no longer
+the WHO ATC (`http://www.whocc.no/atc`). New codings therefore carry the ATC-GM system URI.
+Existing codings with the WHO system remain valid data. To keep searching WHO ATC, override the
+provider with `systemUri: 'http://www.whocc.no/atc'` and a `valueSetUri` your server can expand,
+and observe the WHO Collaborating Centre's terms. tx.fhir.de, for example, cannot expand WHO ATC.
+:::
 
 ### Add another FHIR CodeSystem explicitly
 
@@ -300,7 +390,7 @@ const TerminologyModule = createDefaultTerminologyModule({
   packageProviderOptions: {
     kdl: {
       displayName: 'KDL (Hospital Document Types)',
-      componentLabel: 'KDL 2025'
+      componentLabel: 'KDL'
     }
   }
 });
@@ -333,6 +423,10 @@ const TerminologyModule = createDefaultTerminologyModule({
   additionalPackageProviders: [ localWithFallback ]
 });
 ```
+
+Because a search may reach the FHIR server, such a provider reports `remoteSearch: true`, and the
+properties panel throttles its searches as it does for server providers, the local snapshot
+included; see [Search throttling](/configuration/terminology-server/#search-throttling).
 
 ## Dynamic provider loader
 
@@ -375,7 +469,9 @@ import {
 
 const { terminologyRegistry, terminologyProviderLoader } =
   createDefaultTerminologyServices({
-    serverConfig: { fhirBaseUrl: 'https://terminology.example.org/fhir' }
+    serverConfig: { fhirBaseUrl: 'https://terminology.example.org/fhir' },
+    // Required for SNOMED CT: the edition your licence covers.
+    snomedConfig: { edition: '11000274103' }
   });
 
 const { concepts } = await terminologyRegistry.search('pneumonia', 'snomed-ct');
